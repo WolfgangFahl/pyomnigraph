@@ -18,24 +18,9 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 
 dependencies = [
-# SPARQL endpoint access
-"SPARQLWrapper>=2.0.0",
-# RDF handling
-"rdflib>=7.0.0",
-# Neo4j database access
-"neo4j>=5.0.0",
-# Weaviate vector database
-"weaviate-client>=4.0.0",
-# HTTP requests
-"requests>=2.28.0",
-# JSON handling and utilities
-"pydantic>=2.0.0",
-# Async support
-"aiohttp>=3.8.0",
-# Configuration management
-"pyyaml>=6.0",
-# Logging utilities
-"structlog>=23.0.0",
+	# platform independent knowledge graph ready list of dicts (table) handling
+    # https://pypi.org/project/pyLodStorage/
+    "pyLodStorage>=0.16.0",
 ]
 
 requires-python = ">=3.10"
