@@ -7,7 +7,7 @@ Created on 2025-05-26
 import json
 from pathlib import Path
 
-from ngwidgets.basetest import Basetest
+from tests.basetest import Basetest
 from omnigraph.sparql_server import (
     Blazegraph, BlazegraphConfig,
     QLever, QLeverConfig,
