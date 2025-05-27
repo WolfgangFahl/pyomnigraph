@@ -1,0 +1,11 @@
+#!/bin/bash
+# WF 2023-07-19
+# Check if running in GitHub Actions and apt-get is available
+if [[ -n "$GITHUB_ACTIONS" && -x "$(command -v apt-get)" ]]; then
+    echo "Running in GitHub Actions with apt-get available. Installing dependencies..."
+    sudo apt-get update
+    # install dependencies
+    sudo apt-get install rcs
+fi
+# simple install via pyproject.toml
+pip install .

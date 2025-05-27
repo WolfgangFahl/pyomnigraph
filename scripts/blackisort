@@ -1,0 +1,7 @@
+#!/bin/bash
+# WF 2024-08-15
+for package in omnigraph tests
+do
+  isort $package/*.py
+  black $package/*.py
+done

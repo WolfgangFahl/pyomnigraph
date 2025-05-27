@@ -1,0 +1,93 @@
+# see https://flit.pypa.io/en/latest/pyproject_toml.html
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omnigraph"
+description = "omnigraph: Unified Python interface for multiple graph databases (SPARQL, Neo4j, Weaviate)"
+keywords = ["graph", "database", "SPARQL", "neo4j", "weaviate", "virtuoso", "blazegraph", "jena", "qlever", "rdf"]
+home-page = "https://github.com/WolfgangFahl/omnigraph"
+authors = [
+{name = "Wolfgang Fahl", email = "wf@WolfgangFahl.com"}
+]
+maintainers = [
+{ name = "Wolfgang Fahl", email = "wf@WolfgangFahl.com" },
+]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+
+dependencies = [
+# SPARQL endpoint access
+"SPARQLWrapper>=2.0.0",
+# RDF handling
+"rdflib>=7.0.0",
+# Neo4j database access
+"neo4j>=5.0.0",
+# Weaviate vector database
+"weaviate-client>=4.0.0",
+# HTTP requests
+"requests>=2.28.0",
+# JSON handling and utilities
+"pydantic>=2.0.0",
+# Async support
+"aiohttp>=3.8.0",
+# Configuration management
+"pyyaml>=6.0",
+# Logging utilities
+"structlog>=23.0.0",
+]
+
+requires-python = ">=3.10"
+classifiers=[
+"Development Status :: 4 - Beta",
+"Environment :: Web Environment",
+"Programming Language :: Python :: 3 :: Only",
+"Programming Language :: Python :: 3.10",
+"Programming Language :: Python :: 3.11",
+"Programming Language :: Python :: 3.12",
+"Programming Language :: Python :: 3.13",
+"Operating System :: OS Independent",
+"Topic :: Database",
+"Topic :: Software Development :: Libraries :: Python Modules",
+"Intended Audience :: Developers",
+"Intended Audience :: Science/Research",
+"License :: OSI Approved :: Apache Software License"
+]
+dynamic = ["version"]
+
+[tool.hatch.version]
+path = "omnigraph/__init__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project.urls]
+Home = "https://github.com/WolfgangFahl/omnigraph"
+Documentation = "https://wiki.bitplan.com/index.php/omnigraph"
+Source = "https://github.com/WolfgangFahl/omnigraph"
+
+[project.optional-dependencies]
+test = [
+"pytest>=7.0.0",
+"pytest-asyncio>=0.21.0",
+"green",
+]
+dev = [
+"black>=23.0.0",
+"isort>=5.12.0",
+"mypy>=1.0.0",
+"pre-commit>=3.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["omnigraph"]
+
+[tool.hatch.build.targets.wheel.sources]
+"omnigraph" = "omnigraph"
+
+[project.scripts]
+omnigraph = "omnigraph.omnigraph_cmd:main"
+
+[tool.black]
+line-length = 120
