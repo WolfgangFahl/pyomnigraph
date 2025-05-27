@@ -1,0 +1,69 @@
+<http://www.wikidata.org/entity/Q9682> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q9682" ;
+    <https://omnigraph.bitplan.com/royal/name> "Elizabeth Alexandra Mary Windsor" ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "1926-04-21"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/died_iso_date> "2022-09-08"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 96 ;
+    <https://omnigraph.bitplan.com/royal/of_age> true ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q9682" .
+
+<http://www.wikidata.org/entity/Q43274> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q43274" ;
+    <https://omnigraph.bitplan.com/royal/name> "Charles III of the United Kingdom" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 0 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "1948-11-14"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 75 ;
+    <https://omnigraph.bitplan.com/royal/of_age> true ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q43274" .
+
+<http://www.wikidata.org/entity/Q36812> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q36812" ;
+    <https://omnigraph.bitplan.com/royal/name> "William, Duke of Cambridge" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 1 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "1982-06-21"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 41 ;
+    <https://omnigraph.bitplan.com/royal/of_age> true ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q36812" .
+
+<http://www.wikidata.org/entity/Q13590412> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q13590412" ;
+    <https://omnigraph.bitplan.com/royal/name> "Prince George of Wales" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 2 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "2013-07-22"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 10 ;
+    <https://omnigraph.bitplan.com/royal/of_age> false ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q13590412" .
+
+<http://www.wikidata.org/entity/Q18002970> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q18002970" ;
+    <https://omnigraph.bitplan.com/royal/name> "Princess Charlotte of Wales" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 3 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "2015-05-02"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 8 ;
+    <https://omnigraph.bitplan.com/royal/of_age> false ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q18002970" .
+
+<http://www.wikidata.org/entity/Q38668629> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q38668629" ;
+    <https://omnigraph.bitplan.com/royal/name> "Prince Louis of Wales" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 4 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "2018-04-23"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 5 ;
+    <https://omnigraph.bitplan.com/royal/of_age> false ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q38668629" .
+
+<http://www.wikidata.org/entity/Q152316> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://omnigraph.bitplan.com/royal/Royal> ;
+    <https://omnigraph.bitplan.com/royal/wikidata_id> "Q152316" ;
+    <https://omnigraph.bitplan.com/royal/name> "Harry Duke of Sussex" ;
+    <https://omnigraph.bitplan.com/royal/number_in_line> 5 ;
+    <https://omnigraph.bitplan.com/royal/born_iso_date> "1984-09-15"^^<http://www.w3.org/2001/XMLSchema#date> ;
+    <https://omnigraph.bitplan.com/royal/last_modified_iso> "2024-01-25T07:18:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://omnigraph.bitplan.com/royal/age> 39 ;
+    <https://omnigraph.bitplan.com/royal/of_age> true ;
+    <https://omnigraph.bitplan.com/royal/wikidata_url> "https://www.wikidata.org/wiki/Q152316" .
