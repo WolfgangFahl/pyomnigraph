@@ -1,9 +1,10 @@
+from dataclasses import dataclass, field
 import os
-from dataclasses import dataclass,field
 from typing import List
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
+from omnigraph.yamlable import lod_storable
 
 
 @dataclass
@@ -11,12 +12,11 @@ class Software:
     """
     Single software requirement definition
     """
-
     command: str
     info: str
 
 
-@dataclass
+@lod_storable
 class SoftwareList:
     """
     Collection of software requirements loadable from YAML
@@ -24,7 +24,7 @@ class SoftwareList:
 
     software_list: List[Software]=field(default_factory=list)
 
-    def check_installed(self, log: Log, shell: Shell,verbose:bool=True):
+    def check_installed(self, log: Log, shell: Shell,verbose:bool=True)->int:
         """
         Check if necessary software
         commands are available and suggest installation packages
@@ -43,5 +43,4 @@ class SoftwareList:
             else:
                 log.log("✅", "info", f"{needed.command} available at {where}")
 
-        if missing_counter != 0:
-            self.error("Please install the missing commands before running this script.")
+        return missing_counter

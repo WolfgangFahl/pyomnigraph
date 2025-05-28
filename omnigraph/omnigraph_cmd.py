@@ -173,7 +173,7 @@ class OmnigraphCmd:
 
         if self.args.list_servers:
             print("Available servers:")
-            for name, server in self.servers.items():
+            for name, server in self.all_servers.items():
                 print(f"  {name}: {server.config.server}")
             handled = True
 

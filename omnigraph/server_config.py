@@ -9,6 +9,7 @@ from typing import Callable, Dict, Optional
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
+from omnigraph.software import SoftwareList
 from omnigraph.yamlable import lod_storable
 
 
@@ -59,6 +60,7 @@ class ServerConfig:
     data_dir: Optional[str] = field(default=None)
     dumps_dir: Optional[str] = field(default=None)
     docker_run_command: Optional[str] = field(default=None)
+    needed_software: Optional[SoftwareList] = field(default=None)
 
     def __post_init__(self):
         if self.base_url is None:

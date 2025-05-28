@@ -4,15 +4,15 @@ Created on 2025-05-27
 @author: wf
 """
 
+from pathlib import Path
 import time
 import webbrowser
-from pathlib import Path
 
-import requests
 from lodstorage.sparql import SPARQL
-from tqdm import tqdm
-
 from omnigraph.server_config import ServerConfig, ServerEnv
+import requests
+from tqdm import tqdm
+from omnigraph.software import SoftwareList
 
 
 class SparqlServer:
@@ -335,3 +335,16 @@ class SparqlServer:
                     self.log.log("❌", container_name, f"Failed to load: {filepath}")
 
         return loaded_count
+
+    def check_needed_software(self):
+        """
+        Check if needed software for this server configuration is installed
+        """
+        container_name=self.config.container_name
+        if self.config.needed_software is None:
+            return
+        software_list = SoftwareList.from_dict2(self.config.needed_software)
+        missing=software_list.check_installed(self.log, self.shell, verbose=True)
+        if missing>0:
+            self.log.log("❌",container_name,"Please install the missing commands before running this script.")
+        return missing

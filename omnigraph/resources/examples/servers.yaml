@@ -22,6 +22,12 @@ servers:
     port: 7002
     host: "localhost"
     active: false
+    needed_software:
+      software_list:
+        - command: "pip"
+          info: "pip (Install with 'apt install python3-pip' or 'yum install python3-pip')"
+        - command: "qlever"
+          info: "qlever (Install via pip install qlever)"
   jena:
     server: jena
     name: "jena"
