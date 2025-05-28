@@ -119,7 +119,7 @@ class OmnigraphCmd:
             server = self.all_servers.get(server_name)
             if server:
                 if server.config.dumps_dir is None:
-                    server.config.dumps_dir=self.ogp.examples_dir
+                    server.config.dumps_dir = self.ogp.examples_dir
                 servers[server_name] = server
         return servers
 

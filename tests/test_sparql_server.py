@@ -5,9 +5,8 @@ Created on 2025-05-26
 """
 
 import json
+import tempfile
 from pathlib import Path
-
-from tqdm import tqdm
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
@@ -26,6 +25,7 @@ class TestSparqlServer(Basetest):
         """
         Basetest.setUp(self, debug=debug, profile=profile)
         self.ogp = OmnigraphPaths()
+        self.tempdir = Path(tempfile.mkdtemp(prefix="omnigraph_test_"))
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
         env = ServerEnv()
         omni_server = OmniServer(env=env)
@@ -39,6 +39,11 @@ class TestSparqlServer(Basetest):
         self.assertEqual(0, count_triples)
 
     def start_server(self, server: SparqlServer, verbose: bool = True):
+        """
+        Start the given SPARQL server with a unique data directory under self.tempdir.
+        """
+        server.config.data_dir = self.tempdir / server.name
+        server.config.data_dir.mkdir(parents=True, exist_ok=True)
         if server.is_running():
             if self.debug and verbose:
                 print(f"{server.name} already running")
@@ -75,7 +80,7 @@ class TestSparqlServer(Basetest):
         self.start_server(server, verbose=False)
         self.clear_server(server)
 
-        server.config.dumps_dir=dumps_dir
+        server.config.dumps_dir = dumps_dir
         loaded_count = server.load_dump_files()
 
         if self.debug:

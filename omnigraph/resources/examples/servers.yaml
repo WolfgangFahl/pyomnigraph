@@ -6,6 +6,7 @@ servers:
   blazegraph:
     server: "blazegraph"
     name: "blazegraph"
+    wikidata_id: "Q20127748"
     container_name: "blazegraph-royals"
     image: "lyrasis/blazegraph:2.1.5"
     port: 9898
@@ -14,14 +15,17 @@ servers:
   qlever:
     server: "qlever"
     name: "qlever"
-    container_name: "qlever-royals"
+    wikidata_id: "Q111016295"
+    container_name: "qlever-olympics"
     image: "adfreiburg/qlever:latest"
+    dataset: "olympics"
     port: 7002
     host: "localhost"
     active: false
   jena:
     server: jena
     name: "jena"
+    wikidata_id: "Q109376461"
     container_name: "jena-royals"
     image: "stain/jena-fuseki:latest"
     port: 3030

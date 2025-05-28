@@ -11,7 +11,8 @@ from typing import Callable, Dict
 from omnigraph.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.jena import Jena, JenaConfig
 from omnigraph.qlever import QLever, QLeverConfig
-from omnigraph.sparql_server import ServerCmd, ServerConfig, ServerConfigs, ServerEnv, SparqlServer
+from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
+from omnigraph.sparql_server import SparqlServer
 
 
 class OmniServer:
