@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 
 from tests.basetest import Basetest
+from omnigraph.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.sparql_server import (
-    Blazegraph, BlazegraphConfig,
     QLever, QLeverConfig,
     SparqlServer, ServerConfig
 )
@@ -34,7 +34,7 @@ class TestSparqlServer(Basetest):
                 name="blazegraph",
                 container_name="blazegraph-royals",
                 image="lyrasis/blazegraph:2.1.5",
-                port=9998
+                port=9898
             ),
             "qlever": ServerConfig(
                 name="qlever",
