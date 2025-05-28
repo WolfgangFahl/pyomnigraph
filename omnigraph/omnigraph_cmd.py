@@ -83,6 +83,12 @@ class OmnigraphCmd:
             "-l", "--list-servers", action="store_true", help="List available servers [default: %(default)s]"
         )
         parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="avoid any output [default: %(default)s]",
+        )
+        parser.add_argument(
             "-s",
             "--servers",
             nargs="+",
@@ -134,7 +140,7 @@ class OmnigraphCmd:
                 s_cmd_factory = self.server_cmds.get(cmd)
                 s_cmd = s_cmd_factory(server)
                 if s_cmd:
-                    s_cmd.run(verbose=self.args.verbose)
+                    s_cmd.run(verbose=not self.args.quiet)
                     handled = True
                 else:
                     print(f"unsupported command {cmd}")

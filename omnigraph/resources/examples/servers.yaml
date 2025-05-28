@@ -1,5 +1,6 @@
 #
 # pyomnigraph server configuration example
+# see https://github.com/WolfgangFahl/pyomnigraph
 #
 servers:
   blazegraph:

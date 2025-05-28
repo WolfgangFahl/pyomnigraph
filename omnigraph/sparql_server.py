@@ -110,6 +110,8 @@ class ServerCmd:
         Returns:
             Result from function execution
         """
+        if verbose:
+            print(f"{self.title} ...")
         result = self.func()
         if verbose:
             print(f"{self.title}: {result}")
