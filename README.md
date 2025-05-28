@@ -10,3 +10,5 @@
 
 Unified Python interface for multiple graph databases
 
+## Docs and Tutorials
+[Wiki](https://wiki.bitplan.com/index.php/pyomnigraph)

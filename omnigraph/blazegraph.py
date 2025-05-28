@@ -1,16 +1,21 @@
-from omnigraph.sparql_server import ServerConfig, SparqlServer
-from dataclasses import dataclass
+import glob
 import re
+from dataclasses import dataclass
+from pathlib import Path
+
+from tqdm import tqdm
+
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
-from pathlib import Path
-from tqdm import tqdm
-import glob
+from omnigraph.sparql_server import ServerConfig, SparqlServer
+
+
 @dataclass
 class BlazegraphConfig(ServerConfig):
     """
     Blazegraph configuration
     """
+
     def __post_init__(self):
         super().__post_init__()
         blazegraph_base = f"{self.base_url}/bigdata"
@@ -19,6 +24,7 @@ class BlazegraphConfig(ServerConfig):
         self.dataloader_url = f"{blazegraph_base}/dataloader"
         self.docker_run_command = f"docker run -d --name {self.container_name} -p {self.port}:8080 {self.image}"
 
+
 class Blazegraph(SparqlServer):
     """
     Dockerized Blazegraph SPARQL server
@@ -26,7 +32,7 @@ class Blazegraph(SparqlServer):
 
     def __init__(
         self,
-        config:ServerConfig,
+        config: ServerConfig,
         log: Log = None,
         shell: Shell = None,
         debug: bool = False,
@@ -107,15 +113,11 @@ class Blazegraph(SparqlServer):
                 load_success = True
             else:
                 error_msg = result.get("error", f"HTTP {result['status_code']}")
-                self.log.log(
-                    "❌", self.name, f"Failed to load {filepath}: {error_msg}"
-                )
+                self.log.log("❌", self.name, f"Failed to load {filepath}: {error_msg}")
                 load_success = False
 
         except Exception as e:
-            self.log.log(
-                "❌", self.name, f"Exception loading {filepath}: {e}"
-            )
+            self.log.log("❌", self.name, f"Exception loading {filepath}: {e}")
             load_success = False
 
         return load_success
@@ -156,22 +158,16 @@ class Blazegraph(SparqlServer):
             )
 
             if result["success"]:
-                self.log.log(
-                    "✅", self.container_name, f"Bulk loaded {len(file_list)} files"
-                )
+                self.log.log("✅", self.container_name, f"Bulk loaded {len(file_list)} files")
                 bulk_load_success = True
             else:
                 error_msg = result.get("error", f"HTTP {result['status_code']}")
-                self.log.log(
-                    "❌", self.container_name, f"Bulk load failed: {error_msg}"
-                )
+                self.log.log("❌", self.container_name, f"Bulk load failed: {error_msg}")
                 bulk_load_success = False
 
         return bulk_load_success
 
-    def load_dump_files(
-        self, file_pattern: str = "dump_*.ttl", use_bulk: bool = True
-    ) -> int:
+    def load_dump_files(self, file_pattern: str = "dump_*.ttl", use_bulk: bool = True) -> int:
         """
         Load all dump files matching pattern.
 
@@ -205,9 +201,7 @@ class Blazegraph(SparqlServer):
                     if file_result:
                         loaded_count += 1
                     else:
-                        self.log.log(
-                            "❌", self.container_name, f"Failed to load: {filepath}"
-                        )
+                        self.log.log("❌", self.container_name, f"Failed to load: {filepath}")
 
         return loaded_count
 

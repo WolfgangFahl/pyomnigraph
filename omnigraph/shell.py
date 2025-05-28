@@ -160,9 +160,7 @@ class Shell:
         shell = cls(profile=profile)
         return shell
 
-    def run(
-        self, cmd, text=True, debug=False, tee=False
-    ) -> subprocess.CompletedProcess:
+    def run(self, cmd, text=True, debug=False, tee=False) -> subprocess.CompletedProcess:
         """
         Run command with profile, always capturing output and optionally teeing it.
 
@@ -238,6 +236,4 @@ class Shell:
                 symbol = "✅"
             print(f"{symbol} {idx}/{total}: {path.name}")
         percent_ok = ((total - failures) / total) * 100 if total > 0 else 0
-        print(
-            f"\n✅ {total - failures}/{total} ({percent_ok:.1f}%), ❌ {failures}/{total} ({100 - percent_ok:.1f}%)"
-        )
+        print(f"\n✅ {total - failures}/{total} ({percent_ok:.1f}%), ❌ {failures}/{total} ({100 - percent_ok:.1f}%)")

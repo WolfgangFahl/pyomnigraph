@@ -104,9 +104,7 @@ class Log:
         counter = self.get_counter(level)
         if counter:
             count = sum(counter.values())
-            most_common_entries = dict(
-                counter.most_common(limit)
-            )  # Get the top 'limit' entries
+            most_common_entries = dict(counter.most_common(limit))  # Get the top 'limit' entries
             summary_msg = f"{level.capitalize()} entries: {most_common_entries}"
             return count, summary_msg
         return 0, f"No entries found for level: {level}"

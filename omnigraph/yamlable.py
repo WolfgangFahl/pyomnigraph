@@ -142,9 +142,7 @@ class YamlAble(Generic[T]):
         """
         obj_dict = asdict(self)
         self._yaml_setup()
-        clean_dict = self.remove_ignored_values(
-            obj_dict, ignore_none, ignore_underscore
-        )
+        clean_dict = self.remove_ignored_values(obj_dict, ignore_none, ignore_underscore)
         yaml_str = yaml.dump(
             clean_dict,
             Dumper=self._yaml_dumper,
@@ -291,29 +289,19 @@ class YamlAble(Generic[T]):
             if ignore_empty:
                 if isinstance(v, Mapping) and not v:
                     return False  # Empty dictionary
-                if (
-                    isinstance(v, Iterable)
-                    and not isinstance(v, (str, bytes))
-                    and not v
-                ):
-                    return (
-                        False  # Empty list, set, tuple, etc., but not string or bytes
-                    )
+                if isinstance(v, Iterable) and not isinstance(v, (str, bytes)) and not v:
+                    return False  # Empty list, set, tuple, etc., but not string or bytes
             return True
 
         if isinstance(value, Mapping):
             value = {
-                k: YamlAble.remove_ignored_values(
-                    v, ignore_none, ignore_underscore, ignore_empty
-                )
+                k: YamlAble.remove_ignored_values(v, ignore_none, ignore_underscore, ignore_empty)
                 for k, v in value.items()
                 if is_valid(v) and (not ignore_underscore or not k.startswith("_"))
             }
         elif isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
             value = [
-                YamlAble.remove_ignored_values(
-                    v, ignore_none, ignore_underscore, ignore_empty
-                )
+                YamlAble.remove_ignored_values(v, ignore_none, ignore_underscore, ignore_empty)
                 for v in value
                 if is_valid(v)
             ]

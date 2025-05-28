@@ -3,34 +3,55 @@ Created on 2025-05-27
 
 @author: wf
 """
-from dataclasses import dataclass
-import glob
+
 import time
+from dataclasses import dataclass, field
+from typing import Dict, Optional
 
 import requests
 from lodstorage.sparql import SPARQL
+from tqdm import tqdm
+
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
-from tqdm import tqdm
+from omnigraph.yamlable import lod_storable
+
 
 @dataclass
 class ServerConfig:
+    server: str
     name: str
     container_name: str
     image: str
     port: int
+    active: bool = True
     protocol: str = "http"
-    host:str="localhost"
-    base_url: str = None
-    status_url: str = ""
-    sparql_url: str = ""
-    data_dir: str = ""
-    dump_dir: str = ""
-    docker_run_command: str = ""
+    host: str = "localhost"
+    # fields to be configured by post_init
+    base_url: Optional[str] = field(default=None)
+    status_url: Optional[str] = field(default=None)
+    sparql_url: Optional[str] = field(default=None)
+    data_dir: Optional[str] = field(default=None)
+    dump_dir: Optional[str] = field(default=None)
+    docker_run_command: Optional[str] = field(default=None)
 
     def __post_init__(self):
         if self.base_url is None:
             self.base_url = f"{self.protocol}://{self.host}:{self.port}"
+
+
+@lod_storable
+class ServerConfigs:
+    """Collection of server configurations loaded from YAML."""
+
+    servers: Dict[str, ServerConfig] = field(default_factory=dict)
+
+    @classmethod
+    def ofYaml(cls, yaml_path: str) -> "ServerConfigs":
+        """Load server configurations from YAML file."""
+        server_configs = cls.load_from_yaml_file(yaml_path)
+        return server_configs
+
 
 class SparqlServer:
     """
@@ -39,11 +60,10 @@ class SparqlServer:
 
     def __init__(
         self,
-        config:ServerConfig,
+        config: ServerConfig,
         log: Log = None,
         shell: Shell = None,
         debug: bool = False,
-
     ):
         """
         Initialize the SPARQL server manager.
@@ -52,8 +72,8 @@ class SparqlServer:
         if log is None:
             log = Log()
         self.log = log
-        self.config=config
-        self.name=self.config.name
+        self.config = config
+        self.name = self.config.name
         self.debug = debug
 
         if shell is None:
@@ -95,9 +115,7 @@ class SparqlServer:
             }
         return request_result
 
-    def run_shell_command(
-        self, command: str, success_msg: str = None, error_msg: str = None
-    ) -> bool:
+    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> bool:
         """
         Helper function for running shell commands with consistent error handling.
 
@@ -124,9 +142,7 @@ class SparqlServer:
                 self.log.log("❌", container_name, error_detail)
                 command_success = False
         except Exception as e:
-            self.log.log(
-                "❌", container_name, f"Exception running command '{command}': {e}"
-            )
+            self.log.log("❌", container_name, f"Exception running command '{command}': {e}")
             command_success = False
         return command_success
 
@@ -226,9 +242,7 @@ class SparqlServer:
 
         pbar = None
         if show_progress:
-            pbar = tqdm(
-                total=timeout, desc=f"Waiting for {server_name}", unit="s"
-            )
+            pbar = tqdm(total=timeout, desc=f"Waiting for {server_name}", unit="s")
 
         ready_status = False
         for i in range(timeout):
@@ -266,9 +280,7 @@ class SparqlServer:
         Returns:
             True if container is running
         """
-        running_cmd = (
-            f'docker ps --filter "name={self.config.container_name}" --format "{{{{.Names}}}}"'
-        )
+        running_cmd = f'docker ps --filter "name={self.config.container_name}" --format "{{{{.Names}}}}"'
         result = self.shell.run(running_cmd, debug=self.debug)
         is_container_running = self.config.container_name in result.stdout
         return is_container_running
@@ -280,7 +292,7 @@ class SparqlServer:
         Returns:
             True if container exists
         """
-        container_name=self.config.container_name
+        container_name = self.config.container_name
         check_cmd = f'docker ps -a --filter "name={container_name}" --format "{{{{.Names}}}}"'
         result = self.shell.run(check_cmd, debug=self.debug)
         if result.stderr:
@@ -302,175 +314,3 @@ class SparqlServer:
             error_msg=f"Failed to stop container {self.container_name}",
         )
         return stop_success
-
-
-@dataclass
-class QLeverConfig(ServerConfig):
-    def __post_init__(self):
-        super().__post_init__()
-        self.status_url = f"{self.base_url}/status"
-        self.sparql_url = f"{self.base_url}/api/sparql"
-        self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
-
-class QLever(SparqlServer):
-    """
-    Dockerized QLever SPARQL server
-    """
-
-    def __init__(
-        self,
-        container_name: str = "qlever",
-        image: str = "adfreiburg/qlever",
-        data_dir: str = None,
-        dataset: str = "olympics",
-        port: int = 7001,
-        log: Log = None,
-        shell: Shell = None,
-        debug: bool = False,
-    ):
-        """
-        Initialize the QLever manager.
-
-        Args:
-            container_name: Docker container name
-            image: Docker image to use
-            port: Port for QLever web interface
-            data_dir: where to keep the data
-            dataset(str): a default dataset to be loaded
-            log: Log instance for logging
-            shell: Shell instance for Docker commands
-            debug: Enable debug output
-        """
-        if not data_dir:
-            raise ValueError("Data directory needs to be specified")
-        self.data_dir = data_dir
-        self.dataset = dataset
-        super().__init__(container_name, image, port, log, shell, debug)
-
-    def start(self, show_progress: bool = True) -> bool:
-        """
-        Start QLever using proper workflow.
-        """
-        # Use base class start to get container running
-        started = super().start(show_progress=show_progress)
-        if started and self.dataset:
-            # Run QLever setup workflow
-            setup_cmd = (
-                f"docker exec {self.container_name} qlever setup-config {self.dataset}"
-            )
-            self._run_shell_command(setup_cmd)
-
-            get_data_cmd = f"docker exec {self.container_name} qlever get-data"
-            self._run_shell_command(get_data_cmd)
-
-            index_cmd = f"docker exec {self.container_name} qlever index"
-            self._run_shell_command(index_cmd)
-
-            start_cmd = f"docker exec {self.container_name} qlever start"
-            self._run_shell_command(start_cmd)
-
-        return started
-
-    def status(self) -> dict:
-        """
-        Get QLever status information.
-
-        Returns:
-            Dictionary with status information, empty dict if error
-        """
-        status_dict = {}
-        result = self._make_request("GET", self.status_url, timeout=2)
-
-        if result["success"]:
-            status_dict["status"] = "ready"
-            try:
-                import json
-
-                status_data = json.loads(result["content"])
-                status_dict.update(status_data)
-            except json.JSONDecodeError:
-                status_dict["raw_content"] = result["content"]
-        else:
-            if result.get("error"):
-                status_dict["status"] = f"error: {result['error']}"
-            else:
-                status_dict["status"] = f"status_code: {result['status_code']}"
-
-        return status_dict
-
-    def load_file(self, filepath: str) -> bool:
-        """
-        Load a single RDF file into QLever.
-
-        Args:
-            filepath: Path to RDF file
-
-        Returns:
-            True if loaded successfully
-        """
-        load_success = False
-        try:
-            with open(filepath, "rb") as f:
-                result = self._make_request(
-                    "POST",
-                    f"{self.base_url}/api/upload",
-                    files={"file": f},
-                    timeout=300,
-                )
-
-            if result["success"]:
-                self.log.log("✅", self.container_name, f"Loaded {filepath}")
-                load_success = True
-            else:
-                error_msg = result.get("error", f"HTTP {result['status_code']}")
-                self.log.log(
-                    "❌", self.container_name, f"Failed to load {filepath}: {error_msg}"
-                )
-                load_success = False
-
-        except Exception as e:
-            self.log.log(
-                "❌", self.container_name, f"Exception loading {filepath}: {e}"
-            )
-            load_success = False
-
-        return load_success
-
-    def load_dump_files(
-        self, file_pattern: str = "dump_*.ttl", use_bulk: bool = True
-    ) -> int:
-        """
-        Load all dump files matching pattern.
-
-        Args:
-            file_pattern: Glob pattern for dump files
-            use_bulk: Use bulk loader if True, individual files if False
-
-        Returns:
-            Number of files loaded successfully
-        """
-        files = sorted(glob.glob(file_pattern))
-        loaded_count = 0
-
-        if not files:
-            self.log.log(
-                "⚠️",
-                self.container_name,
-                f"No files found matching pattern: {file_pattern}",
-            )
-            loaded_count = 0
-        else:
-            self.log.log("✅", self.container_name, f"Found {len(files)} files to load")
-
-            # QLever typically loads files individually
-            loaded_count = 0
-            for filepath in tqdm(files, desc="Loading files"):
-                file_result = self.load_file(filepath)
-                if file_result:
-                    loaded_count += 1
-                else:
-                    self.log.log(
-                        "❌", self.container_name, f"Failed to load: {filepath}"
-                    )
-
-        return loaded_count

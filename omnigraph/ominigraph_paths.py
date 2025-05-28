@@ -1,9 +1,11 @@
-'''
+"""
 Created on 27.05.2025
 
 @author: wf
-'''
+"""
+
 from pathlib import Path
+
 
 class OmnigraphPaths:
     """

@@ -7,15 +7,12 @@ Created on 2025-05-26
 import json
 from pathlib import Path
 
-from tests.basetest import Basetest
-from omnigraph.blazegraph import Blazegraph, BlazegraphConfig
-from omnigraph.sparql_server import (
-    QLever, QLeverConfig,
-    SparqlServer, ServerConfig
-)
 from tqdm import tqdm
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.omniserver import OmniServer
+from omnigraph.sparql_server import SparqlServer
+from tests.basetest import Basetest
 
 
 class TestSparqlServer(Basetest):
@@ -28,25 +25,9 @@ class TestSparqlServer(Basetest):
         setUp the test environment
         """
         Basetest.setUp(self, debug=debug, profile=profile)
-        self.ogp=OmnigraphPaths()
-        self.configs = {
-            "blazegraph": BlazegraphConfig(
-                name="blazegraph",
-                container_name="blazegraph-royals",
-                image="lyrasis/blazegraph:2.1.5",
-                port=9898
-            ),
-            "qlever": ServerConfig(
-                name="qlever",
-                container_name="qlever-royals",
-                image="adfreiburg/qlever:latest",
-                port=7002
-            )
-        }
-        self.servers = {
-            "blazegraph": Blazegraph(config=self.configs["blazegraph"], debug=self.debug),
-            #"qlever": QLever(config=self.configs["qlever"], debug=self.debug)
-        }
+        self.ogp = OmnigraphPaths()
+        servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
+        self.servers = OmniServer.servers(str(servers_yaml_path))
 
     def clear_server(self, server: SparqlServer):
         """
@@ -82,19 +63,19 @@ class TestSparqlServer(Basetest):
             self.start_server(server)
 
     def test_load_dumps(self):
-        dumps_dir=self.ogp.examples_dir
+        dumps_dir = self.ogp.examples_dir
         for server in self.servers.values():
             self.load_dump_files(server, dumps_dir)
 
-    def load_dump_files(self,server:SparqlServer,dumps_dir:Path):
+    def load_dump_files(self, server: SparqlServer, dumps_dir: Path):
         """
         test loading dump files if available
         """
         if not dumps_dir.exists():
             self.skipTest(f"Dumps directory {dumps_dir} not available")
-        self.start_server(server,verbose=False)
-        #self.skipTest("protect existing servers")
-        #return
+        self.start_server(server, verbose=False)
+        # self.skipTest("protect existing servers")
+        # return
         self.clear_server(server)
 
         # Get all TTL files
