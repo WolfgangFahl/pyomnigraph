@@ -21,6 +21,15 @@ dependencies = [
 	# platform independent knowledge graph ready list of dicts (table) handling
     # https://pypi.org/project/pyLodStorage/
     "pyLodStorage>=0.16.0",
+    # https://pypi.org/project/tqdm/
+	# progress bar
+	"tdqm",
+	# https://pypi.org/project/dacite/
+	"dacite>=1.8.1",
+	# https://pypi.org/project/dataclasses-json/
+    "dataclasses-json>=0.6.3",
+    #https://pypi.org/project/PyYAML/
+    "PyYAML>=6.0.1",
 ]
 
 requires-python = ">=3.10"

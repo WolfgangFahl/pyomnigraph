@@ -9,8 +9,8 @@ import time
 
 import requests
 from lodstorage.sparql import SPARQL
-from ngwidgets.persistent_log import Log
-from ngwidgets.shell import Shell
+from omnigraph.persistent_log import Log
+from omnigraph.shell import Shell
 from tqdm import tqdm
 
 @dataclass

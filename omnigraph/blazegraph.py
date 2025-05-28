@@ -1,8 +1,8 @@
 from omnigraph.sparql_server import ServerConfig, SparqlServer
 from dataclasses import dataclass
 import re
-from ngwidgets.persistent_log import Log
-from ngwidgets.shell import Shell
+from omnigraph.persistent_log import Log
+from omnigraph.shell import Shell
 from pathlib import Path
 from tqdm import tqdm
 import glob

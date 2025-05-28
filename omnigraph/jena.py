@@ -5,8 +5,8 @@ Created on 2025-05-28
 """
 from dataclasses import dataclass
 from omnigraph.sparql_server import ServerConfig
-from ngwidgets.persistent_log import Log
-from ngwidgets.shell import Shell
+from omnigraph.persistent_log import Log
+from omnigraph.shell import Shell
 
 @dataclass
 class JenaConfig(ServerConfig):
