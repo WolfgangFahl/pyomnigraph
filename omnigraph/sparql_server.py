@@ -4,17 +4,20 @@ Created on 2025-05-27
 @author: wf
 """
 
-import time
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+import glob
+from pathlib import Path
+import time
+from typing import Callable, Dict, Optional
+import webbrowser
 
-import requests
 from lodstorage.sparql import SPARQL
-from tqdm import tqdm
-
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.yamlable import lod_storable
+import requests
+from tqdm import tqdm
+
 
 class ServerEnv:
     """
@@ -32,10 +35,11 @@ class ServerEnv:
             verbose: Enable verbose output
         """
         if log is None:
-            log=Log()
+            log = Log()
+            log.do_print = debug and verbose
         self.log = log
         if shell is None:
-            shell=Shell()
+            shell = Shell()
         self.shell = shell
         self.debug = debug
         self.verbose = verbose
@@ -51,12 +55,14 @@ class ServerConfig:
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"
+    unforced_clear_limit = 100000  # maximumn number of triples that can be cleared without force option
     # fields to be configured by post_init
     base_url: Optional[str] = field(default=None)
     status_url: Optional[str] = field(default=None)
+    web_url: Optional[str] = field(default=None)
     sparql_url: Optional[str] = field(default=None)
     data_dir: Optional[str] = field(default=None)
-    dump_dir: Optional[str] = field(default=None)
+    dumps_dir: Optional[str] = field(default=None)
     docker_run_command: Optional[str] = field(default=None)
 
     def __post_init__(self):
@@ -77,16 +83,45 @@ class ServerConfigs:
         return server_configs
 
 
+@dataclass
+class ServerCmd:
+    """
+    Command wrapper for server operations.
+    """
+
+    def __init__(self, title: str, func: Callable):
+        """
+        Initialize server command.
+
+        Args:
+            title: Description of the command
+            func: Function to execute
+        """
+        self.title = title
+        self.func = func
+
+    def run(self, verbose: bool = True) -> any:
+        """
+        Execute the server command.
+
+        Args:
+            verbose: Whether to print result
+
+        Returns:
+            Result from function execution
+        """
+        result = self.func()
+        if verbose:
+            print(f"{self.title}: {result}")
+        return result
+
+
 class SparqlServer:
     """
     Base class for dockerized SPARQL servers
     """
 
-    def __init__(
-        self,
-        config: ServerConfig,
-        env:ServerEnv
-    ):
+    def __init__(self, config: ServerConfig, env: ServerEnv):
         """
         Initialize the SPARQL server manager.
 
@@ -95,7 +130,7 @@ class SparqlServer:
         self.config = config
         self.name = self.config.name
         self.debug = env.debug
-        self.verbose=env.verbose
+        self.verbose = env.verbose
         self.shell = env.shell
 
         # Subclasses must set these URLs
@@ -163,6 +198,12 @@ class SparqlServer:
             self.log.log("❌", container_name, f"Exception running command '{command}': {e}")
             command_success = False
         return command_success
+
+    def webui(self):
+        """
+        open my webui
+        """
+        webbrowser.open(self.config.web_url)
 
     def start(self, show_progress: bool = True) -> bool:
         """
@@ -325,7 +366,7 @@ class SparqlServer:
         Returns:
             True if stopped successfully
         """
-        container_name=self.config.container_name
+        container_name = self.config.container_name
         stop_cmd = f"docker stop {container_name}"
         stop_success = self.run_shell_command(
             stop_cmd,
@@ -333,3 +374,48 @@ class SparqlServer:
             error_msg=f"Failed to stop container {container_name}",
         )
         return stop_success
+
+    def clear(self) -> int:
+        """
+        delete all triples
+        """
+        container_name = self.config.container_name
+        count_triples = self.count_triples()
+        msg = f"deleting {count_triples} triples ..."
+        if count_triples >= self.config.unforced_clear_limit:
+            self.log.log("❌", container_name, f"{msg} needs force option")
+        else:
+            clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+            self.sparql.insert(clear_query)
+            count_triples = self.count_triples()
+            self.log.log("✅", container_name, f"{msg}")
+        return count_triples
+
+    def load_dump_files(self, file_pattern: str = "*.ttl") -> int:
+        """
+        Load all dump files matching pattern.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+            use_bulk: Use bulk loader if True, individual files if False
+
+        Returns:
+            Number of files loaded successfully
+        """
+        dump_path: Path = Path(self.config.dumps_dir)
+        files = sorted(dump_path.glob(file_pattern))
+        loaded_count = 0
+        container_name = self.config.container_name
+
+        if not files:
+            self.log.log("⚠️", container_name, f"No files found matching pattern: {file_pattern}")
+        else:
+            self.log.log("✅", container_name, f"Found {len(files)} files to load")
+            for filepath in tqdm(files, desc="Loading files"):
+                file_result = self.load_file(filepath)
+                if file_result:
+                    loaded_count += 1
+                else:
+                    self.log.log("❌", container_name, f"Failed to load: {filepath}")
+
+        return loaded_count
