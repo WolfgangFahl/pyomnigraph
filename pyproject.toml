@@ -4,8 +4,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "omnigraph"
-description = "omnigraph: Unified Python interface for multiple graph databases (SPARQL, Neo4j, Weaviate)"
+name = "pyomnigraph"
+description = "pyomnigraph: Unified Python interface for multiple graph databases (SPARQL, Neo4j, Weaviate)"
 keywords = ["graph", "database", "SPARQL", "neo4j", "weaviate", "virtuoso", "blazegraph", "jena", "qlever", "rdf"]
 home-page = "https://github.com/WolfgangFahl/omnigraph"
 authors = [
