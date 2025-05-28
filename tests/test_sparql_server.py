@@ -7,11 +7,11 @@ Created on 2025-05-26
 import json
 from pathlib import Path
 
-from tqdm import tqdm
-
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
-from omnigraph.sparql_server import SparqlServer
+from omnigraph.sparql_server import SparqlServer, ServerEnv
+from tqdm import tqdm
+
 from tests.basetest import Basetest
 
 
@@ -27,7 +27,9 @@ class TestSparqlServer(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.ogp = OmnigraphPaths()
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
-        self.servers = OmniServer.servers(str(servers_yaml_path))
+        env=ServerEnv()
+        omni_server=OmniServer(env=env)
+        self.servers = omni_server.servers(str(servers_yaml_path))
 
     def clear_server(self, server: SparqlServer):
         """

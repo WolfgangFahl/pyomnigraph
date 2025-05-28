@@ -1,13 +1,12 @@
-import glob
-import re
 from dataclasses import dataclass
+import glob
 from pathlib import Path
-
-from tqdm import tqdm
+import re
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
-from omnigraph.sparql_server import ServerConfig, SparqlServer
+from omnigraph.sparql_server import ServerConfig, SparqlServer, ServerEnv
+from tqdm import tqdm
 
 
 @dataclass
@@ -33,19 +32,16 @@ class Blazegraph(SparqlServer):
     def __init__(
         self,
         config: ServerConfig,
-        log: Log = None,
-        shell: Shell = None,
-        debug: bool = False,
+        env: ServerEnv
     ):
         """
         Initialize the Blazegraph manager.
 
         Args:
-            log: Log instance for logging
-            shell: Shell instance for Docker commands
-            debug: Enable debug output
+            config: Server configuration
+            env: Server environment (includes log, shell, debug, verbose)
         """
-        super().__init__(config=config, log=log, shell=shell, debug=debug)
+        super().__init__(config=config, env=env)
         self.dataloader_url = f"{self.config.base_url}/dataloader"
 
     def status(self) -> dict:

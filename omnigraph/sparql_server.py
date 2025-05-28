@@ -16,6 +16,30 @@ from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.yamlable import lod_storable
 
+class ServerEnv:
+    """
+    Server environment configuration.
+    """
+
+    def __init__(self, log: Log = None, shell: Shell = None, debug: bool = False, verbose: bool = False):
+        """
+        Initialize server environment.
+
+        Args:
+            log: Log instance for logging
+            shell: Shell instance for command execution
+            debug: Enable debug mode
+            verbose: Enable verbose output
+        """
+        if log is None:
+            log=Log()
+        self.log = log
+        if shell is None:
+            shell=Shell()
+        self.shell = shell
+        self.debug = debug
+        self.verbose = verbose
+
 
 @dataclass
 class ServerConfig:
@@ -61,24 +85,18 @@ class SparqlServer:
     def __init__(
         self,
         config: ServerConfig,
-        log: Log = None,
-        shell: Shell = None,
-        debug: bool = False,
+        env:ServerEnv
     ):
         """
         Initialize the SPARQL server manager.
 
         """
-        if log is None:
-            log = Log()
-        self.log = log
+        self.log = env.log
         self.config = config
         self.name = self.config.name
-        self.debug = debug
-
-        if shell is None:
-            shell = Shell()
-        self.shell = shell
+        self.debug = env.debug
+        self.verbose=env.verbose
+        self.shell = env.shell
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -130,7 +148,7 @@ class SparqlServer:
         container_name = self.config.container_name
         command_success = False
         try:
-            result = self.shell.run(command, debug=self.debug)
+            result = self.shell.run(command, debug=self.debug, tee=self.verbose)
             if result.returncode == 0:
                 if success_msg:
                     self.log.log("✅", container_name, success_msg)
@@ -307,10 +325,11 @@ class SparqlServer:
         Returns:
             True if stopped successfully
         """
-        stop_cmd = f"docker stop {self.container_name}"
-        stop_success = self._run_shell_command(
+        container_name=self.config.container_name
+        stop_cmd = f"docker stop {container_name}"
+        stop_success = self.run_shell_command(
             stop_cmd,
-            success_msg=f"Stopped container {self.container_name}",
-            error_msg=f"Failed to stop container {self.container_name}",
+            success_msg=f"Stopped container {container_name}",
+            error_msg=f"Failed to stop container {container_name}",
         )
         return stop_success
