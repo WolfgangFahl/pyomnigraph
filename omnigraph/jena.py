@@ -7,10 +7,9 @@ Apache Jena SPARQL support
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any, Dict
 
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, \
-    Response
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
 @dataclass
@@ -34,14 +33,14 @@ class JenaConfig(ServerConfig):
         self.web_url = f"{self.base_url}/#/dataset/ds/query"
 
         # Docker command setup
-        env = "-e FUSEKI_DATASET=ds"
+        env = "-e FUSEKI_DATASET_1=ds"
         if self.auth_password:
-            env = f"-e ADMIN_PASSWORD={self.auth_password}"
+            env = f"{env} -e ADMIN_PASSWORD={self.auth_password}"
         # run with in memory default dataset
         self.docker_run_command = (
-            f"docker run {env} -d --name {self.container_name} "
-            f"-p {self.port}:3030 {self.image}"
+            f"docker run {env} -d --name {self.container_name} " f"-p {self.port}:3030 {self.image}"
         )
+
 
 class Jena(SparqlServer):
     """
@@ -61,8 +60,9 @@ class Jena(SparqlServer):
     def status(self) -> Dict[str, Any]:
         logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
         if "Creating dataset" in logs and "Fuseki is available :-)" in logs:
-            return {
+            status = {
                 "status": "ready",
-                "triples": self.count_triples(),
             }
-        return {"status": "starting"}
+        else:
+            status = {"status": "starting"}
+        return status

@@ -54,7 +54,8 @@ class SparqlServer:
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
-            self.sparql = SPARQL(self.config.sparql_url)
+            is_fuseki=self.config.server=="jena"
+            self.sparql = SPARQL(self.config.sparql_url,isFuseki=is_fuseki)
             if (
                 hasattr(self.config, "auth_password")
                 and self.config.auth_password
@@ -63,11 +64,16 @@ class SparqlServer:
             ):
                 self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
 
-    def handle_exception(self,context:str,ex:Exception):
+    @property
+    def full_name(self):
+        full_name=f"{self.name} {self.config.container_name}"
+        return full_name
+
+    def handle_exception(self, context: str, ex: Exception):
         """
         handle the given exception
         """
-        container_name=self.config.container_name
+        container_name = self.config.container_name
         self.log.log("❌", container_name, f"Exception {context}: {ex}")
         if self.debug:
             traceback.print_exc()
@@ -226,7 +232,7 @@ class SparqlServer:
             triple_count = int(result) if result else 0
         except Exception as ex:
             self.handle_exception("count_triples", ex)
-            triple_count=-1
+            triple_count = -1
         return triple_count
 
     def wait_until_ready(self, show_progress: bool = False) -> bool:
@@ -366,9 +372,16 @@ class SparqlServer:
             self.log.log("❌", container_name, f"{msg} needs force option")
         else:
             clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
-            self.sparql.insert(clear_query)
-            count_triples = self.count_triples()
-            self.log.log("✅", container_name, f"{msg}")
+            try:
+                self.sparql.insert(clear_query)
+                new_count = self.count_triples()
+                if new_count == 0:
+                    self.log.log("✅", container_name, f"deleted {count_triples} triples")
+                else:
+                    self.log.log("❌", container_name, f"delete failed: {new_count} triples remain")
+                count_triples = new_count
+            except Exception as ex:
+                self.handle_exception("clear triples", ex)
         return count_triples
 
     def upload_request(self, file_content: bytes) -> Response:

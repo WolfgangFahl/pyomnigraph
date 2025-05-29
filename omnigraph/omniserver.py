@@ -10,6 +10,7 @@ from typing import Callable, Dict
 
 from omnigraph.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.jena import Jena, JenaConfig
+from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.qlever import QLever, QLeverConfig
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.sparql_server import SparqlServer
@@ -20,11 +21,19 @@ class OmniServer:
     Factory class for creating and managing SPARQL server instances.
     """
 
-    def __init__(self, env: ServerEnv):
+    def __init__(self, env: ServerEnv,patch_config:Callable=None):
         """
         constructor
         """
         self.env = env
+        self.patch_config=patch_config
+
+    @staticmethod
+    def patch_test_config(config: ServerConfig, ogp: OmnigraphPaths):
+        config.data_dir = ogp.omnigraph_dir / "test" / config.name / config.dataset
+        config.data_dir.mkdir(parents=True, exist_ok=True)
+        config.container_name = f"{config.container_name}-test"
+        config.port = config.test_port
 
     def get_server_commands(self) -> Dict[str, Callable[[SparqlServer], ServerCmd]]:
         """
@@ -33,20 +42,22 @@ class OmniServer:
         Returns:
             Dictionary mapping command names to ServerCmd factories
         """
+        def title(action, s): return f"{action} {s.name} ({s.config.container_name})"
         server_cmds = {
-            "start": lambda s: ServerCmd(title=f"start {s.name}", func=s.start),
-            "stop": lambda s: ServerCmd(title=f"stop {s.name}", func=s.stop),
-            "rm": lambda s: ServerCmd(title=f"remove {s.name}", func=s.rm),
-            "bash": lambda s: ServerCmd(title=f"bash into {s.name}", func=s.bash),
-            "logs": lambda s: ServerCmd(title=f"logs of {s.name}", func=s.logs),
-            "status": lambda s: ServerCmd(title=f"status {s.name}", func=s.status),
-            "clear": lambda s: ServerCmd(title=f"clear {s.name}", func=s.clear),
-            "needed": lambda s: ServerCmd(title=f"check needed software for {s.name}", func=s.check_needed_software),
-            "count": lambda s: ServerCmd(title=f"triple count {s.name}", func=s.count_triples),
-            "load": lambda s: ServerCmd(title=f"load dumps {s.name}", func=s.load_dump_files),
-            "webui": lambda s: ServerCmd(title=f"webui {s.name}", func=s.webui),
+            "start":   lambda s: ServerCmd(title("start", s), s.start),
+            "stop":    lambda s: ServerCmd(title("stop", s), s.stop),
+            "rm":      lambda s: ServerCmd(title("remove", s), s.rm),
+            "bash":    lambda s: ServerCmd(title("bash into", s), s.bash),
+            "logs":    lambda s: ServerCmd(title("logs of", s), s.logs),
+            "status":  lambda s: ServerCmd(title("status", s), s.status),
+            "clear":   lambda s: ServerCmd(title("clear", s), s.clear),
+            "needed":  lambda s: ServerCmd(title("check needed software for", s), s.check_needed_software),
+            "count":   lambda s: ServerCmd(title("triple count", s), s.count_triples),
+            "load":    lambda s: ServerCmd(title("load dumps", s), s.load_dump_files),
+            "webui":   lambda s: ServerCmd(title("webui", s), s.webui),
         }
         return server_cmds
+
 
     def server4Config(self, config: ServerConfig) -> SparqlServer:
         """
@@ -59,6 +70,8 @@ class OmniServer:
             SparqlServer instance of appropriate type
         """
         server_instance = None
+        if self.patch_config:
+            self.patch_config(config)
         config_dict = asdict(config)
 
         if config.server == "blazegraph":

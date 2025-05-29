@@ -9,7 +9,9 @@ from pathlib import Path
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
+from omnigraph.server_config import ServerConfig
 from omnigraph.sparql_server import ServerEnv, SparqlServer
+
 from tests.basetest import Basetest
 
 
@@ -26,7 +28,10 @@ class TestSparqlServer(Basetest):
         self.ogp = OmnigraphPaths()
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
         env = ServerEnv(debug=self.debug, verbose=self.debug)
-        omni_server = OmniServer(env=env)
+        omni_server = OmniServer(
+            env=env,
+            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp)
+        )
         self.servers = omni_server.servers(str(servers_yaml_path))
 
     def clear_server(self, server: SparqlServer):
@@ -42,13 +47,6 @@ class TestSparqlServer(Basetest):
         """
         Start the given SPARQL server with a unique data directory
         """
-        use_temp = False
-        if use_temp:
-            server.config.data_dir = self.tempdir / server.name
-        else:
-            data_dir = self.ogp.omnigraph_dir / "test" / f"{server.name}" / f"{server.config.dataset}"
-            server.config.data_dir = data_dir
-        server.config.data_dir.mkdir(parents=True, exist_ok=True)
         if server.is_running():
             if self.debug and verbose:
                 print(f"{server.name} already running")

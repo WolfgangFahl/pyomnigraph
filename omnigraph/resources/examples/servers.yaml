@@ -9,9 +9,12 @@ servers:
     wikidata_id: "Q20127748"
     container_name: "blazegraph-royals"
     image: "lyrasis/blazegraph:2.1.5"
+    # datasets are implemented as namespaces in blazegraph
+    dataset: "kb"
     port: 9898
+    test_port: 7898
     host: "localhost"
-    active: false
+    active: true
   qlever:
     server: "qlever"
     name: "qlever"
@@ -20,8 +23,9 @@ servers:
     image: "adfreiburg/qlever:latest"
     dataset: "olympics"
     port: 7019
+    test_port: 7819
     host: "localhost"
-    active: false
+    active: true
     needed_software:
       software_list:
         - command: "pip"
@@ -29,13 +33,15 @@ servers:
         - command: "qlever"
           info: "qlever (Install via pip install qlever)"
   jena:
-    server: jena
+    server: "jena"
     name: "jena"
     wikidata_id: "Q109376461"
     container_name: "jena-royals"
     image: "stain/jena-fuseki:latest"
     dataset: "ds"
     port: 3030
+    test_port: 7030
     host: "localhost"
-    admin_password: "Q109376461"
+    auth_user: admin
+    auth_password: "Q109376461"
     active: true

@@ -18,7 +18,11 @@ class ServerEnv:
     Server environment configuration.
     """
 
-    def __init__(self, log: Log = None, shell: Shell = None, debug: bool = False, verbose: bool = False):
+    def __init__(self,
+        log: Log = None,
+        shell: Shell = None,
+        debug: bool = False,
+        verbose: bool = False):
         """
         Initialize server environment.
 
@@ -38,7 +42,6 @@ class ServerEnv:
         self.debug = debug
         self.verbose = verbose
 
-
 @dataclass
 class ServerConfig:
     server: str
@@ -47,6 +50,7 @@ class ServerConfig:
     container_name: str
     image: str
     port: int
+    test_port: int
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"

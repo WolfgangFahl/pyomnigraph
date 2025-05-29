@@ -3,8 +3,10 @@ Created on 2025-05-27
 
 @author: wf
 """
-from dataclasses import dataclass
+
 import re
+from dataclasses import dataclass
+
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -18,7 +20,7 @@ class BlazegraphConfig(ServerConfig):
         super().__post_init__()
         blazegraph_base = f"{self.base_url}/bigdata"
         self.status_url = f"{blazegraph_base}/status"
-        self.sparql_url = f"{blazegraph_base}/namespace/kb/sparql"
+        self.sparql_url = f"{blazegraph_base}/namespace/{self.dataset}/sparql"
         self.upload_url = self.sparql_url
         self.web_url = f"{blazegraph_base}/#query"
         self.dataloader_url = f"{blazegraph_base}/dataloader"
@@ -40,7 +42,6 @@ class Blazegraph(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
-        self.dataloader_url = f"{self.config.base_url}/dataloader"
 
     def status(self) -> dict:
         """

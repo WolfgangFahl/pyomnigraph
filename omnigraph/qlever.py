@@ -7,11 +7,10 @@ Created on 2025-05-28
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-
-import rdflib
-
+from typing import Optional, List
+import os
 from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
+import rdflib
 
 
 class QLeverfile:
@@ -43,6 +42,14 @@ class QLeverfile:
             return self.config.get(section, key)
         return None
 
+    def set(self, section: str, key: str, value: str):
+        """
+        Set a value in the config
+        """
+        if not self.config.has_section(section):
+            self.config.add_section(section)
+        self.config.set(section, key, value)
+
     def sections(self) -> list[str]:
         """
         Return list of config sections
@@ -55,6 +62,12 @@ class QLeverfile:
         """
         return {section: dict(self.config.items(section)) for section in self.config.sections()}
 
+    def save(self):
+        """
+        Save the config back to file
+        """
+        with self.path.open("w") as f:
+            self.config.write(f)
 
 @dataclass
 class QLeverConfig(ServerConfig):
@@ -67,7 +80,8 @@ class QLeverConfig(ServerConfig):
         self.access_token = None
         self.status_url = f"{self.base_url}"
         self.sparql_url = f"{self.base_url}/api/sparql"
-        self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
+        # the docker run command is dynamically created by the qlever (control) command later
+        self.docker_run_command = None
 
 
 @dataclass
@@ -119,6 +133,63 @@ class QLever(SparqlServer):
         """
         super().__init__(config=config, env=env)
 
+    def get_step_list(self)->List[Step]:
+        step_list = [
+            Step(
+                name="setup-config",
+                data_dir=self.data_dir,
+                file_name="Qleverfile",
+                setup_cmd=f"qlever setup-config {self.dataset}",
+                step=1,
+            ),
+            Step(
+                name="get-data",
+                data_dir=self.data_dir,
+                file_name=None,  # dynamically determined below
+                setup_cmd=f"qlever get-data",
+                step=2,
+            ),
+            Step(
+                name="index",
+                data_dir=self.data_dir,
+                file_name=f"{self.dataset}.meta-data.json",
+                setup_cmd=f"qlever index",
+                step=3,
+            ),
+            Step(
+                name="start",
+                data_dir=self.data_dir,
+                setup_cmd=f"qlever start --server-container {self.config.container_name}",
+                step=4,
+            ),
+            Step(
+                name="ui",
+                data_dir=self.data_dir,
+                setup_cmd=f"qlever ui",
+                step=5,
+            ),
+        ]
+        return step_list
+
+    def handle_config(self,step:Step):
+        """
+        handle config setting for following step and
+        patch QLeverfile to port
+        """
+        qlever_file = QLeverfile.ofFile(step.path)
+        qlever_name = qlever_file.get("data", "NAME")
+        self.config.access_token = qlever_file.get("server", "ACCESS_TOKEN")
+        msg = f"qlever setup-config for {qlever_name} done"
+        self.log.log("✅", self.config.container_name, msg)
+        input_files = qlever_file.get("index", "input_files")
+        # patch the port
+        qlever_file.set("server", "port", str(self.config.port))
+        # path the name
+        qlever_file.save()
+        # steps are index from 1 so step.step in the step_list
+        # is the following step
+        self.step_list[step.step].file_name = input_files
+
     def start(self, show_progress: bool = True) -> bool:
         """
         Start QLever using proper workflow.
@@ -126,55 +197,22 @@ class QLever(SparqlServer):
         if not self.config.data_dir:
             raise ValueError("Data directory needs to be specified")
         self.data_dir = self.config.data_dir
+        if not os.path.exists(self.config.data_dir):
+            raise ValueError(f"Data directory {self.data.dir} needs to exist")
         self.dataset = self.config.dataset
-        container_name = self.config.container_name
         started = False
         if self.dataset:
-            step_list = [
-                Step(
-                    name="setup-config",
-                    data_dir=self.data_dir,
-                    file_name="Qleverfile",
-                    setup_cmd=f"qlever setup-config {self.dataset}",
-                    step=1,
-                ),
-                Step(
-                    name="get-data",
-                    data_dir=self.data_dir,
-                    file_name=None,  # dynamically determined below
-                    setup_cmd=f"qlever get-data",
-                    step=2,
-                ),
-                Step(
-                    name="index",
-                    data_dir=self.data_dir,
-                    file_name=f"{self.dataset}.meta-data.json",
-                    setup_cmd=f"qlever index",
-                    step=3,
-                ),
-                Step(
-                    name="start",
-                    data_dir=self.data_dir,
-                    setup_cmd=f"qlever start",
-                    step=4,
-                ),
-            ]
             steps = 0
-            for index, step in enumerate(step_list):
+            self.step_list=self.get_step_list()
+            for step in self.step_list:
                 step.perform(server=self)
                 if not step.success:
                     break
                 if step.name == "setup-config":
-                    qlever_file = QLeverfile.ofFile(step.path)
-                    qlever_name = qlever_file.get("data", "NAME")
-                    self.config.access_token = qlever_file.get("server", "ACCESS_TOKEN")
-                    msg = f"qlever setup-config for {qlever_name} done"
-                    self.log.log("✅", container_name, msg)
-                    input_files = qlever_file.get("index", "input_files")
-                    step_list[index + 1].file_name = input_files
+                    self.handle_config(step)
                 steps = step.step
 
-            if steps >= 3:
+            if steps >= 5:
                 started = self.wait_until_ready(show_progress=show_progress)
 
         return started
