@@ -220,7 +220,7 @@ class SparqlServer:
             pbar = tqdm(total=timeout, desc=f"Waiting for {server_name}", unit="s")
 
         ready_status = False
-        for i in range(timeout):
+        for _i in range(timeout):
             status_dict = self.status()
             if status_dict.get("status") == "ready":
                 if show_progress and pbar:
@@ -306,6 +306,56 @@ class SparqlServer:
             count_triples = self.count_triples()
             self.log.log("✅", container_name, f"{msg}")
         return count_triples
+
+    def upload_request(self, file_content: bytes) -> dict:
+        """Default upload request for Blazegraph-style servers."""
+        response= self._make_request(
+            "POST",
+            self.config.sparql_url,
+            headers={"Content-Type": "text/turtle"},
+            data=file_content,
+            timeout=self.config.upload_timeout,
+        )
+        return response
+
+    def load_file(self, filepath: str, upload_request=None) -> bool:
+        """
+        Load a single RDF file into the RDF server.
+
+        Args:
+            filepath: Path to RDF file
+            upload_request_callback: Function that performs the upload request
+
+        Returns:
+            True if loaded successfully
+        """
+        container_name = self.config.container_name
+        load_success = False
+
+        if upload_request is None:
+            upload_request_callback = self.upload_request
+
+        try:
+            with open(filepath, "rb") as f:
+                file_content = f.read()
+
+            result = upload_request_callback(file_content)
+
+            if result["success"]:
+                self.log.log("✅", container_name, f"Loaded {filepath}")
+                load_success = True
+            else:
+                status_code = result['status_code']
+                content = result['content']
+                error_msg = result.get("error", f"HTTP {status_code} → {content}")
+                self.log.log("❌", container_name, f"Failed to load {filepath}: {error_msg}")
+                load_success = False
+
+        except Exception as e:
+            self.log.log("❌", container_name, f"Exception loading {filepath}: {e}")
+            load_success = False
+
+        return load_success
 
     def load_dump_files(self, file_pattern: str = "*.ttl") -> int:
         """

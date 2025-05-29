@@ -51,6 +51,7 @@ class ServerConfig:
     protocol: str = "http"
     host: str = "localhost"
     dataset: Optional[str] = None
+    upload_timeout:int =300
     unforced_clear_limit = 100000  # maximumn number of triples that can be cleared without force option
     # fields to be configured by post_init
     base_url: Optional[str] = field(default=None)

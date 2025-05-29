@@ -3,20 +3,17 @@ Created on 2025-05-28
 
 @author: wf
 """
-import configparser
-import os
-import glob
+from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
+import glob
+import os
 from pathlib import Path
-from tqdm import tqdm
+from typing import Optional
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
-
-from configparser import ConfigParser, ExtendedInterpolation
-from pathlib import Path
-from typing import Optional
+from tqdm import tqdm
 
 
 class QLeverfile:
@@ -70,10 +67,41 @@ class QLeverConfig(ServerConfig):
     """
     def __post_init__(self):
         super().__post_init__()
-        self.status_url = None
+        self.status_url = f"{self.base_url}"
         self.sparql_url = f"{self.base_url}/api/sparql"
         self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
 
+@dataclass
+class Step:
+    """
+    a setup step
+    """
+    name: str
+    data_dir: Path
+    setup_cmd: Optional[str] = None
+    file_name: Optional[str] = None
+    step: int = 0
+    success: bool = False
+
+    @property
+    def path(self) -> Optional[Path]:
+        if self.file_name:
+            return self.data_dir / self.file_name
+        return None
+
+    def perform(self, server:SparqlServer):
+        """
+        perform the setup_cmd if self.path is not created yet
+        """
+        if self.path and self.path.exists():
+            self.success = True
+            msg = f"{self.path} already exists"
+            server.log.log("✅", self.name, msg)
+        else:
+            command=f"cd {self.data_dir};{self.setup_cmd}"
+            success_msg=f"{self.name} done"
+            error_msg=f"{self.name} failed"
+            self.success=server.run_shell_command(command, success_msg, error_msg)
 
 class QLever(SparqlServer):
     """
@@ -100,104 +128,63 @@ class QLever(SparqlServer):
         self.dataset = self.config.dataset
         container_name = self.config.container_name
         started = False
-        steps=0
         if self.dataset:
-            # Run QLever setup workflow
-            qleverfile=self.data_dir / "Qleverfile"
-            if os.path.exists(qleverfile):
-                step=True
-                self.log.log("✅", container_name,f"{qleverfile} already exists")
-            else:
-                setup_cmd = f"cd {self.data_dir};qlever setup-config {self.dataset}"
-                step=self.run_shell_command(setup_cmd)
+            step_list = [
+                Step(
+                    name="setup-config",
+                    data_dir=self.data_dir,
+                    file_name="Qleverfile",
+                    setup_cmd=f"qlever setup-config {self.dataset}",
+                    step=1,
+                ),
+                Step(
+                    name="get-data",
+                    data_dir=self.data_dir,
+                    file_name=None,  # dynamically determined below
+                    setup_cmd=f"qlever get-data",
+                    step=2,
+                ),
+                Step(
+                    name="index",
+                    data_dir=self.data_dir,
+                    file_name=f"{self.dataset}.meta-data.json",
+                    setup_cmd=f"qlever index",
+                    step=3,
+                ),
+                Step(
+                    name="start",
+                    data_dir=self.data_dir,
+                    setup_cmd=f"qlever start",
+                    step=4,
+                ),
+            ]
+            steps=0
+            for index,step in enumerate(step_list)  :
+                step.perform(server=self)
+                if not step.success:
+                    break
+                if step.name=="setup-config":
+                    qlever_file = QLeverfile.ofFile(step.path)
+                    qlever_name = qlever_file.get("data", "NAME")
+                    msg=f"qlever setup-config for {qlever_name} done"
+                    self.log.log("✅", container_name,msg)
+                    input_files=qlever_file.get("index","input_files")
+                    step_list[index+1].file_name=input_files
+                steps=step.step
 
-            if step:
-                steps+=1
-                get_data_cmd = f"cd {self.data_dir};qlever get-data"
-                step=self.run_shell_command(get_data_cmd)
-
-            if step:
-                steps+=1
-                index_cmd = f"cd {self.data_dir};qlever index"
-                step=self.run_shell_command(index_cmd)
-
-            if step:
-                steps+=1
-                start_cmd = f"cd {self.data_dir};qlever start"
-                step=self.run_shell_command(start_cmd)
-            if step:
-                steps+=1
-
-            if steps>=4:
+            if steps>=3:
                 started = self.wait_until_ready(timeout=10, show_progress=show_progress)
 
         return started
 
-    def load_file(self, filepath: str) -> bool:
-        """
-        Load a single RDF file into QLever.
-
-        Args:
-            filepath: Path to RDF file
-
-        Returns:
-            True if loaded successfully
-        """
-        load_success = False
-        try:
-            with open(filepath, "rb") as f:
-                result = self._make_request(
-                    "POST",
-                    f"{self.base_url}/api/upload",
-                    files={"file": f},
-                    timeout=300,
-                )
-
-            if result["success"]:
-                self.log.log("✅", self.container_name, f"Loaded {filepath}")
-                load_success = True
-            else:
-                error_msg = result.get("error", f"HTTP {result['status_code']}")
-                self.log.log("❌", self.container_name, f"Failed to load {filepath}: {error_msg}")
-                load_success = False
-
-        except Exception as e:
-            self.log.log("❌", self.container_name, f"Exception loading {filepath}: {e}")
-            load_success = False
-
-        return load_success
-
-    def load_dump_files(self, file_pattern: str = "dump_*.ttl", use_bulk: bool = True) -> int:
-        """
-        Load all dump files matching pattern.
-
-        Args:
-            file_pattern: Glob pattern for dump files
-            use_bulk: Use bulk loader if True, individual files if False
-
-        Returns:
-            Number of files loaded successfully
-        """
-        files = sorted(glob.glob(file_pattern))
-        loaded_count = 0
-
-        if not files:
-            self.log.log(
-                "⚠️",
-                self.container_name,
-                f"No files found matching pattern: {file_pattern}",
-            )
-            loaded_count = 0
-        else:
-            self.log.log("✅", self.container_name, f"Found {len(files)} files to load")
-
-            # QLever typically loads files individually
-            loaded_count = 0
-            for filepath in tqdm(files, desc="Loading files"):
-                file_result = self.load_file(filepath)
-                if file_result:
-                    loaded_count += 1
-                else:
-                    self.log.log("❌", self.container_name, f"Failed to load: {filepath}")
-
-        return loaded_count
+    def upload_request(self, file_content: bytes) -> dict:
+        """Upload request for QLever using Graph Store Protocol."""
+        graph_name = "default"
+        response = self._make_request(
+            "POST",
+            f"{self.config.base_url}/api/graphs/{graph_name}",
+            headers={"Content-Type": "text/turtle"},
+            data=file_content,
+            timeout=self.config.upload_timeout,
+        )
+        return response

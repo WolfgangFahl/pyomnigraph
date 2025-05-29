@@ -82,41 +82,6 @@ class Blazegraph(SparqlServer):
 
         return status_dict
 
-    def load_file(self, filepath: str) -> bool:
-        """
-        Load a single RDF file into Blazegraph.
-
-        Args:
-            filepath: Path to RDF file
-
-        Returns:
-            True if loaded successfully
-        """
-        load_success = False
-        try:
-            with open(filepath, "rb") as f:
-                result = self._make_request(
-                    "POST",
-                    self.config.sparql_url,
-                    headers={"Content-Type": "text/turtle"},
-                    data=f.read(),
-                    timeout=300,
-                )
-
-            if result["success"]:
-                self.log.log("✅", self.name, f"Loaded {filepath}")
-                load_success = True
-            else:
-                error_msg = result.get("error", f"HTTP {result['status_code']}")
-                self.log.log("❌", self.name, f"Failed to load {filepath}: {error_msg}")
-                load_success = False
-
-        except Exception as e:
-            self.log.log("❌", self.name, f"Exception loading {filepath}: {e}")
-            load_success = False
-
-        return load_success
-
     def test_geosparql(self) -> bool:
         """
         Test if GeoSPARQL functions work.

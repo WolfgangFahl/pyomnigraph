@@ -11,7 +11,7 @@ servers:
     image: "lyrasis/blazegraph:2.1.5"
     port: 9898
     host: "localhost"
-    active: false
+    active: true
   qlever:
     server: "qlever"
     name: "qlever"
@@ -19,9 +19,9 @@ servers:
     container_name: "qlever-olympics"
     image: "adfreiburg/qlever:latest"
     dataset: "olympics"
-    port: 7002
+    port: 7019
     host: "localhost"
-    active: true
+    active: false
     needed_software:
       software_list:
         - command: "pip"

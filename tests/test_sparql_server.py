@@ -34,8 +34,10 @@ class TestSparqlServer(Basetest):
         """
         delete all trips
         """
+        before_clear=server.count_triples()
         count_triples = server.clear()
-        self.assertEqual(0, count_triples)
+        expected=before_clear if server.config.unforced_clear_limit<=before_clear else 0
+        self.assertEqual(expected, count_triples)
 
     def start_server(self, server: SparqlServer, verbose: bool = True):
         """
@@ -70,6 +72,9 @@ class TestSparqlServer(Basetest):
             self.start_server(server)
 
     def test_load_dumps(self):
+        """
+        test loading *.ttl files from examples directory
+        """
         dumps_dir = self.ogp.examples_dir
         for server in self.servers.values():
             self.load_dump_files(server, dumps_dir)
