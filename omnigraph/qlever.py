@@ -3,22 +3,74 @@ Created on 2025-05-28
 
 @author: wf
 """
-
+import configparser
+import os
 import glob
 from dataclasses import dataclass
-
+from pathlib import Path
 from tqdm import tqdm
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
+from configparser import ConfigParser, ExtendedInterpolation
+from pathlib import Path
+from typing import Optional
+
+
+class QLeverfile:
+    """
+    handle qlever control https://github.com/ad-freiburg/qlever-control
+    QLeverfile in INI format
+    """
+
+    def __init__(self, path: Path, config: ConfigParser):
+        self.path = path
+        self.config = config
+
+    @classmethod
+    def ofFile(cls, path: Path) -> Optional["QLeverfile"]:
+        """
+        Create QLeverfile instance from given INI file
+        """
+        if not path.exists():
+            return None
+        config = ConfigParser(interpolation=ExtendedInterpolation())
+        config.read(path)
+        return cls(path, config)
+
+    def get(self, section: str, key: str) -> Optional[str]:
+        """
+        Get a value from the config, if exists
+        """
+        if self.config.has_section(section) and self.config.has_option(section, key):
+            return self.config.get(section, key)
+        return None
+
+    def sections(self) -> list[str]:
+        """
+        Return list of config sections
+        """
+        return self.config.sections()
+
+    def as_dict(self) -> dict[str, dict[str, str]]:
+        """
+        Return full config as nested dictionary
+        """
+        return {
+            section: dict(self.config.items(section))
+            for section in self.config.sections()
+        }
 
 @dataclass
 class QLeverConfig(ServerConfig):
+    """
+    specialized QLever configuration
+    """
     def __post_init__(self):
         super().__post_init__()
-        self.status_url = f"{self.base_url}/status"
+        self.status_url = None
         self.sparql_url = f"{self.base_url}/api/sparql"
         self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
 
@@ -48,21 +100,36 @@ class QLever(SparqlServer):
         self.dataset = self.config.dataset
         container_name = self.config.container_name
         started = False
+        steps=0
         if self.dataset:
             # Run QLever setup workflow
-            setup_cmd = f"docker exec {container_name} qlever setup-config {self.dataset}"
-            self.run_shell_command(setup_cmd)
+            qleverfile=self.data_dir / "Qleverfile"
+            if os.path.exists(qleverfile):
+                step=True
+                self.log.log("✅", container_name,f"{qleverfile} already exists")
+            else:
+                setup_cmd = f"cd {self.data_dir};qlever setup-config {self.dataset}"
+                step=self.run_shell_command(setup_cmd)
 
-            get_data_cmd = f"docker exec {container_name} qlever get-data"
-            self.run_shell_command(get_data_cmd)
+            if step:
+                steps+=1
+                get_data_cmd = f"cd {self.data_dir};qlever get-data"
+                step=self.run_shell_command(get_data_cmd)
 
-            index_cmd = f"docker exec {container_name} qlever index"
-            self.run_shell_command(index_cmd)
+            if step:
+                steps+=1
+                index_cmd = f"cd {self.data_dir};qlever index"
+                step=self.run_shell_command(index_cmd)
 
-            start_cmd = f"docker exec {container_name} qlever start"
-            self.run_shell_command(start_cmd)
+            if step:
+                steps+=1
+                start_cmd = f"cd {self.data_dir};qlever start"
+                step=self.run_shell_command(start_cmd)
+            if step:
+                steps+=1
 
-            started = self.wait_until_ready(timeout=10, show_progress=show_progress)
+            if steps>=4:
+                started = self.wait_until_ready(timeout=10, show_progress=show_progress)
 
         return started
 

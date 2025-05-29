@@ -336,14 +336,14 @@ class SparqlServer:
 
         return loaded_count
 
-    def check_needed_software(self):
+    def check_needed_software(self)->int:
         """
         Check if needed software for this server configuration is installed
         """
         container_name=self.config.container_name
         if self.config.needed_software is None:
             return
-        software_list = SoftwareList.from_dict2(self.config.needed_software)
+        software_list = SoftwareList.from_dict2(self.config.needed_software) # @UndefinedVariable
         missing=software_list.check_installed(self.log, self.shell, verbose=True)
         if missing>0:
             self.log.log("❌",container_name,"Please install the missing commands before running this script.")

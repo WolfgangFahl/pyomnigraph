@@ -25,9 +25,8 @@ class TestSparqlServer(Basetest):
         """
         Basetest.setUp(self, debug=debug, profile=profile)
         self.ogp = OmnigraphPaths()
-        self.tempdir = Path(tempfile.mkdtemp(prefix="omnigraph_test_"))
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
-        env = ServerEnv()
+        env = ServerEnv(debug=self.debug,verbose=self.debug)
         omni_server = OmniServer(env=env)
         self.servers = omni_server.servers(str(servers_yaml_path))
 
@@ -40,9 +39,14 @@ class TestSparqlServer(Basetest):
 
     def start_server(self, server: SparqlServer, verbose: bool = True):
         """
-        Start the given SPARQL server with a unique data directory under self.tempdir.
+        Start the given SPARQL server with a unique data directory
         """
-        server.config.data_dir = self.tempdir / server.name
+        use_temp=False
+        if use_temp:
+            server.config.data_dir = self.tempdir / server.name
+        else:
+            data_dir=self.ogp.omnigraph_dir / "test" / f"{server.name}" / f"{server.config.dataset}"
+            server.config.data_dir=data_dir
         server.config.data_dir.mkdir(parents=True, exist_ok=True)
         if server.is_running():
             if self.debug and verbose:
