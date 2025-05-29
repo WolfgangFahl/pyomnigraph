@@ -5,7 +5,9 @@ if [[ -n "$GITHUB_ACTIONS" && -x "$(command -v apt-get)" ]]; then
     echo "Running in GitHub Actions with apt-get available. Installing dependencies..."
     sudo apt-get update
     # install dependencies
-    sudo apt-get install rcs
+    sudo apt-get install rcs python3-pip
+    # install qlever
+    pip install qlever
 fi
 # simple install via pyproject.toml
 pip install .
