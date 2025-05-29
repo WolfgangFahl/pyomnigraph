@@ -50,8 +50,11 @@ class ServerConfig:
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"
+    admin_password: Optional[str]=None
     dataset: Optional[str] = None
-    upload_timeout:int =300
+    timeout: int=30
+    ready_timeout: int=20
+    upload_timeout: int = 300
     unforced_clear_limit = 100000  # maximumn number of triples that can be cleared without force option
     # fields to be configured by post_init
     base_url: Optional[str] = field(default=None)

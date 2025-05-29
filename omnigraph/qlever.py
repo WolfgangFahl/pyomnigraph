@@ -3,12 +3,14 @@ Created on 2025-05-28
 
 @author: wf
 """
+
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, \
+    Response
 import rdflib
 
 
@@ -51,16 +53,15 @@ class QLeverfile:
         """
         Return full config as nested dictionary
         """
-        return {
-            section: dict(self.config.items(section))
-            for section in self.config.sections()
-        }
+        return {section: dict(self.config.items(section)) for section in self.config.sections()}
+
 
 @dataclass
 class QLeverConfig(ServerConfig):
     """
     specialized QLever configuration
     """
+
     def __post_init__(self):
         super().__post_init__()
         self.access_token = None
@@ -68,11 +69,13 @@ class QLeverConfig(ServerConfig):
         self.sparql_url = f"{self.base_url}/api/sparql"
         self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
 
+
 @dataclass
 class Step:
     """
     a setup step
     """
+
     name: str
     data_dir: Path
     setup_cmd: Optional[str] = None
@@ -86,7 +89,7 @@ class Step:
             return self.data_dir / self.file_name
         return None
 
-    def perform(self, server:SparqlServer):
+    def perform(self, server: SparqlServer):
         """
         perform the setup_cmd if self.path is not created yet
         """
@@ -95,10 +98,11 @@ class Step:
             msg = f"{self.path} already exists"
             server.log.log("✅", self.name, msg)
         else:
-            command=f"cd {self.data_dir};{self.setup_cmd}"
-            success_msg=f"{self.name} done"
-            error_msg=f"{self.name} failed"
-            self.success=server.run_shell_command(command, success_msg, error_msg)
+            command = f"cd {self.data_dir};{self.setup_cmd}"
+            success_msg = f"{self.name} done"
+            error_msg = f"{self.name} failed"
+            self.success = server.run_shell_command(command, success_msg, error_msg)
+
 
 class QLever(SparqlServer):
     """
@@ -155,39 +159,36 @@ class QLever(SparqlServer):
                     step=4,
                 ),
             ]
-            steps=0
-            for index,step in enumerate(step_list)  :
+            steps = 0
+            for index, step in enumerate(step_list):
                 step.perform(server=self)
                 if not step.success:
                     break
-                if step.name=="setup-config":
+                if step.name == "setup-config":
                     qlever_file = QLeverfile.ofFile(step.path)
                     qlever_name = qlever_file.get("data", "NAME")
-                    self.config.access_token=qlever_file.get("server","ACCESS_TOKEN")
-                    msg=f"qlever setup-config for {qlever_name} done"
-                    self.log.log("✅", container_name,msg)
-                    input_files=qlever_file.get("index","input_files")
-                    step_list[index+1].file_name=input_files
-                steps=step.step
+                    self.config.access_token = qlever_file.get("server", "ACCESS_TOKEN")
+                    msg = f"qlever setup-config for {qlever_name} done"
+                    self.log.log("✅", container_name, msg)
+                    input_files = qlever_file.get("index", "input_files")
+                    step_list[index + 1].file_name = input_files
+                steps = step.step
 
-            if steps>=3:
-                started = self.wait_until_ready(timeout=10, show_progress=show_progress)
+            if steps >= 3:
+                started = self.wait_until_ready(show_progress=show_progress)
 
         return started
 
-    def upload_request(self, file_content: bytes) -> dict:
+    def upload_request(self, file_content: bytes) -> Response:
         """Upload request for QLever using SPARQL INSERT statements."""
-        turtle_data = file_content.decode('utf-8')
+        turtle_data = file_content.decode("utf-8")
         sparql_insert = self._convert_turtle_to_insert(turtle_data)
-        access_token=self.config.access_token
+        access_token = self.config.access_token
 
-        response = self._make_request(
+        response = self.make_request(
             "POST",
             self.config.sparql_url,
-            headers={
-                "Content-Type": "application/sparql-update",
-                "Authorization": f"Bearer {access_token}"
-            },
+            headers={"Content-Type": "application/sparql-update", "Authorization": f"Bearer {access_token}"},
             data=sparql_insert,
             timeout=self.config.upload_timeout,
         )

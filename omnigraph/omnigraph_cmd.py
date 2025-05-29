@@ -120,7 +120,7 @@ class OmnigraphCmd:
             if server:
                 if server.config.dumps_dir is None:
                     server.config.dumps_dir = self.ogp.examples_dir
-                    server.config.data_dir = self.ogp.omnigraph_dir /  f"{server.name}" / f"{server.config.dataset}"
+                    server.config.data_dir = self.ogp.omnigraph_dir / f"{server.name}" / f"{server.config.dataset}"
                     server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 servers[server_name] = server
         return servers

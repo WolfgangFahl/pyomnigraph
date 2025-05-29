@@ -3,17 +3,33 @@ Created on 2025-05-27
 
 @author: wf
 """
-
-from pathlib import Path
+from dataclasses import dataclass
 import time
 import webbrowser
+from pathlib import Path
 
-from lodstorage.sparql import SPARQL
-from omnigraph.server_config import ServerConfig, ServerEnv
 import requests
+from lodstorage.sparql import SPARQL
 from tqdm import tqdm
+
+from omnigraph.server_config import ServerConfig, ServerEnv
 from omnigraph.software import SoftwareList
 
+class Response:
+    """
+    wrapper for responses including errors
+    """
+    @property
+    def success(self) -> bool:
+        if self.error is not None:
+            return False
+        if self.response is not None:
+            return self.response.status_code in [200, 204]
+        return False
+
+    def __init__(self, response=None, error=None):
+        self.response = response
+        self.error = error
 
 class SparqlServer:
     """
@@ -36,36 +52,30 @@ class SparqlServer:
         if self.config.sparql_url:
             self.sparql = SPARQL(self.config.sparql_url)
 
-    def _make_request(self, method: str, url: str, timeout: int = 30, **kwargs) -> dict:
+    def make_request(self, method: str, url: str, **kwargs) -> Response:
         """
         Helper function for making HTTP requests with consistent error handling.
 
         Args:
             method: HTTP method (GET, POST, etc.)
             url: Request URL
-            timeout: Request timeout in seconds
             **kwargs: Additional arguments for requests
 
         Returns:
-            Dictionary with 'success', 'status_code', 'content', and optional 'error'
+            Response
         """
-        request_result = {}
         try:
-            response = requests.request(method, url, timeout=timeout, **kwargs)
-            request_result = {
-                "success": response.status_code in [200, 204],
-                "status_code": response.status_code,
-                "content": response.text,
-                "response": response,
-            }
+            # Always add auth if we have admin_password
+            if hasattr(self.config, 'admin_password') and self.config.admin_password:
+                kwargs.setdefault('auth', ('admin', self.config.admin_password))
+
+            # Only set timeout if not already provided
+            kwargs.setdefault('timeout', self.config.timeout)
+            response = requests.request(method, url, **kwargs)
+            response=Response(response)
         except Exception as e:
-            request_result = {
-                "success": False,
-                "status_code": None,
-                "content": None,
-                "error": str(e),
-            }
-        return request_result
+            response=Response(None,e)
+        return response
 
     def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> bool:
         """
@@ -193,7 +203,7 @@ class SparqlServer:
         triple_count = int(result) if result else 0
         return triple_count
 
-    def wait_until_ready(self, timeout: int = 30, show_progress: bool = False) -> bool:
+    def wait_until_ready(self, show_progress: bool = False) -> bool:
         """
         Wait for server to be ready.
 
@@ -208,6 +218,7 @@ class SparqlServer:
         server_name = self.config.name
         status_url = self.config.status_url
         base_url = self.config.base_url
+        timeout=self.config.ready_timeout
 
         self.log.log(
             "✅",
@@ -275,37 +286,48 @@ class SparqlServer:
         container_exists = container_name in result.stdout
         return container_exists
 
-    def stop(self) -> bool:
+    def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
         """
-        Stop the server container.
-
-        Returns:
-            True if stopped successfully
+        run the given docker commmand with the given options
         """
         container_name = self.config.container_name
-        stop_cmd = f"docker stop {container_name}"
-        stop_success = self.run_shell_command(
-            stop_cmd,
-            success_msg=f"Stopped container {container_name}",
-            error_msg=f"Failed to stop container {container_name}",
+        if options:
+            options = f" {options}"
+        if args:
+            args = f" {args}"
+        full_cmd = f"docker {cmd}{options} {container_name}{args}"
+        return full_cmd
+
+    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> bool:
+        container_name = self.config.container_name
+        full_cmd = self.docker_cmd(cmd, options, args)
+        success = self.run_shell_command(
+            full_cmd,
+            success_msg=f"{cmd} container {container_name}",
+            error_msg=f"Failed to {cmd} container {container_name}",
         )
+        return success
+
+    def logs(self) -> bool:
+        """show the logs of the container"""
+        logs_success = self.run_docker_cmd("logs")
+        return logs_success
+
+    def stop(self) -> bool:
+        """stop the server container"""
+        stop_success = self.run_docker_cmd("stop")
         return stop_success
 
     def rm(self) -> bool:
-        """
-        remove the server container.
+        """remove the server container."""
+        rm_success = self.run_docker_cmd("rm")
+        return rm_success
 
-        Returns:
-            True if stopped successfully
-        """
-        container_name = self.config.container_name
-        stop_cmd = f"docker rm {container_name}"
-        stop_success = self.run_shell_command(
-            stop_cmd,
-            success_msg=f"Removed container {container_name}",
-            error_msg=f"Failed to remove container {container_name}",
-        )
-        return stop_success
+    def bash(self) -> bool:
+        """bash into the server container."""
+        bash_cmd = self.docker_cmd("exec", "-it", "/bin/bash")
+        print(bash_cmd)
+        return True
 
     def clear(self) -> int:
         """
@@ -323,9 +345,9 @@ class SparqlServer:
             self.log.log("✅", container_name, f"{msg}")
         return count_triples
 
-    def upload_request(self, file_content: bytes) -> dict:
+    def upload_request(self, file_content: bytes) -> Response:
         """Default upload request for Blazegraph-style servers."""
-        response= self._make_request(
+        response = self.make_request(
             "POST",
             self.config.sparql_url,
             headers={"Content-Type": "text/turtle"},
@@ -337,33 +359,31 @@ class SparqlServer:
     def load_file(self, filepath: str, upload_request=None) -> bool:
         """
         Load a single RDF file into the RDF server.
-
-        Args:
-            filepath: Path to RDF file
-            upload_request_callback: Function that performs the upload request
-
-        Returns:
-            True if loaded successfully
         """
         container_name = self.config.container_name
         load_success = False
 
         if upload_request is None:
             upload_request_callback = self.upload_request
+        else:
+            upload_request_callback = upload_request
 
         try:
             with open(filepath, "rb") as f:
                 file_content = f.read()
 
-            result = upload_request_callback(file_content)
+            response = upload_request_callback(file_content)
 
-            if result["success"]:
+            if response.success:  # Changed from result["success"]
                 self.log.log("✅", container_name, f"Loaded {filepath}")
                 load_success = True
             else:
-                status_code = result['status_code']
-                content = result['content']
-                error_msg = result.get("error", f"HTTP {status_code} → {content}")
+                if response.error:
+                    error_msg = str(response.error)
+                else:
+                    status_code = response.response.status_code
+                    content = response.response.text
+                    error_msg = f"HTTP {status_code} → {content}"
                 self.log.log("❌", container_name, f"Failed to load {filepath}: {error_msg}")
                 load_success = False
 
@@ -402,15 +422,15 @@ class SparqlServer:
 
         return loaded_count
 
-    def check_needed_software(self)->int:
+    def check_needed_software(self) -> int:
         """
         Check if needed software for this server configuration is installed
         """
-        container_name=self.config.container_name
+        container_name = self.config.container_name
         if self.config.needed_software is None:
             return
-        software_list = SoftwareList.from_dict2(self.config.needed_software) # @UndefinedVariable
-        missing=software_list.check_installed(self.log, self.shell, verbose=True)
-        if missing>0:
-            self.log.log("❌",container_name,"Please install the missing commands before running this script.")
+        software_list = SoftwareList.from_dict2(self.config.needed_software)  # @UndefinedVariable
+        missing = software_list.check_installed(self.log, self.shell, verbose=True)
+        if missing > 0:
+            self.log.log("❌", container_name, "Please install the missing commands before running this script.")
         return missing

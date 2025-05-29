@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 import os
+from dataclasses import dataclass, field
 from typing import List
 
 from omnigraph.persistent_log import Log
@@ -12,6 +12,7 @@ class Software:
     """
     Single software requirement definition
     """
+
     command: str
     info: str
 
@@ -22,9 +23,9 @@ class SoftwareList:
     Collection of software requirements loadable from YAML
     """
 
-    software_list: List[Software]=field(default_factory=list)
+    software_list: List[Software] = field(default_factory=list)
 
-    def check_installed(self, log: Log, shell: Shell,verbose:bool=True)->int:
+    def check_installed(self, log: Log, shell: Shell, verbose: bool = True) -> int:
         """
         Check if necessary software
         commands are available and suggest installation packages
@@ -34,7 +35,7 @@ class SoftwareList:
         log.log("✅", "info", f"PATH={os.environ.get('PATH')}")
 
         for needed in self.software_list:
-            process = shell.run(f"which {needed.command}",tee=verbose)
+            process = shell.run(f"which {needed.command}", tee=verbose)
             where = None if process.returncode != 0 else process.stdout.strip()
 
             if not where:

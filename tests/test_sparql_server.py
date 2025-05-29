@@ -5,7 +5,6 @@ Created on 2025-05-26
 """
 
 import json
-import tempfile
 from pathlib import Path
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
@@ -26,7 +25,7 @@ class TestSparqlServer(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.ogp = OmnigraphPaths()
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
-        env = ServerEnv(debug=self.debug,verbose=self.debug)
+        env = ServerEnv(debug=self.debug, verbose=self.debug)
         omni_server = OmniServer(env=env)
         self.servers = omni_server.servers(str(servers_yaml_path))
 
@@ -34,21 +33,21 @@ class TestSparqlServer(Basetest):
         """
         delete all trips
         """
-        before_clear=server.count_triples()
+        before_clear = server.count_triples()
         count_triples = server.clear()
-        expected=before_clear if server.config.unforced_clear_limit<=before_clear else 0
+        expected = before_clear if server.config.unforced_clear_limit <= before_clear else 0
         self.assertEqual(expected, count_triples)
 
     def start_server(self, server: SparqlServer, verbose: bool = True):
         """
         Start the given SPARQL server with a unique data directory
         """
-        use_temp=False
+        use_temp = False
         if use_temp:
             server.config.data_dir = self.tempdir / server.name
         else:
-            data_dir=self.ogp.omnigraph_dir / "test" / f"{server.name}" / f"{server.config.dataset}"
-            server.config.data_dir=data_dir
+            data_dir = self.ogp.omnigraph_dir / "test" / f"{server.name}" / f"{server.config.dataset}"
+            server.config.data_dir = data_dir
         server.config.data_dir.mkdir(parents=True, exist_ok=True)
         if server.is_running():
             if self.debug and verbose:
