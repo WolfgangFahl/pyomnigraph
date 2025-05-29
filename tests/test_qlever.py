@@ -32,3 +32,6 @@ class TestQLever(Basetest):
         self.assertIsNotNone(qlever_file)
         name = qlever_file.get("data", "NAME")
         self.assertEqual(name, "olympics")
+        access_token=qlever_file.get("server","ACCESS_TOKEN")
+        if self.debug:
+            print(f"access_token: {access_token}")

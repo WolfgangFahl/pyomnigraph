@@ -291,6 +291,22 @@ class SparqlServer:
         )
         return stop_success
 
+    def rm(self) -> bool:
+        """
+        remove the server container.
+
+        Returns:
+            True if stopped successfully
+        """
+        container_name = self.config.container_name
+        stop_cmd = f"docker rm {container_name}"
+        stop_success = self.run_shell_command(
+            stop_cmd,
+            success_msg=f"Removed container {container_name}",
+            error_msg=f"Failed to remove container {container_name}",
+        )
+        return stop_success
+
     def clear(self) -> int:
         """
         delete all triples

@@ -5,15 +5,11 @@ Created on 2025-05-28
 """
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
-import glob
-import os
 from pathlib import Path
 from typing import Optional
 
-from omnigraph.persistent_log import Log
-from omnigraph.shell import Shell
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
-from tqdm import tqdm
+import rdflib
 
 
 class QLeverfile:
@@ -67,6 +63,7 @@ class QLeverConfig(ServerConfig):
     """
     def __post_init__(self):
         super().__post_init__()
+        self.access_token = None
         self.status_url = f"{self.base_url}"
         self.sparql_url = f"{self.base_url}/api/sparql"
         self.docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
@@ -166,6 +163,7 @@ class QLever(SparqlServer):
                 if step.name=="setup-config":
                     qlever_file = QLeverfile.ofFile(step.path)
                     qlever_name = qlever_file.get("data", "NAME")
+                    self.config.access_token=qlever_file.get("server","ACCESS_TOKEN")
                     msg=f"qlever setup-config for {qlever_name} done"
                     self.log.log("✅", container_name,msg)
                     input_files=qlever_file.get("index","input_files")
@@ -178,13 +176,35 @@ class QLever(SparqlServer):
         return started
 
     def upload_request(self, file_content: bytes) -> dict:
-        """Upload request for QLever using Graph Store Protocol."""
-        graph_name = "default"
+        """Upload request for QLever using SPARQL INSERT statements."""
+        turtle_data = file_content.decode('utf-8')
+        sparql_insert = self._convert_turtle_to_insert(turtle_data)
+        access_token=self.config.access_token
+
         response = self._make_request(
             "POST",
-            f"{self.config.base_url}/api/graphs/{graph_name}",
-            headers={"Content-Type": "text/turtle"},
-            data=file_content,
+            self.config.sparql_url,
+            headers={
+                "Content-Type": "application/sparql-update",
+                "Authorization": f"Bearer {access_token}"
+            },
+            data=sparql_insert,
             timeout=self.config.upload_timeout,
         )
         return response
+
+    def _convert_turtle_to_insert(self, turtle_data: str) -> str:
+        """Convert Turtle data to SPARQL INSERT statement."""
+
+        graph = rdflib.Graph()
+        graph.parse(data=turtle_data, format="turtle")
+
+        triples_list = []
+        for subject, predicate, obj in graph:
+            triple_str = f"{subject.n3()} {predicate.n3()} {obj.n3()} ."
+            triples_list.append(triple_str)
+
+        triples_block = "\n    ".join(triples_list)
+        sparql_insert = f"INSERT DATA {{\n    {triples_block}\n}}"
+
+        return sparql_insert

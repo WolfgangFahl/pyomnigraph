@@ -36,6 +36,7 @@ class OmniServer:
         server_cmds = {
             "start": lambda s: ServerCmd(title=f"start {s.name}", func=s.start),
             "stop": lambda s: ServerCmd(title=f"stop {s.name}", func=s.stop),
+            "rm": lambda s: ServerCmd(title=f"stop {s.name}", func=s.rm),
             "status": lambda s: ServerCmd(title=f"status {s.name}", func=s.status),
             "clear": lambda s: ServerCmd(title=f"clear {s.name}", func=s.clear),
             "needed": lambda s: ServerCmd(title=f"check needed software for {s.name}", func=s.check_needed_software),

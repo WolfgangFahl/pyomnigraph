@@ -16,12 +16,12 @@ servers:
     server: "qlever"
     name: "qlever"
     wikidata_id: "Q111016295"
-    container_name: "qlever-olympics"
+    container_name: "qlever.server.olympics"
     image: "adfreiburg/qlever:latest"
     dataset: "olympics"
     port: 7019
     host: "localhost"
-    active: false
+    active: true
     needed_software:
       software_list:
         - command: "pip"
