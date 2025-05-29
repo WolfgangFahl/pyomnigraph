@@ -34,6 +34,9 @@ class OmniServer:
         config.data_dir.mkdir(parents=True, exist_ok=True)
         config.container_name = f"{config.container_name}-test"
         config.port = config.test_port
+        # make sure the port is reconfigured for test
+        config.base_url=None
+        pass
 
     def get_server_commands(self) -> Dict[str, Callable[[SparqlServer], ServerCmd]]:
         """

@@ -9,7 +9,6 @@ from pathlib import Path
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
-from omnigraph.server_config import ServerConfig
 from omnigraph.sparql_server import ServerEnv, SparqlServer
 
 from tests.basetest import Basetest
