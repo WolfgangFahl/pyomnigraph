@@ -7,8 +7,10 @@ Apache Jena SPARQL support
 """
 
 from dataclasses import dataclass
+from typing import Dict, Any
 
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, \
+    Response
 
 
 @dataclass
@@ -22,17 +24,24 @@ class JenaConfig(ServerConfig):
         configure the configuration
         """
         super().__post_init__()
+
+        # Clean URLs without credentials
         jena_base = f"{self.base_url}/ds"
         self.status_url = f"{self.base_url}/$/ping"
         self.sparql_url = f"{jena_base}/sparql"
         self.update_url = f"{jena_base}/update"
-        self.web_url = f"{self.base_url}/#/dataset/ds/query"
         self.upload_url = f"{jena_base}/data"
-        env=""
-        if self.admin_password:
-            env=f"-e ADMIN_PASSWORD={self.admin_password}"
-        self.docker_run_command = f"docker run {env} -d --name {self.container_name} -p {self.port}:3030 {self.image}"
+        self.web_url = f"{self.base_url}/#/dataset/ds/query"
 
+        # Docker command setup
+        env = "-e FUSEKI_DATASET=ds"
+        if self.auth_password:
+            env = f"-e ADMIN_PASSWORD={self.auth_password}"
+        # run with in memory default dataset
+        self.docker_run_command = (
+            f"docker run {env} -d --name {self.container_name} "
+            f"-p {self.port}:3030 {self.image}"
+        )
 
 class Jena(SparqlServer):
     """
@@ -48,3 +57,12 @@ class Jena(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+
+    def status(self) -> Dict[str, Any]:
+        logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
+        if "Creating dataset" in logs and "Fuseki is available :-)" in logs:
+            return {
+                "status": "ready",
+                "triples": self.count_triples(),
+            }
+        return {"status": "starting"}

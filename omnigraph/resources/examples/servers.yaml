@@ -21,7 +21,7 @@ servers:
     dataset: "olympics"
     port: 7019
     host: "localhost"
-    active: true
+    active: false
     needed_software:
       software_list:
         - command: "pip"
@@ -34,7 +34,8 @@ servers:
     wikidata_id: "Q109376461"
     container_name: "jena-royals"
     image: "stain/jena-fuseki:latest"
+    dataset: "ds"
     port: 3030
     host: "localhost"
     admin_password: "Q109376461"
-    active: false
+    active: true

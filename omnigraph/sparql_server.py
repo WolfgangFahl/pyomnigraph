@@ -3,8 +3,9 @@ Created on 2025-05-27
 
 @author: wf
 """
-from dataclasses import dataclass
+
 import time
+import traceback
 import webbrowser
 from pathlib import Path
 
@@ -15,10 +16,12 @@ from tqdm import tqdm
 from omnigraph.server_config import ServerConfig, ServerEnv
 from omnigraph.software import SoftwareList
 
+
 class Response:
     """
     wrapper for responses including errors
     """
+
     @property
     def success(self) -> bool:
         if self.error is not None:
@@ -30,6 +33,7 @@ class Response:
     def __init__(self, response=None, error=None):
         self.response = response
         self.error = error
+
 
 class SparqlServer:
     """
@@ -51,6 +55,22 @@ class SparqlServer:
         # Subclasses must set these URLs
         if self.config.sparql_url:
             self.sparql = SPARQL(self.config.sparql_url)
+            if (
+                hasattr(self.config, "auth_password")
+                and self.config.auth_password
+                and hasattr(self.config, "auth_user")
+                and self.config.auth_user
+            ):
+                self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
+
+    def handle_exception(self,context:str,ex:Exception):
+        """
+        handle the given exception
+        """
+        container_name=self.config.container_name
+        self.log.log("❌", container_name, f"Exception {context}: {ex}")
+        if self.debug:
+            traceback.print_exc()
 
     def make_request(self, method: str, url: str, **kwargs) -> Response:
         """
@@ -65,16 +85,22 @@ class SparqlServer:
             Response
         """
         try:
-            # Always add auth if we have admin_password
-            if hasattr(self.config, 'admin_password') and self.config.admin_password:
-                kwargs.setdefault('auth', ('admin', self.config.admin_password))
-
+            #  add auth if we have auth_password and auth_user
+            if (
+                hasattr(self.config, "auth_password")
+                and self.config.auth_password
+                and hasattr(self.config, "auth_user")
+                and self.config.auth_user
+            ):
+                kwargs.setdefault("auth", (self.config.auth_user, self.config.auth_password))
+            # for Jena Fuseki we do this via url
             # Only set timeout if not already provided
-            kwargs.setdefault('timeout', self.config.timeout)
+            kwargs.setdefault("timeout", self.config.timeout)
             response = requests.request(method, url, **kwargs)
-            response=Response(response)
-        except Exception as e:
-            response=Response(None,e)
+            response = Response(response)
+        except Exception as ex:
+            self.handle_exception(f"request {url}", ex)
+            response = Response(None, ex)
         return response
 
     def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> bool:
@@ -103,8 +129,8 @@ class SparqlServer:
                     error_detail += f" - {result.stderr}"
                 self.log.log("❌", container_name, error_detail)
                 command_success = False
-        except Exception as e:
-            self.log.log("❌", container_name, f"Exception running command '{command}': {e}")
+        except Exception as ex:
+            self.handle_exception(f"command '{command}'", ex)
             command_success = False
         return command_success
 
@@ -182,12 +208,8 @@ class SparqlServer:
                     start_success = self.wait_until_ready(show_progress=show_progress)
                 else:
                     start_success = False
-        except Exception as e:
-            self.log.log(
-                "❌",
-                container_name,
-                f"Error starting {server_name}: {e}",
-            )
+        except Exception as ex:
+            self.handle_exception(f"starting {server_name}", ex)
             start_success = False
         return start_success
 
@@ -199,8 +221,12 @@ class SparqlServer:
             Number of triples
         """
         count_query = "SELECT (COUNT(*) AS ?count) WHERE { ?s ?p ?o }"
-        result = self.sparql.getValue(count_query, "count")
-        triple_count = int(result) if result else 0
+        try:
+            result = self.sparql.getValue(count_query, "count")
+            triple_count = int(result) if result else 0
+        except Exception as ex:
+            self.handle_exception("count_triples", ex)
+            triple_count=-1
         return triple_count
 
     def wait_until_ready(self, show_progress: bool = False) -> bool:
@@ -218,7 +244,7 @@ class SparqlServer:
         server_name = self.config.name
         status_url = self.config.status_url
         base_url = self.config.base_url
-        timeout=self.config.ready_timeout
+        timeout = self.config.ready_timeout
 
         self.log.log(
             "✅",
@@ -349,7 +375,7 @@ class SparqlServer:
         """Default upload request for Blazegraph-style servers."""
         response = self.make_request(
             "POST",
-            self.config.sparql_url,
+            self.config.upload_url,
             headers={"Content-Type": "text/turtle"},
             data=file_content,
             timeout=self.config.upload_timeout,
@@ -387,8 +413,8 @@ class SparqlServer:
                 self.log.log("❌", container_name, f"Failed to load {filepath}: {error_msg}")
                 load_success = False
 
-        except Exception as e:
-            self.log.log("❌", container_name, f"Exception loading {filepath}: {e}")
+        except Exception as ex:
+            self.handle_exception(f"loading {filepath}", ex)
             load_success = False
 
         return load_success

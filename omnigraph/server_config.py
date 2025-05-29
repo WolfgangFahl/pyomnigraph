@@ -50,10 +50,11 @@ class ServerConfig:
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"
-    admin_password: Optional[str]=None
+    auth_user: Optional[str] = None
+    auth_password: Optional[str] = None
     dataset: Optional[str] = None
-    timeout: int=30
-    ready_timeout: int=20
+    timeout: int = 30
+    ready_timeout: int = 20
     upload_timeout: int = 300
     unforced_clear_limit = 100000  # maximumn number of triples that can be cleared without force option
     # fields to be configured by post_init
@@ -61,6 +62,7 @@ class ServerConfig:
     status_url: Optional[str] = field(default=None)
     web_url: Optional[str] = field(default=None)
     sparql_url: Optional[str] = field(default=None)
+    upload_url: Optional[str] = field(default=None)
     data_dir: Optional[str] = field(default=None)
     dumps_dir: Optional[str] = field(default=None)
     docker_run_command: Optional[str] = field(default=None)

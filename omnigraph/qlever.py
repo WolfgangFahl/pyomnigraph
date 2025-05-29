@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, \
-    Response
 import rdflib
+
+from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
 
 
 class QLeverfile:

@@ -3,10 +3,8 @@ Created on 2025-05-27
 
 @author: wf
 """
-
-import re
 from dataclasses import dataclass
-
+import re
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -21,6 +19,7 @@ class BlazegraphConfig(ServerConfig):
         blazegraph_base = f"{self.base_url}/bigdata"
         self.status_url = f"{blazegraph_base}/status"
         self.sparql_url = f"{blazegraph_base}/namespace/kb/sparql"
+        self.upload_url = self.sparql_url
         self.web_url = f"{blazegraph_base}/#query"
         self.dataloader_url = f"{blazegraph_base}/dataloader"
 
@@ -60,8 +59,7 @@ class Blazegraph(SparqlServer):
             if response.response.text:
                 html_content = response.response.text
                 # Only parse HTML if it looks like HTML content
-                if '<' in html_content and '>' in html_content:
-                    import re
+                if "<" in html_content and ">" in html_content:
                     name_value_pattern = r'(?:<span id="(?P<name1>[^"]+)">(?P<value1>[^<]+)</span[^>]*>|&#47;(?P<name2>[^=]+)=(?P<value2>[^\s&#]+))'
                     matches = re.finditer(name_value_pattern, html_content, re.DOTALL)
 
