@@ -10,7 +10,6 @@ from pathlib import Path
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
 from omnigraph.sparql_server import ServerEnv, SparqlServer
-
 from tests.basetest import Basetest
 
 
@@ -27,11 +26,20 @@ class TestSparqlServer(Basetest):
         self.ogp = OmnigraphPaths()
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
         env = ServerEnv(debug=self.debug, verbose=self.debug)
-        omni_server = OmniServer(
-            env=env,
-            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp)
-        )
-        self.servers = omni_server.servers(str(servers_yaml_path))
+        omni_server = OmniServer(env=env, patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp))
+        self.all_servers = omni_server.servers(str(servers_yaml_path))
+        self.filter_servers("graphdb")
+
+    def filter_servers(self, server_name: str = None):
+        # Filter to single server if specified
+        if server_name:
+            server = self.all_servers.get(server_name)
+            if server:
+                self.servers = {server_name: server}
+            else:
+                raise ValueError(f"Server '{server_name}' not found. Available: {list(self.all_servers.keys())}")
+        else:
+            self.servers = self.all_servers
 
     def clear_server(self, server: SparqlServer):
         """

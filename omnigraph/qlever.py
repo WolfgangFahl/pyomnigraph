@@ -4,13 +4,15 @@ Created on 2025-05-28
 @author: wf
 """
 
+import os
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, List
-import os
-from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
+from typing import List, Optional
+
 import rdflib
+
+from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
 
 
 class QLeverfile:
@@ -68,6 +70,7 @@ class QLeverfile:
         """
         with self.path.open("w") as f:
             self.config.write(f)
+
 
 @dataclass
 class QLeverConfig(ServerConfig):
@@ -133,7 +136,7 @@ class QLever(SparqlServer):
         """
         super().__init__(config=config, env=env)
 
-    def get_step_list(self)->List[Step]:
+    def get_step_list(self) -> List[Step]:
         step_list = [
             Step(
                 name="setup-config",
@@ -171,7 +174,7 @@ class QLever(SparqlServer):
         ]
         return step_list
 
-    def handle_config(self,step:Step):
+    def handle_config(self, step: Step):
         """
         handle config setting for following step and
         patch QLeverfile to port
@@ -203,7 +206,7 @@ class QLever(SparqlServer):
         started = False
         if self.dataset:
             steps = 0
-            self.step_list=self.get_step_list()
+            self.step_list = self.get_step_list()
             for step in self.step_list:
                 step.perform(server=self)
                 if not step.success:

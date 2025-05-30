@@ -45,3 +45,14 @@ servers:
     auth_user: admin
     auth_password: "Q109376461"
     active: true
+  graphdb:
+    server: "graphdb"
+    name: "graphdb"
+    wikidata_id: "Q58425577"
+    container_name: "graphdb-royals"
+    image: "ontotext/graphdb:9.11.2-se"
+    dataset: "repo1"                    # GraphDB calls them repositories
+    port: 7200                          # GraphDB default port
+    test_port: 7700
+    host: "localhost"
+    active: true

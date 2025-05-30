@@ -168,10 +168,7 @@ class OmnigraphCmd:
             env = ServerEnv(debug=args.debug, verbose=args.verbose)
             patch_config = None
             if args.test:
-                patch_config=(
-                    lambda config:
-                    OmniServer.patch_test_config(config, self.ogp)
-                )
+                patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)
             omni_server = OmniServer(env=env, patch_config=patch_config)
             self.all_servers = omni_server.servers(args.config)
         else:
@@ -192,11 +189,11 @@ class OmnigraphCmd:
             for server in self.all_servers.value():
                 print(f"  {server.full_name}")
             handled = True
-        cmds=list(args.cmd)
+        cmds = list(args.cmd)
         for server in self.servers.values():
             print(f"  {server.full_name}:")
             try:
-                cmds_handled=self.run_cmds(server, cmds=cmds)
+                cmds_handled = self.run_cmds(server, cmds=cmds)
                 handled = handled or cmds_handled
             except Exception as ex:
                 server.handle_exception(f"{args.cmd}", ex)

@@ -10,7 +10,7 @@ from typing import Callable, Dict, Optional
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.software import SoftwareList
-from omnigraph.yamlable import lod_storable
+from lodstorage.yamlable import lod_storable
 
 
 class ServerEnv:
@@ -18,11 +18,7 @@ class ServerEnv:
     Server environment configuration.
     """
 
-    def __init__(self,
-        log: Log = None,
-        shell: Shell = None,
-        debug: bool = False,
-        verbose: bool = False):
+    def __init__(self, log: Log = None, shell: Shell = None, debug: bool = False, verbose: bool = False):
         """
         Initialize server environment.
 
@@ -41,6 +37,7 @@ class ServerEnv:
         self.shell = shell
         self.debug = debug
         self.verbose = verbose
+
 
 @dataclass
 class ServerConfig:

@@ -4,7 +4,7 @@ from typing import List
 
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
-from omnigraph.yamlable import lod_storable
+from lodstorage.yamlable import lod_storable
 
 
 @dataclass

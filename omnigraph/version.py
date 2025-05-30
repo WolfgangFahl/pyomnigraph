@@ -5,7 +5,7 @@ Created on 2025-05-28
 """
 
 import omnigraph
-from omnigraph.yamlable import lod_storable
+from lodstorage.yamlable import lod_storable
 
 
 @lod_storable

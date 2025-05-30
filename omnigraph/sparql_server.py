@@ -54,8 +54,8 @@ class SparqlServer:
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
-            is_fuseki=self.config.server=="jena"
-            self.sparql = SPARQL(self.config.sparql_url,isFuseki=is_fuseki)
+            is_fuseki = self.config.server == "jena"
+            self.sparql = SPARQL(self.config.sparql_url, isFuseki=is_fuseki)
             if (
                 hasattr(self.config, "auth_password")
                 and self.config.auth_password
@@ -66,7 +66,7 @@ class SparqlServer:
 
     @property
     def full_name(self):
-        full_name=f"{self.name} {self.config.container_name}"
+        full_name = f"{self.name} {self.config.container_name}"
         return full_name
 
     def handle_exception(self, context: str, ex: Exception):

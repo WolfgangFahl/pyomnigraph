@@ -82,6 +82,7 @@ only-include = ["omnigraph"]
 
 [project.scripts]
 omnigraph = "omnigraph.omnigraph_cmd:main"
+rdfdump = "omnigraph.rdfdump_cmd:main"
 
 [tool.black]
 line-length = 120
