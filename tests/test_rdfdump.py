@@ -46,40 +46,43 @@ class TestRdfDumpDownloader(Basetest):
             if self.debug:
                 print(f"  {count} triples")
 
-
     def test_download_rdf_dump(self):
         """
         Test downloading RDF dump
         """
         download_limit = 10000  # Only download if expected_triples below this
 
-        for name, dataset in self.datasets.datasets.items():
-            if self.debug:
-                print(f"Checking dataset: {name}")
-
-            # Check if dataset is small enough to download
-            if dataset.expected_triples and dataset.expected_triples > download_limit:
+        for dataset in self.datasets.datasets.values():
+            with self.subTest(dataset=dataset):
+                name=dataset.name
+                if not dataset.active:
+                    self.skipTest(f" dataset: {name} is not active")
                 if self.debug:
-                    print(f"  Skipping {name}: {dataset.expected_triples:,} triples > {download_limit:,}")
-                continue
+                    print(f"Checking dataset: {name}")
 
-            if self.debug:
-                print(f"  Downloading {name}: {dataset.expected_triples:,} triples")
+                # Check if dataset is small enough to download
+                if dataset.expected_triples and dataset.expected_triples > download_limit:
+                    if self.debug:
+                        print(f" Skipping {name}: {dataset.expected_triples:,} triples > {download_limit:,}")
+                    self.skipTest(f"Dataset {name} too large: {dataset.expected_triples:,} triples")
 
-            # Create dataset-specific output directory
-            dataset_output_dir = self.dumps_dir / name
+                if self.debug:
+                    print(f" Downloading {name}: {dataset.expected_triples:,} triples")
 
-            downloader = RdfDumpDownloader(
-                dataset=dataset,
-                output_path=str(dataset_output_dir),
-                limit=1000,  # Smaller chunks for testing
-                max_triples=dataset.expected_triples,
-                show_progress=True,
-            )
+                # Create dataset-specific output directory
+                dataset_output_dir = self.dumps_dir / name
 
-            chunks = downloader.download()
+                downloader = RdfDumpDownloader(
+                    dataset=dataset,
+                    output_path=str(dataset_output_dir),
+                    limit=1000,  # Smaller chunks for testing
+                    max_triples=dataset.expected_triples,
+                    show_progress=True,
+                )
 
-            if self.debug:
-                print(f"  Downloaded {chunks} chunks for {name}")
+                chunks = downloader.download()
 
-            self.assertGreater(chunks, 0)
+                if self.debug:
+                    print(f" Downloaded {chunks} chunks for {name}")
+
+                self.assertGreater(chunks, 0)

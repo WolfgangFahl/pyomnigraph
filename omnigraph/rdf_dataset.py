@@ -23,6 +23,7 @@ class RdfDataset:
     expected_triples: Optional[int] = None  # Expected number of triples
     select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
     description: Optional[str] = None  # Optional dataset description
+    active: Optional[bool] = False
     # fields to be configured by post_init
     count_query: Optional[str] = field(default=None)
     construct_pattern: Optional[str] = field(default=None)

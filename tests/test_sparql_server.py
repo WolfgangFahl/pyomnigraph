@@ -28,7 +28,8 @@ class TestSparqlServer(Basetest):
         env = ServerEnv(debug=self.debug, verbose=self.debug)
         omni_server = OmniServer(env=env, patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp))
         self.all_servers = omni_server.servers(str(servers_yaml_path))
-        self.filter_servers("graphdb")
+        #self.filter_servers("graphdb")
+        self.filter_servers()
 
     def filter_servers(self, server_name: str = None):
         # Filter to single server if specified

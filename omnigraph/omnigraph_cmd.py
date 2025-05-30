@@ -191,7 +191,8 @@ class OmnigraphCmd:
             handled = True
         cmds = list(args.cmd)
         for server in self.servers.values():
-            print(f"  {server.full_name}:")
+            if not self.args.quiet:
+                print(f"  {server.full_name}:")
             try:
                 cmds_handled = self.run_cmds(server, cmds=cmds)
                 handled = handled or cmds_handled

@@ -14,6 +14,7 @@ datasets:
     select_pattern: "?s wdt:P31 wd:Q3539533 . ?s ?p ?o"
     # Optional dataset description
     description: "Triplestores and their properties"
+    active: true
   gov_full:
     # https://gov.genealogy.net/ontology.owl
     # Genealogisches OrtsVerzeichnis
@@ -28,7 +29,7 @@ datasets:
     select_pattern: "?s ?p ?o"
     # Optional dataset description
     description: "GOV genealogy full dataset"
-
+    active: false
   gov-w2306:
     name: "GOV W2306 Coordinates"
     # SPARQL endpoint URL
@@ -46,3 +47,4 @@ datasets:
       ?pName <http://gov.genealogy.net/ontology.owl#value> ?name
     # Optional dataset description
     description: "W2306 postal code coordinates"
+    active: false

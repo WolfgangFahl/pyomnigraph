@@ -55,4 +55,4 @@ servers:
     port: 7200                          # GraphDB default port
     test_port: 7700
     host: "localhost"
-    active: true
+    active: false
