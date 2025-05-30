@@ -57,7 +57,7 @@ class RdfDumpDownloader:
         Raises:
             Exception: If HTTP request fails
         """
-        query = self.construct_query(offset)
+        query = self.dataset.get_construct_query(offset, self.limit)
         response = requests.post(
             self.endpoint_url,
             data={"query": query},
