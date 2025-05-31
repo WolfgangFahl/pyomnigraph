@@ -6,8 +6,9 @@ Created on 2025-05-30
 
 from dataclasses import dataclass, field
 from typing import Dict, Optional
-from lodstorage.sparql import SPARQL
+
 from lodstorage.query import Query
+from lodstorage.sparql import SPARQL
 from lodstorage.yamlable import lod_storable
 
 
@@ -18,7 +19,7 @@ class RdfDataset:
     """
 
     name: str  # Human-readable dataset name
-    base_url: str # Base URL e.g. for tryit
+    base_url: str  # Base URL e.g. for tryit
     endpoint_url: str  # SPARQL endpoint URL
     expected_triples: Optional[int] = None  # Expected number of triples
     select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
@@ -36,18 +37,18 @@ class RdfDataset:
             name=f"{self.name}_count",
             query=f"SELECT (COUNT(*) AS ?count) WHERE {{ {self.select_pattern} }}",
             endpoint=self.endpoint_url,
-            description=f"Count query for {self.name}"
+            description=f"Count query for {self.name}",
         )
         self.select_query = Query(
             name=f"{self.name}_select",
             query=f"SELECT * WHERE {{ {self.select_pattern} }}",
             endpoint=self.endpoint_url,
-            description=f"Select query for {self.name}"
+            description=f"Select query for {self.name}",
         )
         self.construct_pattern = self.select_pattern
-        self.sparql=SPARQL(self.endpoint_url)
+        self.sparql = SPARQL(self.endpoint_url)
 
-    def getTryItUrl(self, database: str = "blazegraph")->str:
+    def getTryItUrl(self, database: str = "blazegraph") -> str:
         """
         return the "try it!" url for the given database
 
@@ -57,7 +58,7 @@ class RdfDataset:
         Returns:
             str: the "try it!" url for the given query
         """
-        tryit_url=self.select_query.getTryItUrl(self.base_url, database)
+        tryit_url = self.select_query.getTryItUrl(self.base_url, database)
         return tryit_url
 
     def get_construct_query(self, offset: int, limit: int) -> str:

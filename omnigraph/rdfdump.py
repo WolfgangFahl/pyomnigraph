@@ -5,12 +5,16 @@ Created on 2025-05-26
 
 Download RDF dump via paginated CONSTRUCT queries.
 """
-from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+
 import argparse
 import time
 from pathlib import Path
+
 import requests
 from tqdm import tqdm
+
+from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+
 
 class RdfDumpDownloader:
     """

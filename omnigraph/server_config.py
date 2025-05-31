@@ -7,10 +7,11 @@ Created on 2025-05-28
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional
 
+from lodstorage.yamlable import lod_storable
+
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.software import SoftwareList
-from lodstorage.yamlable import lod_storable
 
 
 class ServerEnv:

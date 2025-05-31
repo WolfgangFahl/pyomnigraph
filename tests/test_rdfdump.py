@@ -3,9 +3,10 @@ Created on 2025-05-26
 
 @author: wf
 """
-from lodstorage.sparql import SPARQL
-from omnigraph.ominigraph_paths import OmnigraphPaths
 
+from lodstorage.sparql import SPARQL
+
+from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.rdf_dataset import RdfDatasets
 from omnigraph.rdfdump import RdfDumpDownloader
 from tests.basetest import Basetest
@@ -24,7 +25,7 @@ class TestRdfDumpDownloader(Basetest):
         self.ogp = OmnigraphPaths()
         self.dumps_dir = self.ogp.dumps_dir
         self.datasets_yaml_path = self.ogp.examples_dir / "datasets.yaml"
-        self.datasets=RdfDatasets.ofYaml(self.datasets_yaml_path)
+        self.datasets = RdfDatasets.ofYaml(self.datasets_yaml_path)
 
     def test_rdf_datasets(self):
         """
@@ -36,13 +37,13 @@ class TestRdfDumpDownloader(Basetest):
             "gov-w2306": "jena",
         }
         self.assertIsNotNone(self.datasets)
-        for name,dataset in self.datasets.datasets.items():
-            database=databases.get(name)
-            tryit_url= dataset.getTryItUrl(database)
+        for name, dataset in self.datasets.datasets.items():
+            database = databases.get(name)
+            tryit_url = dataset.getTryItUrl(database)
             if self.debug:
                 print(f"{name}:{dataset.count_query.query}")
                 print(f"  {tryit_url}")
-            count=dataset.sparql.getValue(dataset.count_query.query,"count")
+            count = dataset.sparql.getValue(dataset.count_query.query, "count")
             if self.debug:
                 print(f"  {count} triples")
 
@@ -54,7 +55,7 @@ class TestRdfDumpDownloader(Basetest):
 
         for dataset in self.datasets.datasets.values():
             with self.subTest(dataset=dataset):
-                name=dataset.name
+                name = dataset.name
                 if not dataset.active:
                     self.skipTest(f" dataset: {name} is not active")
                 if self.debug:

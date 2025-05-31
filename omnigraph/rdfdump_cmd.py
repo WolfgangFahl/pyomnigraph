@@ -1,4 +1,3 @@
-
 """
 Created on 2025-05-30
 
@@ -7,14 +6,16 @@ Created on 2025-05-30
 Command line interface for RDF dump downloading.
 """
 
-from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
-from omnigraph.rdfdump import RdfDumpDownloader
-from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
-from omnigraph.version import Version
+from argparse import ArgumentParser, Namespace
+import os
 from typing import Dict
 
-class RdfDumpCmd:
+from omnigraph.basecmd import BaseCmd
+from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+from omnigraph.rdfdump import RdfDumpDownloader
+
+class RdfDumpCmd(BaseCmd):
     """
     Command line interface for RDF dump downloading.
     """
@@ -23,22 +24,23 @@ class RdfDumpCmd:
         """
         Initialize command line interface.
         """
-        self.ogp = OmnigraphPaths()
         self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
-        self.version = Version()
-        self.program_version_message = f"{self.version.name} RDF Dump Downloader {self.version.version}"
-        self.parser = self.getArgParser()
+        super().__init__(
+            description="Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries"
+        )
 
-    def getArgParser(self, description: str = None, version_msg=None) -> ArgumentParser:
+    def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
-        Setup command line argument parser.
-        """
-        if description is None:
-            description = "Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries"
-        if version_msg is None:
-            version_msg = self.program_version_message
+        Extend base parser with RDF-specific arguments.
 
-        parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter)
+        Args:
+            description: CLI description string
+            version_msg: version display string
+
+        Returns:
+            ArgumentParser: extended argument parser
+        """
+        parser = super().get_arg_parser(description, version_msg)
         parser.add_argument(
             "-c",
             "--config",
@@ -47,7 +49,7 @@ class RdfDumpCmd:
             help="Path to datasets configuration YAML file [default: %(default)s]",
         )
         parser.add_argument(
-            "-d",
+            "-ds",
             "--datasets",
             nargs="+",
             default=["all"],
@@ -59,8 +61,12 @@ class RdfDumpCmd:
             default=10000,
             help="Number of triples per request [default: %(default)s]",
         )
+        parser.add_argument("-l", "--list", action="store_true", help="List available datasets [default: %(default)s]")
         parser.add_argument(
-            "-l", "--list", action="store_true", help="List available datasets [default: %(default)s]"
+            "-4o",
+            "--for-omnigraph",
+            action="store_true",
+            help="store dump at default omnigraph location [default: %(default)s]",
         )
         parser.add_argument(
             "--max-triples",
@@ -70,12 +76,14 @@ class RdfDumpCmd:
         )
         parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
         parser.add_argument("--output-path", default=".", help="Path for dump files")
-        parser.add_argument("-V", "--version", action="version", version=version_msg)
         return parser
 
     def getDatasets(self) -> Dict[str, RdfDataset]:
         """
-        Get the datasets to work with.
+        Resolve and select datasets to download.
+
+        Returns:
+            Dict[str, RdfDataset]: selected datasets by name
         """
         datasets = {}
         all_datasets = RdfDatasets.ofYaml(self.args.config)
@@ -88,15 +96,23 @@ class RdfDumpCmd:
                 datasets[dataset_name] = dataset
         return datasets
 
-    def download_dataset(self, dataset_name: str, dataset: RdfDataset):
+    def download_dataset(self, dataset_name: str, dataset: RdfDataset, output_path: str):
         """
-        Download a single dataset.
+        Download the specified dataset to a subdirectory.
+
+        Args:
+            dataset_name: name of dataset
+            dataset: RDF dataset definition
+            output_path: base output directory
         """
-        print(f"Starting download for dataset: {dataset_name}")
+        dataset_dir = os.path.join(output_path, dataset_name)
+        os.makedirs(dataset_dir, exist_ok=True)
+        if not self.quiet:
+            print(f"Starting download for dataset: {dataset_name} to {dataset_dir} ...")
 
         downloader = RdfDumpDownloader(
             dataset=dataset,
-            output_path=self.args.output_path,
+            output_path=dataset_dir,
             limit=self.args.limit,
             max_triples=self.args.max_triples,
             show_progress=not self.args.no_progress,
@@ -107,9 +123,14 @@ class RdfDumpCmd:
 
     def handle_args(self, args: Namespace):
         """
-        Handle command line arguments.
+        Handle parsed CLI arguments.
+
+        Args:
+            args: parsed namespace
         """
-        self.args = args
+        super().handle_args(args)
+        if self.args.about:
+            self.about()
         datasets = self.getDatasets()
         if self.args.list:
             print("Available datasets:")
@@ -117,14 +138,12 @@ class RdfDumpCmd:
                 print(f"  {dataset_name}: {dataset.name}")
             return
 
+        output_path = self.args.output_path
+        if self.args.for_omnigraph:
+            output_path = self.ogp.dumps_dir
+
         for dataset_name, dataset in datasets.items():
-            self.download_dataset(dataset_name, dataset)
+            self.download_dataset(dataset_name, dataset, output_path)
 
-
-def main():
-    """
-    Main entry point for command line interface.
-    """
-    cmd = RdfDumpCmd()
-    args = cmd.parser.parse_args()
-    cmd.handle_args(args)
+if __name__ == "__main__":
+    RdfDumpCmd.main()

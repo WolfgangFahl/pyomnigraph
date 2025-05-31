@@ -3,19 +3,16 @@ Created on 2025-05-28
 
 @author: wf
 """
-
-import webbrowser
-from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict, List
 
+from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
 from omnigraph.sparql_server import ServerEnv, SparqlServer
-from omnigraph.version import Version
 
-
-class OmnigraphCmd:
+class OmnigraphCmd(BaseCmd):
     """
     Command line interface for omnigraph.
     """
@@ -26,39 +23,17 @@ class OmnigraphCmd:
         """
         self.ogp = OmnigraphPaths()
         self.default_yaml_path = self.ogp.examples_dir / "servers.yaml"
-        self.version = Version()
-        self.program_version_message = f"{self.version.name} {self.version.version}"
-        # Prepare an environment to extract commands
         self.env = ServerEnv()
         self.omni_server = OmniServer(env=self.env)
         self.server_cmds = self.omni_server.get_server_commands()
-        available_cmds_keys = list(self.server_cmds.keys())
-        self.available_cmds = ", ".join(available_cmds_keys)
-        self.parser = self.getArgParser()
+        self.available_cmds = ", ".join(self.server_cmds.keys())
+        super().__init__(description="Manage SPARQL server configurations and command execution")
 
-    def getArgParser(self, description: str = None, version_msg=None) -> ArgumentParser:
+    def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
-        Setup command line argument parser
-
-        Args:
-            description(str): the description
-            version_msg(str): the version message
-
-        Returns:
-            ArgumentParser: the argument parser
+        Extend base parser with Omnigraph-specific arguments.
         """
-        if description is None:
-            description = self.version.description
-        if version_msg is None:
-            version_msg = self.program_version_message
-
-        parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter)
-        parser.add_argument(
-            "-a",
-            "--about",
-            help="show about info [default: %(default)s]",
-            action="store_true",
-        )
+        parser = super().get_arg_parser(description, version_msg)
         parser.add_argument(
             "-c",
             "--config",
@@ -67,12 +42,6 @@ class OmnigraphCmd:
             help="Path to server configuration YAML file [default: %(default)s]",
         )
         parser.add_argument("--cmd", nargs="+", help=f"commands to execute on servers: {self.available_cmds}")
-        parser.add_argument(
-            "-d",
-            "--debug",
-            action="store_true",
-            help="show debug info [default: %(default)s]",
-        )
         parser.add_argument(
             "-f",
             "--force",
@@ -88,17 +57,11 @@ class OmnigraphCmd:
             help="use test environment [default: %(default)s]",
         )
         parser.add_argument(
-            "-q",
-            "--quiet",
-            action="store_true",
-            help="avoid any output [default: %(default)s]",
-        )
-        parser.add_argument(
             "-s",
             "--servers",
             nargs="+",
             default=["blazegraph"],
-            help="servers: servers to work with - all is an alias for all servers [default: %(default)s]",
+            help="servers to work with - 'all' selects all configured servers [default: %(default)s]",
         )
         parser.add_argument(
             "-v",
@@ -106,15 +69,11 @@ class OmnigraphCmd:
             action="store_true",
             help="show verbose output [default: %(default)s]",
         )
-        parser.add_argument("-V", "--version", action="version", version=version_msg)
         return parser
 
     def getServers(self) -> Dict[str, SparqlServer]:
         """
-        Get the servers to work with.
-
-        Returns:
-            Dictionary of active servers
+        Get the active servers from configuration.
         """
         servers = {}
         server_names = self.args.servers
@@ -125,91 +84,73 @@ class OmnigraphCmd:
             if server:
                 if server.config.dumps_dir is None:
                     server.config.dumps_dir = self.ogp.examples_dir
-                    server.config.data_dir = self.ogp.omnigraph_dir / f"{server.name}" / f"{server.config.dataset}"
+                    server.config.data_dir = self.ogp.omnigraph_dir / server.name / server.config.dataset
                     server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 servers[server_name] = server
         return servers
 
     def run_cmds(self, server: SparqlServer, cmds: List[str]) -> bool:
         """
-        Run commands on a server.
+        Run commands on a specific server.
 
         Args:
             server: Server instance
-            cmds: List of commands to execute
+            cmds: List of command names to run
 
         Returns:
-            True if any commands were handled
+            bool: True if any commands were successfully run
         """
         handled = False
         if cmds:
             for cmd in cmds:
                 s_cmd_factory = self.server_cmds.get(cmd)
-                s_cmd = s_cmd_factory(server)
+                s_cmd = s_cmd_factory(server) if s_cmd_factory else None
                 if s_cmd:
-                    s_cmd.run(verbose=not self.args.quiet)
+                    s_cmd.run(verbose=not self.quiet)
                     handled = True
                 else:
                     print(f"unsupported command {cmd}")
         return handled
 
-    def handle_args(self, args: Namespace) -> bool:
+    def handle_args(self, args: Namespace):
         """
-        Handle command line arguments.
+        Handle parsed CLI arguments.
 
-        Returns:
-            bool: True if arguments were handled, False otherwise
-            args: Namespace
+        Args:
+            args: parsed argument namespace
         """
-        self.args = args
-        handled = False
+        super().handle_args(args)
         self.all_servers = {}
         if Path(self.args.config).exists():
-            env = ServerEnv(debug=args.debug, verbose=args.verbose)
+            env = ServerEnv(debug=self.debug, verbose=self.args.verbose)
             patch_config = None
-            if args.test:
+            if self.args.test:
                 patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)
             omni_server = OmniServer(env=env, patch_config=patch_config)
-            self.all_servers = omni_server.servers(args.config)
+            self.all_servers = omni_server.servers(self.args.config)
         else:
-            print(f"Config file not found: {args.config}")
+            print(f"Config file not found: {self.args.config}")
         self.servers = self.getServers()
 
-        if args.about:
-            print(self.program_version_message)
+        if self.args.about:
+            self.about()
             print(f"{len(self.all_servers)} servers configured - {len(self.servers)} active")
-            for name, server in self.servers.items():
+            for _name, server in self.servers.items():
                 print(f"  {server.full_name}")
-            print(f"see {self.version.doc_url}")
-            webbrowser.open(self.version.doc_url)
-            handled = True
 
         if self.args.list_servers:
             print("Available servers:")
-            for server in self.all_servers.value():
+            for server in self.all_servers.values():
                 print(f"  {server.full_name}")
-            handled = True
-        cmds = list(args.cmd)
+
+        cmds = list(self.args.cmd or [])
         for server in self.servers.values():
-            if not self.args.quiet:
+            if not self.quiet:
                 print(f"  {server.full_name}:")
             try:
-                cmds_handled = self.run_cmds(server, cmds=cmds)
-                handled = handled or cmds_handled
+                self.run_cmds(server, cmds=cmds)
             except Exception as ex:
-                server.handle_exception(f"{args.cmd}", ex)
-
-        return handled
-
-
-def main():
-    """
-    Main entry point for command line interface.
-    """
-    cmd = OmnigraphCmd()
-    args = cmd.parser.parse_args()
-    cmd.handle_args(args)
-
+                server.handle_exception(str(self.args.cmd), ex)
 
 if __name__ == "__main__":
-    main()
+    OmnigraphCmd.main()

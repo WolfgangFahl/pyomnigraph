@@ -4,8 +4,9 @@ Created on 2025-05-28
 @author: wf
 """
 
-import omnigraph
 from lodstorage.yamlable import lod_storable
+
+import omnigraph
 
 
 @lod_storable
@@ -17,7 +18,7 @@ class Version:
     name = "omnigraph"
     version = omnigraph.__version__
     date = "2025-05-27"
-    updated = "2025-05-29"
+    updated = "2025-05-31"
     description = "Unified Python interface for multiple graph databases"
 
     authors = "Wolfgang Fahl"
