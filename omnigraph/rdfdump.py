@@ -6,14 +6,15 @@ Created on 2025-05-26
 Download RDF dump via paginated CONSTRUCT queries.
 """
 
+from argparse import Namespace
 import argparse
-import time
 from pathlib import Path
-
-import requests
-from tqdm import tqdm
+import time
+from typing import Optional
 
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+import requests
+from tqdm import tqdm
 
 
 class RdfDumpDownloader:
@@ -26,9 +27,7 @@ class RdfDumpDownloader:
         self,
         dataset: RdfDataset,
         output_path: str,
-        limit: int = 10000,
-        max_triples: int = None,
-        show_progress: bool = True,
+        args: Optional[Namespace] = None
     ):
         """
         Initialize the RDF dump downloader.
@@ -36,17 +35,19 @@ class RdfDumpDownloader:
         Args:
             dataset: RdfDataset configuration
             output_path: the directory for the dump file
-            limit: Number of triples per request
-            max_triples: Maximum number of triples to download
-            show_progress: Whether to show progress bar
+            args: parsed CLI arguments (optional)
         """
         self.dataset = dataset
         self.endpoint_url = dataset.endpoint_url
         self.output_path = output_path
-        self.limit = limit
-        self.max_triples = max_triples or dataset.expected_triples or 200000
-        self.show_progress = show_progress
+        self.limit = args.limit if args else 10000
+        self.max_triples = (
+            args.max_triples if args and args.max_triples is not None else dataset.expected_triples or 200000
+        )
+        self.show_progress = not args.no_progress if args else True
+        self.force = args.force if args else False
         self.headers = {"Accept": "text/turtle"}
+
 
     def fetch_chunk(self, offset: int) -> str:
         """

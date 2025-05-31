@@ -112,9 +112,7 @@ class RdfDumpCmd(BaseCmd):
         downloader = RdfDumpDownloader(
             dataset=dataset,
             output_path=dataset_dir,
-            limit=self.args.limit,
-            max_triples=self.args.max_triples,
-            show_progress=not self.args.no_progress,
+            args=self.args
         )
 
         chunk_count = downloader.download()

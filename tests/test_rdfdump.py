@@ -4,11 +4,13 @@ Created on 2025-05-26
 @author: wf
 """
 
-from lodstorage.sparql import SPARQL
+from argparse import Namespace
 
+from lodstorage.sparql import SPARQL
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.rdf_dataset import RdfDatasets
 from omnigraph.rdfdump import RdfDumpDownloader
+
 from tests.basetest import Basetest
 
 
@@ -73,12 +75,17 @@ class TestRdfDumpDownloader(Basetest):
                 # Create dataset-specific output directory
                 dataset_output_dir = self.dumps_dir / name
 
+                args = Namespace(
+                    limit=1000,
+                    max_triples=dataset.expected_triples,
+                    no_progress=False,
+                    force=True
+                )
+
                 downloader = RdfDumpDownloader(
                     dataset=dataset,
                     output_path=str(dataset_output_dir),
-                    limit=1000,  # Smaller chunks for testing
-                    max_triples=dataset.expected_triples,
-                    show_progress=True,
+                    args=args
                 )
 
                 chunks = downloader.download()
