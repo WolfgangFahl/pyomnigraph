@@ -92,6 +92,10 @@ class RdfDumpDownloader:
             iterator = tqdm(iterator, desc="Downloading RDF dump")
 
         for chunk_idx in iterator:
+            filename = output_dir / f"dump_{chunk_idx:06d}.ttl"
+            if filename.exists() and not self.force:
+                print(f"Skipping existing file: {filename}")
+                continue
             offset = chunk_idx * self.limit
             try:
                 content = self.fetch_chunk(offset)
@@ -106,7 +110,6 @@ class RdfDumpDownloader:
                 print(f"Offset {offset}: Empty response → stopping.")
                 break
 
-            filename = output_dir / f"dump_{chunk_idx:06d}.ttl"
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(content)
 

@@ -43,12 +43,6 @@ class OmnigraphCmd(BaseCmd):
         )
         parser.add_argument("--cmd", nargs="+", help=f"commands to execute on servers: {self.available_cmds}")
         parser.add_argument(
-            "-f",
-            "--force",
-            action="store_true",
-            help="force action e.g. for clear command [default: %(default)s]",
-        )
-        parser.add_argument(
             "-l", "--list-servers", action="store_true", help="List available servers [default: %(default)s]"
         )
         parser.add_argument(
@@ -152,5 +146,8 @@ class OmnigraphCmd(BaseCmd):
             except Exception as ex:
                 server.handle_exception(str(self.args.cmd), ex)
 
-if __name__ == "__main__":
+def main():
     OmnigraphCmd.main()
+
+if __name__ == "__main__":
+    main()

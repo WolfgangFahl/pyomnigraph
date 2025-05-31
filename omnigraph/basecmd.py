@@ -25,7 +25,7 @@ class BaseCmd:
         self.program_version_message = f"{self.version.name} {self.version.version}"
         if description is None:
             description = self.version.description
-        self.parser = self.get_arg_parser(description=description, version_msg=self.program_version_message)
+        self.parser=None
         self.debug=False
         self.quiet=False
 
@@ -54,6 +54,12 @@ class BaseCmd:
             help="show debug info [default: %(default)s]",
         )
         parser.add_argument(
+            "-f",
+            "--force",
+            action="store_true",
+            help="force actions that would modify existing data [default: %(default)s]",
+        )
+        parser.add_argument(
             "-q",
             "--quiet",
             action="store_true",
@@ -79,20 +85,25 @@ class BaseCmd:
         self.debug=args.debug
         self.quiet=args.quiet
 
+    def parse_args(self)->Namespace:
+        if not self.parser:
+            self.parser = self.get_arg_parser(self.version.description, self.program_version_message)
+        args = self.parser.parse_args()
+        return args
+
     def run(self):
         """
         Parse arguments and dispatch to handler.
         """
-        args = self.parser.parse_args()
+        args=self.parse_args()
         self.handle_args(args)
+
 
     @classmethod
     def main(cls):
         """
         Entry point for CLI.
-        Subclasses must implement handle_args().
         """
         instance = cls()
-        args = instance.parser.parse_args()
+        args=instance.parse_args()
         instance.handle_args(args)
-

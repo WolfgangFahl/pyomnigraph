@@ -11,7 +11,6 @@ import os
 from typing import Dict
 
 from omnigraph.basecmd import BaseCmd
-from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.rdfdump import RdfDumpDownloader
 
@@ -24,10 +23,10 @@ class RdfDumpCmd(BaseCmd):
         """
         Initialize command line interface.
         """
-        self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
         super().__init__(
             description="Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries"
         )
+        self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
@@ -145,5 +144,5 @@ class RdfDumpCmd(BaseCmd):
         for dataset_name, dataset in datasets.items():
             self.download_dataset(dataset_name, dataset, output_path)
 
-if __name__ == "__main__":
+def main():
     RdfDumpCmd.main()
