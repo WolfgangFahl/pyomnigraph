@@ -28,6 +28,7 @@ class BaseCmd:
         self.parser=None
         self.debug=False
         self.quiet=False
+        self.force=False
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
@@ -84,6 +85,7 @@ class BaseCmd:
         self.args = args
         self.debug=args.debug
         self.quiet=args.quiet
+        self.force=args.force
 
     def parse_args(self)->Namespace:
         if not self.parser:
