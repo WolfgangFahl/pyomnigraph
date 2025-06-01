@@ -11,6 +11,7 @@ from typing import Dict, List
 from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
+from omnigraph.rdf_dataset import RdfDataset
 from omnigraph.sparql_server import ServerEnv, SparqlServer
 
 
@@ -78,34 +79,71 @@ class OmnigraphCmd(BaseCmd):
         for server_name in server_names:
             server = self.all_servers.get(server_name)
             if server:
+                server.config.data_dir = self.ogp.omnigraph_dir / server.name / server.config.dataset
+                server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 if server.config.dumps_dir is None:
-                    server.config.dumps_dir = self.ogp.examples_dir
-                    server.config.data_dir = self.ogp.omnigraph_dir / server.name / server.config.dataset
-                    server.config.data_dir.mkdir(parents=True, exist_ok=True)
+                    self.configure_dumps_dir(server)
                 servers[server_name] = server
         return servers
+
+    def configure_dumps_dir(self, server: SparqlServer, dataset: RdfDataset = None):
+        """
+        Configure dumps directory for a server based on dataset.
+
+        Args:
+            server: Server instance to configure
+            dataset: RdfDataset instance
+        """
+        if dataset is None:
+            server.config.dumps_dir = self.ogp.examples_dir
+        else:
+            server.config.dumps_dir = self.ogp.dumps_dir / dataset.id
+
+    def run_single_cmd(self, server: SparqlServer, cmd: str) -> bool:
+        """
+        Run a single command on a server.
+
+        Args:
+            server: Server instance
+            cmd: Command name to run
+
+        Returns:
+            bool: True if command was successfully run
+        """
+        s_cmd_factory = self.server_cmds.get(cmd)
+        s_cmd = s_cmd_factory(server) if s_cmd_factory else None
+        if s_cmd:
+            s_cmd.run(verbose=not self.quiet)
+            return True
+        else:
+            print(f"unsupported command {cmd}")
+            return False
+
+    def load_iterator(self, server):
+        """
+        Iterator for load command that configures dumps_dir for each dataset.
+        """
+        for dataset_name, dataset in self.datasets.items():
+            if self.debug:
+                print(f"loading {dataset_name}...")
+            self.configure_dumps_dir(server, dataset)
+            yield
 
     def run_cmds(self, server: SparqlServer, cmds: List[str]) -> bool:
         """
         Run commands on a specific server.
-
-        Args:
-            server: Server instance
-            cmds: List of command names to run
-
-        Returns:
-            bool: True if any commands were successfully run
         """
         handled = False
         if cmds:
             for cmd in cmds:
-                s_cmd_factory = self.server_cmds.get(cmd)
-                s_cmd = s_cmd_factory(server) if s_cmd_factory else None
-                if s_cmd:
-                    s_cmd.run(verbose=not self.quiet)
-                    handled = True
+                if cmd == "load":
+                    cmd_iterator = self.load_iterator(server)
                 else:
-                    print(f"unsupported command {cmd}")
+                    cmd_iterator = iter([None])  # Single iteration
+
+                for _ in cmd_iterator:
+                    if self.run_single_cmd(server, cmd):
+                        handled = True
         return handled
 
     def handle_args(self, args: Namespace):

@@ -177,14 +177,15 @@ class SparqlServer:
         server_name = self.config.name
         start_success = False
         try:
-            if self.is_running():
+            exists,running=self.get_container_state()
+            if running:
                 self.log.log(
                     "✅",
                     container_name,
                     f"Container {container_name} is already running",
                 )
                 start_success = self.wait_until_ready(show_progress=show_progress)
-            elif self.exists():
+            elif exists:
                 self.log.log(
                     "✅",
                     container_name,
@@ -291,32 +292,21 @@ class SparqlServer:
 
         return ready_status
 
-    def is_running(self) -> bool:
-        """
-        Check if container is currently running.
+    def get_container_state(self) -> tuple[bool, bool]:
+        """Get container state information.
 
         Returns:
-            True if container is running
+            (exists, running) tuple
         """
-        running_cmd = f'docker ps --filter "name={self.config.container_name}" --format "{{{{.Names}}}}"'
-        result = self.shell.run(running_cmd, debug=self.debug)
-        is_container_running = self.config.container_name in result.stdout
-        return is_container_running
+        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name} 2>/dev/null'
+        if self.debug and self.verbose:
+            print(inspect_cmd)
+        result = self.shell.run(inspect_cmd, debug=self.debug)
+        if result.returncode != 0:
+            return (False, False)
 
-    def exists(self) -> bool:
-        """
-        Check if container exists (running or stopped).
-
-        Returns:
-            True if container exists
-        """
-        container_name = self.config.container_name
-        check_cmd = f'docker ps -a --filter "name={container_name}" --format "{{{{.Names}}}}"'
-        result = self.shell.run(check_cmd, debug=self.debug)
-        if result.stderr:
-            self.log.log("❌", container_name, result.stderr)
-        container_exists = container_name in result.stdout
-        return container_exists
+        running = result.stdout.strip() == "true"
+        return (True, running)
 
     def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
         """

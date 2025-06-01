@@ -76,7 +76,12 @@ class TestRdfDumpDownloader(Basetest):
                 # Create dataset-specific output directory
                 dataset_output_dir = self.dumps_dir / name
 
-                args = Namespace(limit=1000, max_count=count, no_progress=False, force=True)
+                args = Namespace(
+                    limit=10000,
+                    max_count=count,
+                    no_progress=False,
+                    force=True,
+                    debug=self.debug)
 
                 downloader = RdfDumpDownloader(dataset=dataset, output_path=str(dataset_output_dir), args=args)
 

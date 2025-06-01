@@ -26,7 +26,6 @@ class RdfDumpCmd(BaseCmd):
         Initialize command line interface.
         """
         super().__init__(description="Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries")
-        self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
@@ -40,20 +39,6 @@ class RdfDumpCmd(BaseCmd):
             ArgumentParser: extended argument parser
         """
         parser = super().get_arg_parser(description, version_msg)
-        parser.add_argument(
-            "-c",
-            "--config",
-            type=str,
-            default=str(self.default_datasets_path),
-            help="Path to datasets configuration YAML file [default: %(default)s]",
-        )
-        parser.add_argument(
-            "-ds",
-            "--datasets",
-            nargs="+",
-            default=["all"],
-            help="datasets to download - all is an alias for all datasets [default: %(default)s]",
-        )
         parser.add_argument(
             "--limit",
             type=int,
@@ -75,31 +60,13 @@ class RdfDumpCmd(BaseCmd):
             "--max-count",
             type=int,
             default=None,
-            help="Maximum number of solutions/triples to download (uses dataset expected_triples if not specified)",
+            help="Maximum number of solutions/triples to download (uses dataset expected_solutions if not specified)",
         )
         parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
         parser.add_argument("--output-path", default=".", help="Path for dump files")
         parser.add_argument("--tryit", action="store_true", help="open the try it! URL [default: %(default)s]")
 
         return parser
-
-    def getDatasets(self) -> Dict[str, RdfDataset]:
-        """
-        Resolve and select datasets to download.
-
-        Returns:
-            Dict[str, RdfDataset]: selected datasets by name
-        """
-        datasets = {}
-        all_datasets = RdfDatasets.ofYaml(self.args.config)
-        dataset_names = self.args.datasets
-        if "all" in dataset_names:
-            dataset_names = list(all_datasets.datasets.keys())
-        for dataset_name in dataset_names:
-            dataset = all_datasets.datasets.get(dataset_name)
-            if dataset:
-                datasets[dataset_name] = dataset
-        return datasets
 
     def download_dataset(self, dataset_name: str, dataset: RdfDataset, output_path: str):
         """
@@ -128,9 +95,10 @@ class RdfDumpCmd(BaseCmd):
             args: parsed namespace
         """
         super().handle_args(args)
+        datasets=self.datasets
         if self.args.about:
             self.about()
-        datasets = self.getDatasets()
+
         if self.args.list:
             print("Available datasets:")
             for dataset in datasets.values():

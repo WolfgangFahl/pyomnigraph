@@ -4,10 +4,12 @@ Created on 31.05.2025
 @author: wf
 """
 
-import webbrowser
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
+from typing import Dict
+import webbrowser
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.version import Version
 
 
@@ -29,6 +31,7 @@ class BaseCmd:
         self.debug = False
         self.quiet = False
         self.force = False
+        self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
@@ -55,6 +58,22 @@ class BaseCmd:
             help="show debug info [default: %(default)s]",
         )
         parser.add_argument(
+            "-ds",
+            "--datasets",
+            nargs="+",
+            default=["wikidata_triplestores"],
+            help="datasets to work with - all is an alias for all datasets [default: %(default)s]",
+        )
+        parser.add_argument(
+            "-dc",
+            "--datasets-config",
+            type=str,
+            default=str(self.default_datasets_path),
+            help="Path to datasets configuration YAML file [default: %(default)s]",
+        )
+
+
+        parser.add_argument(
             "-f",
             "--force",
             action="store_true",
@@ -80,12 +99,13 @@ class BaseCmd:
 
     def handle_args(self, args: Namespace):
         """
-        Must be implemented in subclass.
+        should be extended by specialized subclass.
         """
         self.args = args
         self.debug = args.debug
         self.quiet = args.quiet
         self.force = args.force
+        self.datasets = self.getDatasets(yaml_path=args.datasets_config)
 
     def parse_args(self) -> Namespace:
         if not self.parser:
@@ -99,6 +119,27 @@ class BaseCmd:
         """
         args = self.parse_args()
         self.handle_args(args)
+
+    def getDatasets(self, yaml_path: str) -> Dict[str, RdfDataset]:
+        """
+        Resolve and select datasets to download.
+
+        Args:
+            yaml_path: Path to datasets configuration YAML file
+
+        Returns:
+            Dict[str, RdfDataset]: selected datasets by name
+        """
+        datasets = {}
+        all_datasets = RdfDatasets.ofYaml(yaml_path)
+        dataset_names = self.args.datasets
+        if "all" in dataset_names:
+            dataset_names = list(all_datasets.datasets.keys())
+        for dataset_name in dataset_names:
+            dataset = all_datasets.datasets.get(dataset_name)
+            if dataset:
+                datasets[dataset_name] = dataset
+        return datasets
 
     @classmethod
     def main(cls):
