@@ -5,8 +5,6 @@ Created on 2025-05-26
 
 Download RDF dump via paginated CONSTRUCT queries.
 """
-
-import argparse
 import time
 from argparse import Namespace
 from pathlib import Path
@@ -42,6 +40,7 @@ class RdfDumpDownloader:
         )
         self.show_progress = not args.no_progress if args else True
         self.force = args.force if args else False
+        self.debug = args.debug if args else False
         self.headers = {"Accept": "text/turtle"}
 
     def fetch_chunk(self, offset: int) -> str:
@@ -78,20 +77,23 @@ class RdfDumpDownloader:
         # make sure the output_path is created
         output_dir = Path(self.output_path)
         output_dir.mkdir(parents=True, exist_ok=True)
-        total_triples_downloaded = 0
 
-        total_chunks = self.max_count // self.limit
+        # Get actual count from dataset
+        actual_count = self.dataset.get_solution_count()
+        total_chunks = (actual_count + self.limit - 1) // self.limit  # Round up
         chunk_count = 0
 
         iterator = range(total_chunks)
         if self.show_progress:
-            iterator = tqdm(iterator, desc="Downloading RDF dump")
+            iterator = tqdm(iterator, desc=f"Downloading RDF dump ({actual_count} results)")
 
         for chunk_idx in iterator:
             filename = output_dir / f"dump_{chunk_idx:06d}.ttl"
             if filename.exists() and not self.force:
-                print(f"Skipping existing file: {filename}")
+                if self.show_progress:
+                    iterator.set_description(f"Skipping existing file: {filename}")
                 continue
+
             offset = chunk_idx * self.limit
             try:
                 content = self.fetch_chunk(offset)
@@ -99,11 +101,7 @@ class RdfDumpDownloader:
                 print(f"Error at offset {offset}: {e}")
                 break
 
-            if content:
-                triple_count = content.count(" .") - content.count("@prefix")
-                total_triples_downloaded += triple_count
-            else:
-                print(f"Offset {offset}: Empty response → stopping.")
+            if not content or content.strip() == "":
                 break
 
             with open(filename, "w", encoding="utf-8") as f:

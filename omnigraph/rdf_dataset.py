@@ -57,6 +57,17 @@ class RdfDataset:
         full_name = f"{ds_id}→{self.name}({self.description})"
         return full_name
 
+    def get_solution_count(self) -> int:
+        """
+        Get the number of solutions/results from the SPARQL endpoint.
+
+        Returns:
+            Number of solutions available from the count query
+        """
+        count = self.sparql.getValue(self.count_query.query, "count")
+        return count
+
+
     def getTryItUrl(self, database: str = "blazegraph") -> str:
         """
         return the "try it!" url for the given database
