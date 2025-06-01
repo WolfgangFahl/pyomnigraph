@@ -9,12 +9,23 @@ datasets:
     base_url: "https://query.wikidata.org"
     endpoint_url: "https://query.wikidata.org/sparql"
     # Expected number of triples
-    expected_triples: 1190
+    expected_solutions: 1190
     # Basic Graph Pattern for selection - get instances and their properties
     select_pattern: "?s wdt:P31 wd:Q3539533 . ?s ?p ?o"
     # Optional dataset description
     description: "Triplestores and their properties"
     active: true
+  wikidata_family_merkel:
+    name: "Wikidata Family Name Merkel"
+    base_url: "https://query.wikidata.org"
+    endpoint_url: "https://query.wikidata.org/sparql"
+    database: "blazegraph"
+    expected_solutions: 5000
+    select_pattern: |
+      ?s <http://www.wikidata.org/prop/direct/P734> <http://www.wikidata.org/entity/Q1921787>.
+      ?s ?p ?o
+    description: "Persons having a family name (P734) Merkel and their properties"
+    active: false
   gov_full:
     # https://gov.genealogy.net/ontology.owl
     # Genealogisches OrtsVerzeichnis
@@ -24,7 +35,7 @@ datasets:
     base_url: "https://gov-sparql.genealogy.net/"
     endpoint_url: "https://gov-sparql.genealogy.net/dataset/sparql"
     # Expected number of triples
-    expected_triples: 36606943
+    expected_solutions: 36606943
     # Basic Graph Pattern for selection
     select_pattern: "?s ?p ?o"
     # Optional dataset description
@@ -36,7 +47,7 @@ datasets:
     base_url: "https://gov-sparql.genealogy.net/"
     endpoint_url: "https://gov-sparql.genealogy.net/dataset/sparql"
     # Expected number of triples
-    expected_triples: 100
+    expected_solutions: 100
     # Basic Graph Pattern for selection
     select_pattern: |
       ?place a <http://gov.genealogy.net/ontology.owl#GovObject> .
@@ -45,6 +56,10 @@ datasets:
       ?place <http://www.opengis.net/ont/geosparql#wktLiteral> ?geo .
       ?place <http://gov.genealogy.net/ontology.owl#hasName> ?pName .
       ?pName <http://gov.genealogy.net/ontology.owl#value> ?name
+    construct_template: |
+        ?place ?p4place ?o4place .
+        ?pc ?p4pc ?o4pc .
+        ?pName ?p4Name ?o4Name
     # Optional dataset description
     description: "W2306 postal code coordinates"
     active: false

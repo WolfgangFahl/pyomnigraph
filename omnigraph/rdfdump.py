@@ -6,15 +6,16 @@ Created on 2025-05-26
 Download RDF dump via paginated CONSTRUCT queries.
 """
 
-from argparse import Namespace
 import argparse
-from pathlib import Path
 import time
+from argparse import Namespace
+from pathlib import Path
 from typing import Optional
 
-from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 import requests
 from tqdm import tqdm
+
+from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 
 
 class RdfDumpDownloader:
@@ -23,12 +24,7 @@ class RdfDumpDownloader:
     paginated CONSTRUCT queries.
     """
 
-    def __init__(
-        self,
-        dataset: RdfDataset,
-        output_path: str,
-        args: Optional[Namespace] = None
-    ):
+    def __init__(self, dataset: RdfDataset, output_path: str, args: Optional[Namespace] = None):
         """
         Initialize the RDF dump downloader.
 
@@ -41,13 +37,12 @@ class RdfDumpDownloader:
         self.endpoint_url = dataset.endpoint_url
         self.output_path = output_path
         self.limit = args.limit if args else 10000
-        self.max_triples = (
-            args.max_triples if args and args.max_triples is not None else dataset.expected_triples or 200000
+        self.max_count = (
+            args.max_count if args and args.max_count is not None else dataset.expected_solutions or 200000
         )
         self.show_progress = not args.no_progress if args else True
         self.force = args.force if args else False
         self.headers = {"Accept": "text/turtle"}
-
 
     def fetch_chunk(self, offset: int) -> str:
         """
@@ -85,7 +80,7 @@ class RdfDumpDownloader:
         output_dir.mkdir(parents=True, exist_ok=True)
         total_triples_downloaded = 0
 
-        total_chunks = self.max_triples // self.limit
+        total_chunks = self.max_count // self.limit
         chunk_count = 0
 
         iterator = range(total_chunks)
@@ -143,10 +138,10 @@ def main():
     )
 
     parser.add_argument(
-        "--max-triples",
+        "--max-count",
         type=int,
         default=200000,
-        help="Maximum number of triples to download (default: 200000)",
+        help="Maximum count of solutions/triples to download (default: 200000)",
     )
 
     parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
@@ -158,13 +153,13 @@ def main():
         endpoint_url=args.url,
         output_path=args.output_path,
         limit=args.limit,
-        max_triples=args.max_triples,
+        max_count=args.max_count,
         show_progress=not args.no_progress,
     )
 
     print(f"Starting download from: {args.url}")
     print(f"Limit per request: {args.limit}")
-    print(f"Max triples: {args.max_triples}")
+    print(f"Max count: {args.max_count}")
 
     chunk_count = downloader.download()
     print(f"Download completed. Downloaded {chunk_count} chunks.")

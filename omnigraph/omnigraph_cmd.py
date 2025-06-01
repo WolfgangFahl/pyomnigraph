@@ -3,6 +3,7 @@ Created on 2025-05-28
 
 @author: wf
 """
+
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict, List
@@ -11,6 +12,7 @@ from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
 from omnigraph.sparql_server import ServerEnv, SparqlServer
+
 
 class OmnigraphCmd(BaseCmd):
     """
@@ -146,8 +148,10 @@ class OmnigraphCmd(BaseCmd):
             except Exception as ex:
                 server.handle_exception(str(self.args.cmd), ex)
 
+
 def main():
     OmnigraphCmd.main()
+
 
 if __name__ == "__main__":
     main()

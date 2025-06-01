@@ -21,13 +21,17 @@ class RdfDataset:
     name: str  # Human-readable dataset name
     base_url: str  # Base URL e.g. for tryit
     endpoint_url: str  # SPARQL endpoint URL
-    expected_triples: Optional[int] = None  # Expected number of triples
-    select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
     description: Optional[str] = None  # Optional dataset description
+    database: Optional[str] = "jena"  # the database type of the endpoint
+    expected_solutions: Optional[int] = None  # Expected number of solutions
+    select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
+    construct_template: Optional[str] = field(default="?s ?p4s ?o4s")
     active: Optional[bool] = False
     # fields to be configured by post_init
-    count_query: Optional[str] = field(default=None)
-    construct_pattern: Optional[str] = field(default=None)
+    id: Optional[str] = field(default=None)
+    count_query: Optional[Query] = field(default=None)
+    select_query: Optional[Query] = field(default=None)
+    sparql: Optional[SPARQL] = field(default=None)
 
     def __post_init__(self):
         """
@@ -45,8 +49,13 @@ class RdfDataset:
             endpoint=self.endpoint_url,
             description=f"Select query for {self.name}",
         )
-        self.construct_pattern = self.select_pattern
         self.sparql = SPARQL(self.endpoint_url)
+
+    @property
+    def full_name(self):
+        ds_id = self.id or "?"
+        full_name = f"{ds_id}→{self.name}({self.description})"
+        return full_name
 
     def getTryItUrl(self, database: str = "blazegraph") -> str:
         """
@@ -73,8 +82,8 @@ class RdfDataset:
             SPARQL CONSTRUCT query string
         """
         query = f"""
-        CONSTRUCT {{ {self.construct_pattern} }}
-        WHERE     {{ {self.construct_pattern} }}
+        CONSTRUCT {{ {self.construct_template} }}
+        WHERE     {{ {self.select_pattern} }}
         OFFSET {offset}
         LIMIT {limit}
         """
@@ -91,4 +100,6 @@ class RdfDatasets:
     def ofYaml(cls, yaml_path: str) -> "RdfDatasets":
         """Load server configurations from YAML file."""
         datasets = cls.load_from_yaml_file(yaml_path)
+        for ds_id, dataset in datasets.datasets.items():
+            dataset.id = ds_id
         return datasets

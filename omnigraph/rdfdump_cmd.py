@@ -6,13 +6,15 @@ Created on 2025-05-30
 Command line interface for RDF dump downloading.
 """
 
-from argparse import ArgumentParser, Namespace
 import os
+import webbrowser
+from argparse import ArgumentParser, Namespace
 from typing import Dict
 
 from omnigraph.basecmd import BaseCmd
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.rdfdump import RdfDumpDownloader
+
 
 class RdfDumpCmd(BaseCmd):
     """
@@ -23,9 +25,7 @@ class RdfDumpCmd(BaseCmd):
         """
         Initialize command line interface.
         """
-        super().__init__(
-            description="Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries"
-        )
+        super().__init__(description="Download RDF dump from SPARQL endpoint via paginated CONSTRUCT queries")
         self.default_datasets_path = self.ogp.examples_dir / "datasets.yaml"
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
@@ -62,6 +62,10 @@ class RdfDumpCmd(BaseCmd):
         )
         parser.add_argument("-l", "--list", action="store_true", help="List available datasets [default: %(default)s]")
         parser.add_argument(
+            "--count", action="store_true", help="List available datasets with triple counts[default: %(default)s]"
+        )
+        parser.add_argument("--dump", action="store_true", help="perform the dump [default: %(default)s]")
+        parser.add_argument(
             "-4o",
             "--for-omnigraph",
             action="store_true",
@@ -75,6 +79,8 @@ class RdfDumpCmd(BaseCmd):
         )
         parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
         parser.add_argument("--output-path", default=".", help="Path for dump files")
+        parser.add_argument("--tryit", action="store_true", help="open the try it! URL [default: %(default)s]")
+
         return parser
 
     def getDatasets(self) -> Dict[str, RdfDataset]:
@@ -109,11 +115,7 @@ class RdfDumpCmd(BaseCmd):
         if not self.quiet:
             print(f"Starting download for dataset: {dataset_name} to {dataset_dir} ...")
 
-        downloader = RdfDumpDownloader(
-            dataset=dataset,
-            output_path=dataset_dir,
-            args=self.args
-        )
+        downloader = RdfDumpDownloader(dataset=dataset, output_path=dataset_dir, args=self.args)
 
         chunk_count = downloader.download()
         print(f"Dataset {dataset_name}: Downloaded {chunk_count} chunks.")
@@ -131,16 +133,28 @@ class RdfDumpCmd(BaseCmd):
         datasets = self.getDatasets()
         if self.args.list:
             print("Available datasets:")
-            for dataset_name, dataset in datasets.items():
-                print(f"  {dataset_name}: {dataset.name}")
+            for dataset in datasets.values():
+                print(f"  {dataset.full_name}")
             return
+
+        if self.args.count:
+            print("Triple count for available datasets:")
+            for dataset in datasets.values():
+                tryit_url = dataset.getTryItUrl(dataset.database)
+                print(f"  {dataset.full_name}")
+                if self.args.tryit:
+                    webbrowser.open(tryit_url)
+                count = dataset.sparql.getValue(dataset.count_query.query, "count")
+                print(f"  {count} triples")
 
         output_path = self.args.output_path
         if self.args.for_omnigraph:
             output_path = self.ogp.dumps_dir
 
-        for dataset_name, dataset in datasets.items():
-            self.download_dataset(dataset_name, dataset, output_path)
+        if self.args.dump:
+            for dataset_name, dataset in datasets.items():
+                self.download_dataset(dataset_name, dataset, output_path)
+
 
 def main():
     RdfDumpCmd.main()

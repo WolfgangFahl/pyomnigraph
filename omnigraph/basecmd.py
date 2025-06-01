@@ -4,8 +4,8 @@ Created on 31.05.2025
 @author: wf
 """
 
-from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 import webbrowser
+from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.version import Version
@@ -25,10 +25,10 @@ class BaseCmd:
         self.program_version_message = f"{self.version.name} {self.version.version}"
         if description is None:
             description = self.version.description
-        self.parser=None
-        self.debug=False
-        self.quiet=False
-        self.force=False
+        self.parser = None
+        self.debug = False
+        self.quiet = False
+        self.force = False
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
         """
@@ -83,11 +83,11 @@ class BaseCmd:
         Must be implemented in subclass.
         """
         self.args = args
-        self.debug=args.debug
-        self.quiet=args.quiet
-        self.force=args.force
+        self.debug = args.debug
+        self.quiet = args.quiet
+        self.force = args.force
 
-    def parse_args(self)->Namespace:
+    def parse_args(self) -> Namespace:
         if not self.parser:
             self.parser = self.get_arg_parser(self.version.description, self.program_version_message)
         args = self.parser.parse_args()
@@ -97,9 +97,8 @@ class BaseCmd:
         """
         Parse arguments and dispatch to handler.
         """
-        args=self.parse_args()
+        args = self.parse_args()
         self.handle_args(args)
-
 
     @classmethod
     def main(cls):
@@ -107,5 +106,5 @@ class BaseCmd:
         Entry point for CLI.
         """
         instance = cls()
-        args=instance.parse_args()
+        args = instance.parse_args()
         instance.handle_args(args)
