@@ -81,6 +81,7 @@ class TestRdfDumpDownloader(Basetest):
                     max_count=count,
                     no_progress=False,
                     force=True,
+                    rdf_format="turtle",
                     debug=self.debug)
 
                 downloader = RdfDumpDownloader(dataset=dataset, output_path=str(dataset_output_dir), args=args)

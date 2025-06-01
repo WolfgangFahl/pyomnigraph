@@ -20,7 +20,7 @@ license = {text = "Apache-2.0"}
 dependencies = [
 	# platform independent knowledge graph ready list of dicts (table) handling
     # https://pypi.org/project/pyLodStorage/
-    "pyLodStorage>=0.16.1",
+    "pyLodStorage>=0.16.2",
     # https://pypi.org/project/tqdm/
 	# progress bar
 	"tdqm",

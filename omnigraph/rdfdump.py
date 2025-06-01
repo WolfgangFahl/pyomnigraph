@@ -5,15 +5,15 @@ Created on 2025-05-26
 
 Download RDF dump via paginated CONSTRUCT queries.
 """
-import time
 from argparse import Namespace
 from pathlib import Path
+import time
 from typing import Optional
 
-import requests
-from tqdm import tqdm
-
+from lodstorage.rdf_format import RdfFormat
+from lodstorage.sparql import SPARQL
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+from tqdm import tqdm
 
 
 class RdfDumpDownloader:
@@ -31,8 +31,10 @@ class RdfDumpDownloader:
             output_path: the directory for the dump file
             args: parsed CLI arguments (optional)
         """
+        self.args=args
         self.dataset = dataset
         self.endpoint_url = dataset.endpoint_url
+        self.sparql=SPARQL(self.endpoint_url)
         self.output_path = output_path
         self.limit = args.limit if args else 10000
         self.max_count = (
@@ -41,31 +43,21 @@ class RdfDumpDownloader:
         self.show_progress = not args.no_progress if args else True
         self.force = args.force if args else False
         self.debug = args.debug if args else False
-        self.headers = {"Accept": "text/turtle"}
 
-    def fetch_chunk(self, offset: int) -> str:
+    def fetch_chunk(self, offset: int, rdf_format: str = "turtle") -> str:
         """
-        Fetch a chunk of RDF data from the endpoint.
+        Fetch a chunk of RDF data in the given format using direct HTTP POST.
 
         Args:
             offset: Query offset
+            rdf_format: RDF format label
 
         Returns:
             RDF content as string
-
-        Raises:
-            Exception: If HTTP request fails
         """
         query = self.dataset.get_construct_query(offset, self.limit)
-        response = requests.post(
-            self.endpoint_url,
-            data={"query": query},
-            headers=self.headers,
-            timeout=60,
-        )
-        if response.status_code != 200:
-            raise Exception(f"HTTP {response.status_code}: {response.text}")
-        return response.text.strip()
+        text=self.sparql.post_query_direct(query=query, rdf_format=rdf_format)
+        return text
 
     def download(self) -> int:
         """
@@ -96,7 +88,7 @@ class RdfDumpDownloader:
 
             offset = chunk_idx * self.limit
             try:
-                content = self.fetch_chunk(offset)
+                content = self.fetch_chunk(offset=offset,rdf_format=self.args.rdf_format)
             except Exception as e:
                 print(f"Error at offset {offset}: {e}")
                 break

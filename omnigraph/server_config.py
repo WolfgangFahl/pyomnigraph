@@ -52,6 +52,7 @@ class ServerConfig:
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"
+    rdf_format: str="turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None
     dataset: Optional[str] = None

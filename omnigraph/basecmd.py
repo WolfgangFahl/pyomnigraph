@@ -11,6 +11,7 @@ import webbrowser
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.version import Version
+from lodstorage.rdf_format import RdfFormat
 
 
 class BaseCmd:
@@ -72,12 +73,21 @@ class BaseCmd:
             help="Path to datasets configuration YAML file [default: %(default)s]",
         )
 
-
         parser.add_argument(
             "-f",
             "--force",
             action="store_true",
             help="force actions that would modify existing data [default: %(default)s]",
+        )
+        rdf_format_choices=[fmt.label for fmt in RdfFormat]
+
+        parser.add_argument(
+            "-r",
+            "--rdf_format",
+            type=str,
+            default="turtle",
+            choices=rdf_format_choices,
+            help="RDF format to use [default: %(default)s]",
         )
         parser.add_argument(
             "-q",
@@ -106,6 +116,7 @@ class BaseCmd:
         self.quiet = args.quiet
         self.force = args.force
         self.datasets = self.getDatasets(yaml_path=args.datasets_config)
+        self.rdf_format =RdfFormat.by_label(args.rdf_format)
 
     def parse_args(self) -> Namespace:
         if not self.parser:

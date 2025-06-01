@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from omnigraph.server_config import ServerConfig, ServerEnv
 from omnigraph.software import SoftwareList
+from lodstorage.rdf_format import RdfFormat
 
 
 class Response:
@@ -51,6 +52,7 @@ class SparqlServer:
         self.debug = env.debug
         self.verbose = env.verbose
         self.shell = env.shell
+        self.rdf_format=RdfFormat.by_label(self.config.rdf_format)
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -379,7 +381,7 @@ class SparqlServer:
         response = self.make_request(
             "POST",
             self.config.upload_url,
-            headers={"Content-Type": "text/turtle"},
+            headers={"Content-Type": self.rdf_format.mime_type},
             data=file_content,
             timeout=self.config.upload_timeout,
         )

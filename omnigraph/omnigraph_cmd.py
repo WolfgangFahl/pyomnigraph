@@ -83,6 +83,7 @@ class OmnigraphCmd(BaseCmd):
                 server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 if server.config.dumps_dir is None:
                     self.configure_dumps_dir(server)
+                server.config.rdf_format=self.args.rdf_format
                 servers[server_name] = server
         return servers
 
