@@ -12,6 +12,7 @@ datasets:
     expected_solutions: 1190
     # Basic Graph Pattern for selection - get instances and their properties
     select_pattern: "?s wdt:P31 wd:Q3539533 . ?s ?p ?o"
+    construct_template: "?s ?p ?o"
     # Optional dataset description
     description: "Triplestores and their properties"
     active: true
@@ -24,6 +25,7 @@ datasets:
     select_pattern: |
       ?s <http://www.wikidata.org/prop/direct/P734> <http://www.wikidata.org/entity/Q1921787>.
       ?s ?p ?o
+    construct_template: "?s ?p ?o"
     description: "Persons having a family name (P734) Merkel and their properties"
     active: true
   gov_full:
@@ -38,6 +40,7 @@ datasets:
     expected_solutions: 36606943
     # Basic Graph Pattern for selection
     select_pattern: "?s ?p ?o"
+    construct_template: "?s ?p ?o"
     # Optional dataset description
     description: "GOV genealogy full dataset"
     active: false

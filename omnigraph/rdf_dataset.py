@@ -25,7 +25,7 @@ class RdfDataset:
     database: Optional[str] = "jena"  # the database type of the endpoint
     expected_solutions: Optional[int] = None  # Expected number of solutions
     select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
-    construct_template: Optional[str] = field(default="?s ?p4s ?o4s")
+    construct_template: Optional[str] = field(default="?s ?p ?o")
     active: Optional[bool] = False
     # fields to be configured by post_init
     id: Optional[str] = field(default=None)

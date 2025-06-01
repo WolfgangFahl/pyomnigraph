@@ -57,8 +57,13 @@ class RdfDumpDownloader:
             RDF content as string
         """
         query = self.dataset.get_construct_query(offset, self.limit)
-        text=self.sparql.post_query_direct(query=query, rdf_format=rdf_format)
-        return text
+        if self.debug:
+            print(query)
+        content=self.sparql.post_query_direct(query=query, rdf_format=rdf_format)
+        # Better debugging
+        if self.debug:
+            print(f"Chunk {offset}: content length = {len(content) if content else 0}")
+        return content
 
     def download(self) -> int:
         """
