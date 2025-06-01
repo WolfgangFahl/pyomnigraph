@@ -72,10 +72,10 @@ class RdfDumpCmd(BaseCmd):
             help="store dump at default omnigraph location [default: %(default)s]",
         )
         parser.add_argument(
-            "--max-triples",
+            "--max-count",
             type=int,
             default=None,
-            help="Maximum number of triples to download (uses dataset expected_triples if not specified)",
+            help="Maximum number of solutions/triples to download (uses dataset expected_triples if not specified)",
         )
         parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
         parser.add_argument("--output-path", default=".", help="Path for dump files")

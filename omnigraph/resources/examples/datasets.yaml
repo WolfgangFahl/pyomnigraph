@@ -25,7 +25,7 @@ datasets:
       ?s <http://www.wikidata.org/prop/direct/P734> <http://www.wikidata.org/entity/Q1921787>.
       ?s ?p ?o
     description: "Persons having a family name (P734) Merkel and their properties"
-    active: false
+    active: true
   gov_full:
     # https://gov.genealogy.net/ontology.owl
     # Genealogisches OrtsVerzeichnis

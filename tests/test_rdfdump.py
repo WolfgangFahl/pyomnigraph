@@ -71,7 +71,7 @@ class TestRdfDumpDownloader(Basetest):
                     self.skipTest(msg)
 
                 if self.debug:
-                    print(f" Downloading {name}: {count} ")
+                    print(f"Downloading {name}: {count}")
 
                 # Create dataset-specific output directory
                 dataset_output_dir = self.dumps_dir / name
