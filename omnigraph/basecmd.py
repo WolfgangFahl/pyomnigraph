@@ -142,12 +142,12 @@ class BaseCmd:
             Dict[str, RdfDataset]: selected datasets by name
         """
         datasets = {}
-        all_datasets = RdfDatasets.ofYaml(yaml_path)
+        self.all_datasets = RdfDatasets.ofYaml(yaml_path)
         dataset_names = self.args.datasets
         if "all" in dataset_names:
-            dataset_names = list(all_datasets.datasets.keys())
+            dataset_names = list(self.all_datasets.datasets.keys())
         for dataset_name in dataset_names:
-            dataset = all_datasets.datasets.get(dataset_name)
+            dataset = self.all_datasets.datasets.get(dataset_name)
             if dataset:
                 datasets[dataset_name] = dataset
         return datasets

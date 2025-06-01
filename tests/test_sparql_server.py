@@ -79,7 +79,7 @@ class TestSparqlServer(Basetest):
 
     def test_load_dumps(self):
         """
-        test loading *.ttl files from examples directory
+        test loading dump files from examples directory
         """
         dumps_dir = self.ogp.examples_dir
         for server in self.servers.values():

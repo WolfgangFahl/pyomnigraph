@@ -424,7 +424,7 @@ class SparqlServer:
 
         return load_success
 
-    def load_dump_files(self, file_pattern: str = "*.ttl") -> int:
+    def load_dump_files(self, file_pattern: str = None) -> int:
         """
         Load all dump files matching pattern.
 
@@ -436,6 +436,8 @@ class SparqlServer:
             Number of files loaded successfully
         """
         dump_path: Path = Path(self.config.dumps_dir)
+        if file_pattern is None:
+            file_pattern=f"*{self.rdf_format.extension}"
         files = sorted(dump_path.glob(file_pattern))
         loaded_count = 0
         container_name = self.config.container_name

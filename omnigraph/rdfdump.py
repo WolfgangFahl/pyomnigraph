@@ -32,6 +32,7 @@ class RdfDumpDownloader:
             args: parsed CLI arguments (optional)
         """
         self.args=args
+        self.rdf_format=RdfFormat.by_label(args.rdf_format)
         self.dataset = dataset
         self.endpoint_url = dataset.endpoint_url
         self.sparql=SPARQL(self.endpoint_url)
@@ -80,7 +81,7 @@ class RdfDumpDownloader:
             iterator = tqdm(iterator, desc=f"Downloading RDF dump ({actual_count} results)")
 
         for chunk_idx in iterator:
-            filename = output_dir / f"dump_{chunk_idx:06d}.ttl"
+            filename = output_dir / f"dump_{chunk_idx:06d}{self.rdf_format.extension}"
             if filename.exists() and not self.force:
                 if self.show_progress:
                     iterator.set_description(f"Skipping existing file: {filename}")
@@ -88,7 +89,7 @@ class RdfDumpDownloader:
 
             offset = chunk_idx * self.limit
             try:
-                content = self.fetch_chunk(offset=offset,rdf_format=self.args.rdf_format)
+                content = self.fetch_chunk(offset=offset,rdf_format=self.rdf_format.label)
             except Exception as e:
                 print(f"Error at offset {offset}: {e}")
                 break

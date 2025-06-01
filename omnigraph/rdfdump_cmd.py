@@ -9,7 +9,6 @@ Command line interface for RDF dump downloading.
 import os
 import webbrowser
 from argparse import ArgumentParser, Namespace
-from typing import Dict
 
 from omnigraph.basecmd import BaseCmd
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
@@ -80,12 +79,12 @@ class RdfDumpCmd(BaseCmd):
         dataset_dir = os.path.join(output_path, dataset_name)
         os.makedirs(dataset_dir, exist_ok=True)
         if not self.quiet:
-            print(f"Starting download for dataset: {dataset_name} to {dataset_dir} ...")
+            print(f"Starting download for dataset: {dataset_name} to {dataset_dir} in {self.rdf_format.label} format ...")
 
         downloader = RdfDumpDownloader(dataset=dataset, output_path=dataset_dir, args=self.args)
 
         chunk_count = downloader.download()
-        print(f"Dataset {dataset_name}: Downloaded {chunk_count} chunks.")
+        print(f"Dataset {dataset_name}: Downloaded {chunk_count} {self.rdf_format.extension} files.")
 
     def handle_args(self, args: Namespace):
         """
@@ -101,7 +100,7 @@ class RdfDumpCmd(BaseCmd):
 
         if self.args.list:
             print("Available datasets:")
-            for dataset in datasets.values():
+            for dataset in self.all_datasets.datasets.values():
                 print(f"  {dataset.full_name}")
             return
 
