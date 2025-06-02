@@ -38,7 +38,7 @@ class BlazegraphConfig(ServerConfig):
         docker_run_command = (
             f"docker run -d --name {self.container_name} "
             f"-p {self.port}:8080 "
-            f"-v {data_dir}:/var/lib/jetty"
+            f"-v {data_dir}:/var/lib/jetty "
             f"{self.image}"
         )
         return docker_run_command
