@@ -4,18 +4,18 @@ Created on 2025-05-27
 @author: wf
 """
 
+from pathlib import Path
 import time
 import traceback
 import webbrowser
-from pathlib import Path
 
-import requests
-from lodstorage.sparql import SPARQL
-from tqdm import tqdm
-
-from omnigraph.server_config import ServerConfig, ServerEnv
-from omnigraph.software import SoftwareList
 from lodstorage.rdf_format import RdfFormat
+from lodstorage.sparql import SPARQL
+from omnigraph.server_config import ServerConfig, ServerEnv, ServerStatus, \
+    ServerLifecycleState
+from omnigraph.software import SoftwareList
+import requests
+from tqdm import tqdm
 
 
 class Response:
@@ -148,22 +148,26 @@ class SparqlServer:
         """
         webbrowser.open(self.config.web_url)
 
-    def status(self) -> dict:
+    def status(self) -> ServerStatus:
         """
-        Get status information via SPARQL triple count.
+        Check server status from container logs.
 
         Returns:
-            Dictionary with status info or error details.
+        ServerStatus object with status information
         """
-        status_dict = {}
+        server_status=ServerStatus(at=ServerLifecycleState.UNKNOWN)
+        server_status.logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
+        return server_status
+
+    def add_triple_count2_server_status(self,server_status=ServerStatus):
+        """
+        add triple count to server status
+        """
         try:
             triple_count = self.count_triples()
-            status_dict["status"] = "ready"
-            status_dict["triples"] = triple_count
-        except Exception as e:
-            status_dict["status"] = "error"
-            status_dict["error"] = str(e)
-        return status_dict
+            server_status.triple_count=triple_count
+        except Exception as ex:
+            server_status.error=ex
 
     def start(self, show_progress: bool = True) -> bool:
         """

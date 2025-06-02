@@ -65,7 +65,7 @@ class TestSparqlServer(Basetest):
         if verbose:
             status = server.status()
             if self.debug:
-                print(json.dumps(status, indent=2))
+                print(status.get_summary(debug=self.debug))
             count_triples = server.count_triples()
             if self.debug:
                 print(f"{count_triples} triples found for {server.name}")

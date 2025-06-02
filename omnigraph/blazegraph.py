@@ -4,9 +4,10 @@ Created on 2025-05-27
 @author: wf
 """
 
-import re
 from dataclasses import dataclass
+import re
 
+from omnigraph.server_config import ServerStatus, ServerLifecycleState
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -58,50 +59,60 @@ class Blazegraph(SparqlServer):
         """
         super().__init__(config=config, env=env)
 
-    def status(self) -> dict:
+    def status(self) -> ServerStatus:
         """
         Get server status information.
 
         Returns:
-            Dictionary with status information, empty dict if error
+            ServerStatus object with status information
         """
-        status_dict = {}
+        server_status=super().status()
 
         response = self.make_request("GET", self.config.status_url)
 
         if response.success:
-            status_dict["status"] = "ready"
-            # For servers that return HTML status, parse it
-            if response.response.text:
-                html_content = response.response.text
-                # Only parse HTML if it looks like HTML content
-                if "<" in html_content and ">" in html_content:
-                    name_value_pattern = r'(?:<span id="(?P<name1>[^"]+)">(?P<value1>[^<]+)</span[^>]*>|&#47;(?P<name2>[^=]+)=(?P<value2>[^\s&#]+))'
-                    matches = re.finditer(name_value_pattern, html_content, re.DOTALL)
+            lifecycle = ServerLifecycleState.READY
 
-                    for match in matches:
-                        for name_group, value_group in {
-                            "name1": "value1",
-                            "name2": "value2",
-                        }.items():
-                            name = match.group(name_group)
-                            if name:
-                                value = match.group(value_group)
-                                sanitized_value = value.replace("</p", "").replace("&#47;", "/")
-                                sanitized_name = name.replace("-", "_").replace("/", "_")
-                                sanitized_name = sanitized_name.replace("&#47;", "/")
-                                if not sanitized_name.startswith("/"):
-                                    status_dict[sanitized_name] = sanitized_value
-                                break
+        if response.response.text:
+            html_content = response.response.text
+            # Only parse HTML if it looks like HTML content
+            if "<" in html_content and ">" in html_content:
+                name_value_pattern = r'(?:<span id="(?P<name1>[^"]+)">(?P<value1>[^<]+)</span[^>]*>|&#47;(?P<name2>[^=]+)=(?P<value2>[^\s&#]+))'
+                matches = re.finditer(name_value_pattern, html_content, re.DOTALL)
+
+                for match in matches:
+                    for name_group, value_group in {
+                        "name1": "value1",
+                        "name2": "value2",
+                    }.items():
+                        name = match.group(name_group)
+                        if name:
+                            value = match.group(value_group)
+                            sanitized_value = value.replace("</p", "").replace("&#47;", "/")
+                            sanitized_name = name.replace("-", "_").replace("/", "_")
+                            sanitized_name = sanitized_name.replace("&#47;", "/")
+                            if not sanitized_name.startswith("/"):
+                                server_status.status_dict[sanitized_name] = sanitized_value
+                            break
+
+            server_status.http_status_code=response.response.status_code if response.response else None,
         else:
             if response.error:
-                status_dict["status"] = f"error: {response.error}"
+                error = Exception(response.error)
+                lifecycle = ServerLifecycleState.ERROR
             elif response.response:
-                status_dict["status"] = f"status_code: {response.response.status_code}"
+                error = Exception(f"GET {self.config.status_url} request failed")
+                lifecycle = ServerLifecycleState.ERROR
             else:
-                status_dict["status"] = "unknown error"
+                error = Exception("unknown error")
+                lifecycle = ServerLifecycleState.UNKNOWN
 
-        return status_dict
+            server_status.at=lifecycle
+            server_status.error=error
+            server_status.http_status_code=response.response.status_code if response.response else None,
+        if server_status.at==ServerLifecycleState.READY:
+            self.add_triple_count2_server_status(server_status)
+        return server_status
 
     def test_geosparql(self) -> bool:
         """

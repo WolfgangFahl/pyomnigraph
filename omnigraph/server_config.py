@@ -3,7 +3,7 @@ Created on 2025-05-28
 
 @author: wf
 """
-
+import traceback
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional
 
@@ -13,6 +13,50 @@ from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.software import SoftwareList
 from datetime import datetime
+from enum import Enum
+
+class ServerLifecycleState(Enum):
+    """
+    a state in the servers lifecycle
+    """
+    READY = "ready ✅"
+    ERROR = "error ❌"
+    UNKNOWN = "unknown ❓"
+    STARTING = "starting 🔄"
+    STOPPED = "stopped ⏹️"
+
+@dataclass
+class ServerStatus:
+    """
+    Server status
+    """
+    at: ServerLifecycleState
+    error: Optional[Exception] = None
+    http_status_code: Optional[int] = None
+    # fields to be initialized by post_init
+    logs: str=field(default=None)
+    triple_count: int= field(default=None)
+    timestamp: datetime = field(default=None)
+    status_dict: Dict[str,str] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.timestamp = datetime.now()
+
+    def get_summary(self,debug:bool)->str:
+        """
+        get a summary of the Server Status
+        """
+        summary = f"{self.at.value} @ {self.timestamp.strftime('%H:%M:%S')}"
+        if self.http_status_code:
+            summary += f" (HTTP {self.http_status_code})"
+        if self.triple_count:
+            summary += f"{self.triple_count} triples"
+        if self.error:
+            debug_msg=f" - {type(self.error).__name__}"
+            if debug:
+                debug_msg = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
+            summary += debug_msg
+        return summary
 
 class ServerEnv:
     """

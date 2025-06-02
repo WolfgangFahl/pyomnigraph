@@ -4,15 +4,15 @@ Created on 2025-05-28
 @author: wf
 """
 
-import os
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import List, Optional
 
-import rdflib
-
+from omnigraph.server_config import ServerStatus, ServerLifecycleState
 from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
+import rdflib
 
 
 class QLeverfile:
@@ -135,6 +135,18 @@ class QLever(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+
+    def status(self) -> ServerStatus:
+        """
+        Check QLever server status from container logs.
+
+        Returns:
+        ServerStatus object with status information
+        """
+        server_status=super().status()
+        # basically check state by trying to get triple count
+        self.add_triple_count2_server_status(server_status)
+        return server_status
 
     def get_step_list(self) -> List[Step]:
         step_list = [
