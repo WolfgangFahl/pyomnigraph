@@ -81,7 +81,7 @@ class Jena(SparqlServer):
         """
         server_status=super().status()
         logs=server_status.logs
-        if "Creating dataset" in logs and "Fuseki is available :-)" in logs:
+        if logs and "Creating dataset" in logs and "Fuseki is available :-)" in logs:
             server_status.at=ServerLifecycleState.READY
         else:
             server_status.at=ServerLifecycleState.STARTING

@@ -156,8 +156,21 @@ class SparqlServer:
         ServerStatus object with status information
         """
         server_status=ServerStatus(at=ServerLifecycleState.UNKNOWN)
-        server_status.logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
+        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name} 2>/dev/null'
+        if self.debug and self.verbose:
+            print(inspect_cmd)
+        result = self.shell.run(inspect_cmd, debug=self.debug)
+        if result.returncode != 0:
+            server_status.running=False
+        else:
+            server_status.exists=True
+            server_status.running = result.stdout.strip() == "true"
+            if server_status.running:
+                self.refresh_logs(server_status)
         return server_status
+
+    def refresh_logs(self,server_status=ServerStatus):
+        server_status.logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
 
     def add_triple_count2_server_status(self,server_status=ServerStatus):
         """
@@ -183,15 +196,17 @@ class SparqlServer:
         server_name = self.config.name
         start_success = False
         try:
-            exists,running=self.get_container_state()
-            if running:
+            server_status = self.status()
+            operation_success = False
+
+            if server_status.running:
                 self.log.log(
                     "✅",
                     container_name,
                     f"Container {container_name} is already running",
                 )
-                start_success = self.wait_until_ready(show_progress=show_progress)
-            elif exists:
+                operation_success = True
+            elif server_status.exists:
                 self.log.log(
                     "✅",
                     container_name,
@@ -202,26 +217,26 @@ class SparqlServer:
                     start_cmd,
                     error_msg=f"Failed to start container {container_name}",
                 )
-                if start_result:
-                    start_success = self.wait_until_ready(show_progress=show_progress)
-                else:
-                    start_success = False
+                operation_success = start_result
             else:
                 self.log.log(
                     "✅",
                     container_name,
                     f"Creating new {server_name} container {container_name}...",
                 )
-                base_data_dir=self.config.base_data_dir
+                base_data_dir = self.config.base_data_dir
                 create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
                 create_result = self.run_shell_command(
                     create_cmd,
                     error_msg=f"Failed to create container {container_name}",
                 )
-                if create_result:
-                    start_success = self.wait_until_ready(show_progress=show_progress)
-                else:
-                    start_success = False
+                operation_success = create_result
+
+            if operation_success:
+                start_success = self.wait_until_ready(show_progress=show_progress)
+            else:
+                start_success = False
+
         except Exception as ex:
             self.handle_exception(f"starting {server_name}", ex)
             start_success = False
@@ -263,7 +278,7 @@ class SparqlServer:
         self.log.log(
             "✅",
             container_name,
-            f"Waiting for {server_name} to start ... {status_url}",
+            f"Waiting for {server_name} to start ... ",
         )
 
         pbar = None
@@ -271,15 +286,15 @@ class SparqlServer:
             pbar = tqdm(total=timeout, desc=f"Waiting for {server_name}", unit="s")
 
         ready_status = False
-        for _i in range(timeout):
-            status_dict = self.status()
-            if status_dict.get("status") == "ready":
+        for secs in range(timeout):
+            server_status=self.status()
+            if server_status.at==ServerLifecycleState.READY:
                 if show_progress and pbar:
                     pbar.close()
                 self.log.log(
                     "✅",
                     container_name,
-                    f"{server_name} ready at {base_url}",
+                    f"{server_name} ready at {base_url} after {secs}s",
                 )
                 ready_status = True
                 break
@@ -298,22 +313,6 @@ class SparqlServer:
             )
 
         return ready_status
-
-    def get_container_state(self) -> tuple[bool, bool]:
-        """Get container state information.
-
-        Returns:
-            (exists, running) tuple
-        """
-        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name} 2>/dev/null'
-        if self.debug and self.verbose:
-            print(inspect_cmd)
-        result = self.shell.run(inspect_cmd, debug=self.debug)
-        if result.returncode != 0:
-            return (False, False)
-
-        running = result.stdout.strip() == "true"
-        return (True, running)
 
     def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
         """

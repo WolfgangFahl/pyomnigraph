@@ -55,8 +55,8 @@ class TestSparqlServer(Basetest):
         """
         Start the given SPARQL server with a unique data directory
         """
-        _exists,running=server.get_container_state()
-        if running:
+        server_status=server.status()
+        if server_status.running:
             if self.debug and verbose:
                 print(f"{server.name} already running")
         else:

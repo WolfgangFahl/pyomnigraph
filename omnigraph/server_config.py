@@ -31,6 +31,8 @@ class ServerStatus:
     Server status
     """
     at: ServerLifecycleState
+    running: bool=False
+    exists: bool=False
     error: Optional[Exception] = None
     http_status_code: Optional[int] = None
     # fields to be initialized by post_init
