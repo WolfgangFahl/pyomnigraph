@@ -32,18 +32,28 @@ class GraphDBConfig(ServerConfig):
         self.upload_url = f"{graphdb_repo}/statements"
         self.web_url = f"{self.base_url}/sparql"
 
-        # Docker command setup
+
+    def get_docker_run_command(self, data_dir) -> str:
+        """
+        Generate docker run command with bind mount for data directory.
+
+        Args:
+            data_dir: Host directory path to bind mount to container
+
+        Returns:
+            Complete docker run command string
+        """
         env = ""
         if self.auth_password:
             env = f"-e GDB_JAVA_OPTS='-Dgraphdb.auth.token.secret={self.auth_password}'"
 
-        # Volume mount for data persistence
-        volume_mount = f"-v {self.data_dir}:/opt/graphdb/home"
-
-        self.docker_run_command = (
-            f"docker run {env} {volume_mount} -d --name {self.container_name} "
-            f"-p 127.0.0.1:{self.port}:7200 {self.image}"
+        docker_run_command = (
+            f"docker run {env}-d --name {self.container_name} "
+            f"-p 127.0.0.1:{self.port}:7200 "
+            f"-v {data_dir}:/opt/graphdb/home "
+            f"{self.image}"
         )
+        return docker_run_command
 
 
 class GraphDB(SparqlServer):

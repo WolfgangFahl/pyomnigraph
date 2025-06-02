@@ -38,6 +38,10 @@ class OmnigraphCmd(BaseCmd):
         """
         parser = super().get_arg_parser(description, version_msg)
         parser.add_argument(
+            "--apache",
+            help="create apache configuration file for the given server(s)",
+        )
+        parser.add_argument(
             "-c",
             "--config",
             type=str,
@@ -79,7 +83,8 @@ class OmnigraphCmd(BaseCmd):
         for server_name in server_names:
             server = self.all_servers.get(server_name)
             if server:
-                server.config.data_dir = self.ogp.omnigraph_dir / server.name / server.config.dataset
+                server.config.base_data_dir = self.ogp.omnigraph_dir / server.name
+                server.config.data_dir = server.config.base_data_dir / server.config.dataset
                 server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 if server.config.dumps_dir is None:
                     self.configure_dumps_dir(server)
@@ -172,6 +177,12 @@ class OmnigraphCmd(BaseCmd):
             print(f"{len(self.all_servers)} servers configured - {len(self.servers)} active")
             for _name, server in self.servers.items():
                 print(f"  {server.full_name}")
+
+        if self.args.apache:
+            if self.args.apache:
+                for server in self.servers.values():
+                    config=server.config
+                    print(config.to_apache_config(version=self.version,domain=self.args.apache))
 
         if self.args.list_servers:
             print("Available servers:")

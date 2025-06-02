@@ -85,7 +85,7 @@ class QLeverConfig(ServerConfig):
         self.sparql_url = f"{self.base_url}/api/sparql"
         # the docker run command is dynamically created by the qlever (control) command later
         self.docker_run_command = None
-
+        #  docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
 
 @dataclass
 class Step:

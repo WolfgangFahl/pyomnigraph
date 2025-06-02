@@ -32,14 +32,28 @@ class JenaConfig(ServerConfig):
         self.upload_url = f"{jena_base}/data"
         self.web_url = f"{self.base_url}/#/dataset/ds/query"
 
+
+    def get_docker_run_command(self,data_dir)->str:
+        """
+        Generate docker run command with bind mount for data directory.
+
+        Args:
+            data_dir: Host directory path to bind mount to container
+
+        Returns:
+            Complete docker run command string
+        """
         # Docker command setup
         env = "-e FUSEKI_DATASET_1=ds"
         if self.auth_password:
             env = f"{env} -e ADMIN_PASSWORD={self.auth_password}"
-        # run with in memory default dataset
-        self.docker_run_command = (
-            f"docker run {env} -d --name {self.container_name} " f"-p {self.port}:3030 {self.image}"
+        docker_run_command = (
+            f"docker run {env} -d --name {self.container_name} "
+            f"-p {self.port}:3030 "
+            f"-v {data_dir}:/fuseki "
+            f"{self.image}"
         )
+        return docker_run_command
 
 
 class Jena(SparqlServer):

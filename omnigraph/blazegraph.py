@@ -25,8 +25,23 @@ class BlazegraphConfig(ServerConfig):
         self.web_url = f"{blazegraph_base}/#query"
         self.dataloader_url = f"{blazegraph_base}/dataloader"
 
-        self.docker_run_command = f"docker run -d --name {self.container_name} -p {self.port}:8080 {self.image}"
+    def get_docker_run_command(self, data_dir) -> str:
+        """
+        Generate docker run command with bind mount for data directory.
 
+        Args:
+            data_dir: Host directory path to bind mount to container
+
+        Returns:
+            Complete docker run command string
+        """
+        docker_run_command = (
+            f"docker run -d --name {self.container_name} "
+            f"-p {self.port}:8080 "
+            f"-v {data_dir}:/var/lib/jetty"
+            f"{self.image}"
+        )
+        return docker_run_command
 
 class Blazegraph(SparqlServer):
     """
