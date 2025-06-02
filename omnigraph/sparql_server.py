@@ -156,7 +156,7 @@ class SparqlServer:
         ServerStatus object with status information
         """
         server_status=ServerStatus(at=ServerLifecycleState.UNKNOWN)
-        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name} 2>/dev/null'
+        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name}'
         if self.debug and self.verbose:
             print(inspect_cmd)
         result = self.shell.run(inspect_cmd, debug=self.debug)
@@ -270,20 +270,18 @@ class SparqlServer:
             True if ready within timeout
         """
         container_name = self.config.container_name
-        server_name = self.config.name
-        status_url = self.config.status_url
         base_url = self.config.base_url
         timeout = self.config.ready_timeout
 
         self.log.log(
             "✅",
             container_name,
-            f"Waiting for {server_name} to start ... ",
+            f"Waiting for {self.full_name} to start ... ",
         )
 
         pbar = None
         if show_progress:
-            pbar = tqdm(total=timeout, desc=f"Waiting for {server_name}", unit="s")
+            pbar = tqdm(total=timeout, desc=f"Waiting for {self.full_name}", unit="s")
 
         ready_status = False
         for secs in range(timeout):
@@ -294,7 +292,7 @@ class SparqlServer:
                 self.log.log(
                     "✅",
                     container_name,
-                    f"{server_name} ready at {base_url} after {secs}s",
+                    f"{self.full_name} ready at {base_url} after {secs}s",
                 )
                 ready_status = True
                 break
@@ -309,7 +307,7 @@ class SparqlServer:
             self.log.log(
                 "⚠️",
                 container_name,
-                f"Timeout waiting for {server_name} to start after {timeout}s",
+                f"Timeout waiting for {self.full_name} to start after {timeout}s",
             )
 
         return ready_status
