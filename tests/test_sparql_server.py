@@ -4,7 +4,6 @@ Created on 2025-05-26
 @author: wf
 """
 
-import json
 from pathlib import Path
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
@@ -23,7 +22,8 @@ class TestSparqlServer(Basetest):
         setUp the test environment
         """
         Basetest.setUp(self, debug=debug, profile=profile)
-        self.ogp = OmnigraphPaths()
+        home = Path("/tmp/home") if self.inPublicCI() else None
+        self.ogp = OmnigraphPaths(home)
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
         env = ServerEnv(debug=self.debug, verbose=self.debug)
         omni_server = OmniServer(env=env, patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp))
