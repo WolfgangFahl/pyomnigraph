@@ -4,9 +4,10 @@ Created on 2025-05-27
 @author: wf
 """
 
-import re
 from dataclasses import dataclass
-
+from pathlib import Path
+import re
+import os
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
@@ -38,15 +39,14 @@ class BlazegraphConfig(ServerConfig):
         """
         docker_run_command = (
             f"docker run -d --name {self.container_name} "
+            f"-e BLAZEGRAPH_UID={os.getuid()} "
+            f"-e BLAZEGRAPH_GID={os.getgid()} "
             f"-p {self.port}:8080 "
-            #           f"-v {data_dir}:/data "
-            f"{self.image} "
-            #           f"java -server -Xmx4g "
-            #           f"-Dcom.bigdata.journal.AbstractJournal.file=/data/blazegraph.jnl "
-            #           f"-jar /var/lib/jetty/bigdata.war"
+            f"-v {data_dir}/RWStore.properties:/RWStore.properties "
+            f"-v {data_dir}:/data "
+            f"{self.image}"
         )
         return docker_run_command
-
 
 class Blazegraph(SparqlServer):
     """
@@ -62,6 +62,36 @@ class Blazegraph(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+
+    def pre_create(self):
+        """
+        Prepare Blazegraph data directory and RWStore.properties.
+        """
+        data_dir = Path(self.config.base_data_dir)
+        data_dir.mkdir(parents=True, exist_ok=True)
+        rwstore_path = data_dir / "RWStore.properties"
+        if not rwstore_path.exists():
+            header = self.config.generator_header()
+            props = f"""{header}
+
+    # Blazegraph journal configuration
+    com.bigdata.journal.AbstractJournal.file=/data/blazegraph.jnl
+
+    # Enable text index
+    com.bigdata.rdf.store.AbstractTripleStore.textIndex=true
+
+    # No OWL reasoning
+    com.bigdata.rdf.store.AbstractTripleStore.axiomsClass=com.bigdata.rdf.axioms.NoAxioms
+
+    # No justification or truth maintenance
+    com.bigdata.rdf.sail.truthMaintenance=false
+    com.bigdata.rdf.store.AbstractTripleStore.justify=false
+
+    # Default namespace
+    com.bigdata.rdf.sail.namespace={self.config.dataset}
+    """
+            rwstore_path.write_text(props)
+
 
     def status(self) -> ServerStatus:
         """

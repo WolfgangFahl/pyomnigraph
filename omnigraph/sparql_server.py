@@ -48,6 +48,16 @@ class ShellResult:
         self.proc = proc
         self.success = success
 
+    def __str__(self):
+        text=self.as_text()
+        return text
+
+    def as_text(self,debug:bool=False):
+        if debug:
+            text= f"{self.proc.args} → rc={self.proc.returncode}, success={self.success}"
+        else:
+            text="✅" if self.success else f"❌ → rc={self.proc.returncode}"
+        return text
 
 class SparqlServer:
     """
@@ -232,6 +242,12 @@ class SparqlServer:
         except Exception as ex:
             server_status.error = ex
 
+    def pre_create(self):
+        """
+        abstract pre-create step
+        implement a special version if need be
+        """
+
     def docker_create(self) -> bool:
         """
         Create and start a new Docker container for the configured server.
@@ -242,24 +258,30 @@ class SparqlServer:
         container_name = self.config.container_name
         server_name = self.config.name
         self.log.log("✅", container_name, f"Creating new {server_name} container {container_name}...")
-
-        base_data_dir = self.config.base_data_dir
-        create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
-        create_result = self.run_shell_command(
-            create_cmd,
-            error_msg=f"Failed to create container {container_name}",
-        )
-
-        operation_success = create_result.success
-        container_id = create_result.proc.stdout.strip()
-
-        if not re.fullmatch(r"[0-9a-f]{12,}", container_id):
-            self.log.log(
-                "❌",
-                container_name,
-                f"Creating new {server_name} container failed – invalid container ID '{container_id}' from command: {create_cmd}",
+        try:
+            self.pre_create()
+            operation_success=True
+        except Exception as ex:
+            self.handle_exception("pre_create", ex)
+            operation_success=False
+        if operation_success:
+            base_data_dir = self.config.base_data_dir
+            create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
+            create_result = self.run_shell_command(
+                create_cmd,
+                error_msg=f"Failed to create container {container_name}",
             )
-            operation_success = False
+
+            operation_success = create_result.success
+            container_id = create_result.proc.stdout.strip()
+
+            if not re.fullmatch(r"[0-9a-f]{12,}", container_id):
+                self.log.log(
+                    "❌",
+                    container_name,
+                    f"Creating new {server_name} container failed – invalid container ID '{container_id}' from command: {create_cmd}",
+                )
+                operation_success = False
 
         if operation_success:
             server_status = self.status()
