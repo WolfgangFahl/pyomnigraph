@@ -41,12 +41,11 @@ class OxigraphConfig(ServerConfig):
         Returns:
             Complete docker run command string
         """
-        # Docker command setup
         docker_run_command = (
             f"docker run {self.docker_user_flag} -d --name {self.container_name} "
             f"-p {self.port}:7878 "
             f"-v {data_dir}:/data "
-            f"{self.image} --location /data --bind 0.0.0.0:7878"
+            f"{self.image} --bind 0.0.0.0:7878 /data"
         )
         return docker_run_command
 

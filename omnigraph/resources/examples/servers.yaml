@@ -50,7 +50,7 @@ servers:
     port: 7878
     test_port: 7378
     host: "localhost"
-    active: true
+    active: false
   qlever:
     server: "qlever"
     name: "qlever"
@@ -94,4 +94,4 @@ servers:
     host: "localhost"
     auth_user: "dba"
     auth_password: "dba"
-    active: true
+    active: false
