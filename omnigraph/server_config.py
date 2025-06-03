@@ -3,7 +3,7 @@ Created on 2025-05-28
 
 @author: wf
 """
-
+import os
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -129,6 +129,17 @@ class ServerConfig:
     def __post_init__(self):
         if self.base_url is None:
             self.base_url = f"{self.protocol}://{self.host}:{self.port}"
+
+    @property
+    def docker_user_flag(self)->str:
+        try:
+            uid = os.getuid()
+            gid = os.getgid()
+            user_flag=f"-u {uid}:{gid}"
+        except AttributeError:
+            # e.g. on Windows
+            user_flag=""
+        return user_flag
 
     def to_apache_config(self, domain: str, version: None) -> str:
         """

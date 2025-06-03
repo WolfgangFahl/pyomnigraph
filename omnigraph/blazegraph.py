@@ -37,7 +37,7 @@ class BlazegraphConfig(ServerConfig):
             Complete docker run command string
         """
         docker_run_command = (
-            f"docker run -d --name {self.container_name} "
+            f"docker run {self.docker_user_flag} -d --name {self.container_name} "
             f"-p {self.port}:8080 "
             #           f"-v {data_dir}:/data "
             f"{self.image} "

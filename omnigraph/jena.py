@@ -7,7 +7,6 @@ Apache Jena SPARQL support
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
@@ -48,7 +47,7 @@ class JenaConfig(ServerConfig):
         if self.auth_password:
             env = f"{env} -e ADMIN_PASSWORD={self.auth_password}"
         docker_run_command = (
-            f"docker run {env} -d --name {self.container_name} "
+            f"docker run {self.docker_user_flag} {env} -d --name {self.container_name} "
             f"-p {self.port}:3030 "
             f"-v {data_dir}:/fuseki "
             f"{self.image}"
