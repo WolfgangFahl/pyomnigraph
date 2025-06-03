@@ -31,7 +31,7 @@ class OmniServer:
 
     @staticmethod
     def patch_test_config(config: ServerConfig, ogp: OmnigraphPaths):
-        config.base_data_dir = ogp.omnigraph_dir / "test" / config.name
+        config.base_data_dir = ogp.omnigraph_dir / "test" / config.name / "data"
         config.data_dir = config.base_data_dir / config.dataset
         config.data_dir.mkdir(parents=True, exist_ok=True)
         config.container_name = f"{config.container_name}-test"

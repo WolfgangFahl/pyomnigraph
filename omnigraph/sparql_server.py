@@ -4,18 +4,21 @@ Created on 2025-05-27
 @author: wf
 """
 
-from pathlib import Path
+import json
+import re
 import time
 import traceback
 import webbrowser
+from pathlib import Path
+from typing import Any, Dict, Optional
 
+import requests
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
-from omnigraph.server_config import ServerConfig, ServerEnv, ServerStatus, \
-    ServerLifecycleState
-from omnigraph.software import SoftwareList
-import requests
 from tqdm import tqdm
+
+from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
+from omnigraph.software import SoftwareList
 
 
 class Response:
@@ -36,6 +39,16 @@ class Response:
         self.error = error
 
 
+class ShellResult:
+    """
+    result of a command line call
+    """
+
+    def __init__(self, proc, success: bool):
+        self.proc = proc
+        self.success = success
+
+
 class SparqlServer:
     """
     Base class for dockerized SPARQL servers
@@ -52,7 +65,7 @@ class SparqlServer:
         self.debug = env.debug
         self.verbose = env.verbose
         self.shell = env.shell
-        self.rdf_format=RdfFormat.by_label(self.config.rdf_format)
+        self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -111,7 +124,7 @@ class SparqlServer:
             response = Response(None, ex)
         return response
 
-    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> bool:
+    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> ShellResult:
         """
         Helper function for running shell commands with consistent error handling.
 
@@ -125,22 +138,24 @@ class SparqlServer:
         """
         container_name = self.config.container_name
         command_success = False
+        proc = None
         try:
-            result = self.shell.run(command, debug=self.debug, tee=self.verbose)
-            if result.returncode == 0:
+            proc = self.shell.run(command, debug=self.debug, tee=self.verbose)
+            if proc.returncode == 0:
                 if success_msg:
                     self.log.log("✅", container_name, success_msg)
                 command_success = True
             else:
                 error_detail = error_msg or f"Command failed: {command}"
-                if result.stderr:
-                    error_detail += f" - {result.stderr}"
+                if proc.stderr:
+                    error_detail += f" - {proc.stderr}"
                 self.log.log("❌", container_name, error_detail)
                 command_success = False
         except Exception as ex:
             self.handle_exception(f"command '{command}'", ex)
             command_success = False
-        return command_success
+        shell_result = ShellResult(proc, command_success)
+        return shell_result
 
     def webui(self):
         """
@@ -148,39 +163,117 @@ class SparqlServer:
         """
         webbrowser.open(self.config.web_url)
 
-    def status(self) -> ServerStatus:
+    def docker_inspect(self) -> Optional[Dict[str, Any]]:
         """
-        Check server status from container logs.
+        Retrieve full .State of the Docker container.
 
         Returns:
-        ServerStatus object with status information
+            dict: parsed .State structure or None on error
         """
-        server_status=ServerStatus(at=ServerLifecycleState.UNKNOWN)
-        inspect_cmd = f'docker inspect -f "{{{{.State.Running}}}}" {self.config.container_name}'
-        if self.debug and self.verbose:
-            print(inspect_cmd)
-        result = self.shell.run(inspect_cmd, debug=self.debug)
-        if result.returncode != 0:
-            server_status.running=False
-        else:
-            server_status.exists=True
-            server_status.running = result.stdout.strip() == "true"
+        inspect_dict = None
+        cmd = f'docker inspect -f "{{{{json .State}}}}" {self.config.container_name}'
+        result = self.shell.run(cmd, debug=self.debug)
+        if result.returncode == 0:
+            try:
+                json_text = result.stdout.strip()
+                inspect_dict = json.loads(json_text)
+            except Exception as ex:
+                if self.debug:
+                    print(f"Failed to parse Docker state JSON: {ex}")
+        return inspect_dict
+
+    def status(self) -> ServerStatus:
+        """
+        Check server status using a single docker inspect call.
+
+        Returns:
+            ServerStatus: object with detailed container state
+        """
+        server_status = ServerStatus(at=ServerLifecycleState.UNKNOWN)
+        state = self.docker_inspect()
+
+        if state:
+            server_status.exists = True
+            server_status.running = state.get("Running", False)
+            server_status.docker_status = state.get("Status")
+            server_status.docker_exit_code = state.get("ExitCode")
+            self.refresh_logs(server_status)
             if server_status.running:
+                server_status.at = ServerLifecycleState.READY
                 self.refresh_logs(server_status)
+            else:
+                if server_status.docker_status == "exited" and server_status.docker_exit_code not in (0, None):
+                    server_status.at = ServerLifecycleState.ERROR
+                elif server_status.docker_status == "created":
+                    server_status.at = ServerLifecycleState.STARTING
+                else:
+                    server_status.at = ServerLifecycleState.STOPPED
+        else:
+            server_status.exists = False
+            server_status.running = False
+
         return server_status
 
-    def refresh_logs(self,server_status=ServerStatus):
-        server_status.logs = self.shell.run(f"docker logs {self.config.container_name}", tee=False).stdout
+    def refresh_logs(self, server_status=ServerStatus):
+        """
+        refresh the logs for the given server status
+        """
+        proc = self.shell.run(f"docker logs {self.config.container_name}", tee=False)
+        logs = f"stdout:{proc.stdout}\nstderr:{proc.stderr}"
+        server_status.logs = logs
 
-    def add_triple_count2_server_status(self,server_status=ServerStatus):
+    def add_triple_count2_server_status(self, server_status=ServerStatus):
         """
         add triple count to server status
         """
         try:
             triple_count = self.count_triples()
-            server_status.triple_count=triple_count
+            server_status.triple_count = triple_count
         except Exception as ex:
-            server_status.error=ex
+            server_status.error = ex
+
+    def docker_create(self) -> bool:
+        """
+        Create and start a new Docker container for the configured server.
+
+        Returns:
+            bool: True if the container was created and is running, False otherwise.
+        """
+        container_name = self.config.container_name
+        server_name = self.config.name
+        self.log.log("✅", container_name, f"Creating new {server_name} container {container_name}...")
+
+        base_data_dir = self.config.base_data_dir
+        create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
+        create_result = self.run_shell_command(
+            create_cmd,
+            error_msg=f"Failed to create container {container_name}",
+        )
+
+        operation_success = create_result.success
+        container_id = create_result.proc.stdout.strip()
+
+        if not re.fullmatch(r"[0-9a-f]{12,}", container_id):
+            self.log.log(
+                "❌",
+                container_name,
+                f"Creating new {server_name} container failed – invalid container ID '{container_id}' from command: {create_cmd}",
+            )
+            operation_success = False
+
+        if operation_success:
+            server_status = self.status()
+            if not server_status.running:
+                self.log.log(
+                    "❌",
+                    container_name,
+                    f"Container exited with status='{server_status.docker_status}', exit_code={server_status.docker_exit_code}",
+                )
+                if server_status.logs:
+                    self.log.log("ℹ️", container_name, f"Logs:\n{server_status.logs.strip()}")
+                operation_success = False
+
+        return operation_success
 
     def start(self, show_progress: bool = True) -> bool:
         """
@@ -219,18 +312,7 @@ class SparqlServer:
                 )
                 operation_success = start_result
             else:
-                self.log.log(
-                    "✅",
-                    container_name,
-                    f"Creating new {server_name} container {container_name}...",
-                )
-                base_data_dir = self.config.base_data_dir
-                create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
-                create_result = self.run_shell_command(
-                    create_cmd,
-                    error_msg=f"Failed to create container {container_name}",
-                )
-                operation_success = create_result
+                operation_success = self.docker_create()
 
             if operation_success:
                 start_success = self.wait_until_ready(show_progress=show_progress)
@@ -285,8 +367,8 @@ class SparqlServer:
 
         ready_status = False
         for secs in range(timeout):
-            server_status=self.status()
-            if server_status.at==ServerLifecycleState.READY:
+            server_status = self.status()
+            if server_status.at == ServerLifecycleState.READY:
                 if show_progress and pbar:
                     pbar.close()
                 self.log.log(
@@ -324,30 +406,30 @@ class SparqlServer:
         full_cmd = f"docker {cmd}{options} {container_name}{args}"
         return full_cmd
 
-    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> bool:
+    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> ShellResult:
         container_name = self.config.container_name
         full_cmd = self.docker_cmd(cmd, options, args)
-        success = self.run_shell_command(
+        shell_result = self.run_shell_command(
             full_cmd,
             success_msg=f"{cmd} container {container_name}",
             error_msg=f"Failed to {cmd} container {container_name}",
         )
-        return success
+        return shell_result
 
-    def logs(self) -> bool:
+    def logs(self) -> ShellResult:
         """show the logs of the container"""
-        logs_success = self.run_docker_cmd("logs")
-        return logs_success
+        logs_result = self.run_docker_cmd("logs")
+        return logs_result
 
-    def stop(self) -> bool:
+    def stop(self) -> ShellResult:
         """stop the server container"""
-        stop_success = self.run_docker_cmd("stop")
-        return stop_success
+        stop_result = self.run_docker_cmd("stop")
+        return stop_result
 
-    def rm(self) -> bool:
+    def rm(self) -> ShellResult:
         """remove the server container."""
-        rm_success = self.run_docker_cmd("rm")
-        return rm_success
+        rm_result = self.run_docker_cmd("rm")
+        return rm_result
 
     def bash(self) -> bool:
         """bash into the server container."""
@@ -439,7 +521,7 @@ class SparqlServer:
         """
         dump_path: Path = Path(self.config.dumps_dir)
         if file_pattern is None:
-            file_pattern=f"*{self.rdf_format.extension}"
+            file_pattern = f"*{self.rdf_format.extension}"
         files = sorted(dump_path.glob(file_pattern))
         loaded_count = 0
         container_name = self.config.container_name

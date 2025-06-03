@@ -9,7 +9,7 @@ Apache Jena SPARQL support
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from omnigraph.server_config import ServerStatus, ServerLifecycleState
+from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -33,8 +33,7 @@ class JenaConfig(ServerConfig):
         self.upload_url = f"{jena_base}/data"
         self.web_url = f"{self.base_url}/#/dataset/ds/query"
 
-
-    def get_docker_run_command(self,data_dir)->str:
+    def get_docker_run_command(self, data_dir) -> str:
         """
         Generate docker run command with bind mount for data directory.
 
@@ -79,11 +78,11 @@ class Jena(SparqlServer):
         Returns:
         ServerStatus object with status information
         """
-        server_status=super().status()
-        logs=server_status.logs
+        server_status = super().status()
+        logs = server_status.logs
         if logs and "Creating dataset" in logs and "Fuseki is available :-)" in logs:
-            server_status.at=ServerLifecycleState.READY
+            server_status.at = ServerLifecycleState.READY
         else:
-            server_status.at=ServerLifecycleState.STARTING
+            server_status.at = ServerLifecycleState.STARTING
 
         return server_status

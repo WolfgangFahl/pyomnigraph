@@ -9,7 +9,7 @@ Ontotext GraphDB SPARQL support
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from omnigraph.server_config import ServerStatus, ServerLifecycleState
+from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -32,7 +32,6 @@ class GraphDBConfig(ServerConfig):
         self.update_url = f"{graphdb_repo}/statements"
         self.upload_url = f"{graphdb_repo}/statements"
         self.web_url = f"{self.base_url}/sparql"
-
 
     def get_docker_run_command(self, data_dir) -> str:
         """
@@ -79,14 +78,14 @@ class GraphDB(SparqlServer):
         Returns:
         ServerStatus object with status information
         """
-        server_status=super().status()
-        logs=server_status.logs
+        server_status = super().status()
+        logs = server_status.logs
         if "GraphDB Workbench is running" in logs and "Started GraphDB" in logs:
             lifecycle = ServerLifecycleState.READY
         else:
             lifecycle = ServerLifecycleState.STARTING
-        server_status.at=lifecycle
+        server_status.at = lifecycle
 
-        if server_status.at==ServerLifecycleState.READY:
+        if server_status.at == ServerLifecycleState.READY:
             self.add_triple_count2_server_status(server_status)
         return server_status

@@ -79,7 +79,9 @@ class RdfDumpCmd(BaseCmd):
         dataset_dir = os.path.join(output_path, dataset_name)
         os.makedirs(dataset_dir, exist_ok=True)
         if not self.quiet:
-            print(f"Starting download for dataset: {dataset_name} to {dataset_dir} in {self.rdf_format.label} format ...")
+            print(
+                f"Starting download for dataset: {dataset_name} to {dataset_dir} in {self.rdf_format.label} format ..."
+            )
 
         downloader = RdfDumpDownloader(dataset=dataset, output_path=dataset_dir, args=self.args)
 
@@ -94,7 +96,7 @@ class RdfDumpCmd(BaseCmd):
             args: parsed namespace
         """
         super().handle_args(args)
-        datasets=self.datasets
+        datasets = self.datasets
         if self.args.about:
             self.about()
 

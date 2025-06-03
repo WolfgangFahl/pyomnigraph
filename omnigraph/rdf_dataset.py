@@ -67,7 +67,6 @@ class RdfDataset:
         count = self.sparql.getValue(self.count_query.query, "count")
         return count
 
-
     def getTryItUrl(self, database: str = "blazegraph") -> str:
         """
         return the "try it!" url for the given database

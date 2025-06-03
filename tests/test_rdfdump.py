@@ -63,9 +63,9 @@ class TestRdfDumpDownloader(Basetest):
                     print(f"Checking dataset: {name}")
 
                 # Check if dataset is small enough to download
-                count=dataset.expected_solutions
+                count = dataset.expected_solutions
                 if count and count > download_limit:
-                    msg=f"Dataset {name}: {count:,} > {download_limit:,} limit"
+                    msg = f"Dataset {name}: {count:,} > {download_limit:,} limit"
                     if self.debug:
                         print(msg)
                     self.skipTest(msg)
@@ -77,12 +77,8 @@ class TestRdfDumpDownloader(Basetest):
                 dataset_output_dir = self.dumps_dir / name
 
                 args = Namespace(
-                    limit=10000,
-                    max_count=count,
-                    no_progress=False,
-                    force=True,
-                    rdf_format="turtle",
-                    debug=self.debug)
+                    limit=10000, max_count=count, no_progress=False, force=True, rdf_format="turtle", debug=self.debug
+                )
 
                 downloader = RdfDumpDownloader(dataset=dataset, output_path=str(dataset_output_dir), args=args)
 

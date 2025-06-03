@@ -3,8 +3,11 @@ Created on 2025-05-28
 
 @author: wf
 """
+
 import traceback
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 from typing import Callable, Dict, Optional
 
 from lodstorage.yamlable import lod_storable
@@ -12,39 +15,43 @@ from lodstorage.yamlable import lod_storable
 from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell
 from omnigraph.software import SoftwareList
-from datetime import datetime
-from enum import Enum
+
 
 class ServerLifecycleState(Enum):
     """
     a state in the servers lifecycle
     """
+
     READY = "ready ✅"
     ERROR = "error ❌"
     UNKNOWN = "unknown ❓"
     STARTING = "starting 🔄"
     STOPPED = "stopped ⏹️"
 
+
 @dataclass
 class ServerStatus:
     """
     Server status
     """
+
     at: ServerLifecycleState
-    running: bool=False
-    exists: bool=False
+    running: bool = False
+    exists: bool = False
     error: Optional[Exception] = None
     http_status_code: Optional[int] = None
+    docker_status: Optional[str] = None
+    docker_exit_code: Optional[int] = None
     # fields to be initialized by post_init
-    logs: str=field(default=None)
-    triple_count: int= field(default=None)
+    logs: str = field(default=None)
+    triple_count: int = field(default=None)
     timestamp: datetime = field(default=None)
-    status_dict: Dict[str,str] = field(default_factory=dict)
+    status_dict: Dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
         self.timestamp = datetime.now()
 
-    def get_summary(self,debug:bool)->str:
+    def get_summary(self, debug: bool) -> str:
         """
         get a summary of the Server Status
         """
@@ -54,11 +61,12 @@ class ServerStatus:
         if self.triple_count:
             summary += f"{self.triple_count} triples"
         if self.error:
-            debug_msg=f" - {type(self.error).__name__}"
+            debug_msg = f" - {type(self.error).__name__}"
             if debug:
-                debug_msg = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
+                debug_msg = "".join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
             summary += debug_msg
         return summary
+
 
 class ServerEnv:
     """
@@ -98,13 +106,13 @@ class ServerConfig:
     active: bool = True
     protocol: str = "http"
     host: str = "localhost"
-    rdf_format: str="turtle"
+    rdf_format: str = "turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None
     dataset: Optional[str] = None
     timeout: int = 30
     ready_timeout: int = 20
-    proxy_timeout: int = 5400 # e.g. apache server
+    proxy_timeout: int = 5400  # e.g. apache server
     upload_timeout: int = 300
     unforced_clear_limit = 100000  # maximumn number of triples that can be cleared without force option
     # fields to be configured by post_init
@@ -113,8 +121,8 @@ class ServerConfig:
     web_url: Optional[str] = field(default=None)
     sparql_url: Optional[str] = field(default=None)
     upload_url: Optional[str] = field(default=None)
-    base_data_dir: Optional[str] = field(default=None) # base data directory available as bind mount
-    data_dir: Optional[str] = field(default=None) # default data directory
+    base_data_dir: Optional[str] = field(default=None)  # base data directory available as bind mount
+    data_dir: Optional[str] = field(default=None)  # default data directory
     dumps_dir: Optional[str] = field(default=None)
     needed_software: Optional[SoftwareList] = field(default=None)
 
@@ -122,7 +130,7 @@ class ServerConfig:
         if self.base_url is None:
             self.base_url = f"{self.protocol}://{self.host}:{self.port}"
 
-    def to_apache_config(self, domain: str,version:None) -> str:
+    def to_apache_config(self, domain: str, version: None) -> str:
         """
         Generate Apache configuration based for this server.
 
@@ -189,6 +197,7 @@ class ServerConfig:
 
         apache_config = header_comment + ssl_config + http_config
         return apache_config
+
 
 @lod_storable
 class ServerConfigs:

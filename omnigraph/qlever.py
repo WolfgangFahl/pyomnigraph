@@ -4,15 +4,16 @@ Created on 2025-05-28
 @author: wf
 """
 
+import os
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
-import os
 from pathlib import Path
 from typing import List, Optional
 
-from omnigraph.server_config import ServerStatus, ServerLifecycleState
-from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
 import rdflib
+
+from omnigraph.server_config import ServerLifecycleState, ServerStatus
+from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
 
 
 class QLeverfile:
@@ -87,6 +88,7 @@ class QLeverConfig(ServerConfig):
         self.docker_run_command = None
         #  docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
 
+
 @dataclass
 class Step:
     """
@@ -118,7 +120,8 @@ class Step:
             command = f"cd {self.data_dir};{self.setup_cmd}"
             success_msg = f"{self.name} done"
             error_msg = f"{self.name} failed"
-            self.success = server.run_shell_command(command, success_msg, error_msg)
+            shell_result = server.run_shell_command(command, success_msg, error_msg)
+            self.success = shell_result.success
 
 
 class QLever(SparqlServer):
@@ -143,7 +146,7 @@ class QLever(SparqlServer):
         Returns:
         ServerStatus object with status information
         """
-        server_status=super().status()
+        server_status = super().status()
         # basically check state by trying to get triple count
         self.add_triple_count2_server_status(server_status)
         return server_status

@@ -83,12 +83,12 @@ class OmnigraphCmd(BaseCmd):
         for server_name in server_names:
             server = self.all_servers.get(server_name)
             if server:
-                server.config.base_data_dir = self.ogp.omnigraph_dir / server.name
+                server.config.base_data_dir = self.ogp.omnigraph_dir / server.name / "data"
                 server.config.data_dir = server.config.base_data_dir / server.config.dataset
                 server.config.data_dir.mkdir(parents=True, exist_ok=True)
                 if server.config.dumps_dir is None:
                     self.configure_dumps_dir(server)
-                server.config.rdf_format=self.args.rdf_format
+                server.config.rdf_format = self.args.rdf_format
                 servers[server_name] = server
         return servers
 
@@ -181,8 +181,8 @@ class OmnigraphCmd(BaseCmd):
         if self.args.apache:
             if self.args.apache:
                 for server in self.servers.values():
-                    config=server.config
-                    print(config.to_apache_config(version=self.version,domain=self.args.apache))
+                    config = server.config
+                    print(config.to_apache_config(version=self.version, domain=self.args.apache))
 
         if self.args.list_servers:
             print("Available servers:")

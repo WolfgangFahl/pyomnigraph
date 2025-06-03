@@ -4,10 +4,10 @@ Created on 2025-05-27
 @author: wf
 """
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
-from omnigraph.server_config import ServerStatus, ServerLifecycleState
+from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -28,7 +28,7 @@ class BlazegraphConfig(ServerConfig):
 
     def get_docker_run_command(self, data_dir) -> str:
         """
-        Generate docker run command with bind mount for data directory.
+        Generate docker run command with bind mount for Blazegraph journal directory.
 
         Args:
             data_dir: Host directory path to bind mount to container
@@ -39,10 +39,14 @@ class BlazegraphConfig(ServerConfig):
         docker_run_command = (
             f"docker run -d --name {self.container_name} "
             f"-p {self.port}:8080 "
-            f"-v {data_dir}:/var/lib/jetty "
-            f"{self.image}"
+            #           f"-v {data_dir}:/data "
+            f"{self.image} "
+            #           f"java -server -Xmx4g "
+            #           f"-Dcom.bigdata.journal.AbstractJournal.file=/data/blazegraph.jnl "
+            #           f"-jar /var/lib/jetty/bigdata.war"
         )
         return docker_run_command
+
 
 class Blazegraph(SparqlServer):
     """
@@ -66,7 +70,7 @@ class Blazegraph(SparqlServer):
         Returns:
             ServerStatus object with status information
         """
-        server_status=super().status()
+        server_status = super().status()
         if server_status.exists and server_status.running:
             response = self.make_request("GET", self.config.status_url)
 
@@ -95,7 +99,7 @@ class Blazegraph(SparqlServer):
                                     server_status.status_dict[sanitized_name] = sanitized_value
                                 break
 
-                server_status.http_status_code=response.response.status_code if response.response else None,
+                server_status.http_status_code = (response.response.status_code if response.response else None,)
             else:
                 if response.error:
                     error = Exception(response.error)
@@ -107,10 +111,10 @@ class Blazegraph(SparqlServer):
                     error = Exception("unknown error")
                     lifecycle = ServerLifecycleState.UNKNOWN
 
-                server_status.at=lifecycle
-                server_status.error=error
-                server_status.http_status_code=response.response.status_code if response.response else None,
-            if server_status.at==ServerLifecycleState.READY:
+                server_status.at = lifecycle
+                server_status.error = error
+                server_status.http_status_code = (response.response.status_code if response.response else None,)
+            if server_status.at == ServerLifecycleState.READY:
                 self.add_triple_count2_server_status(server_status)
         return server_status
 
