@@ -16,6 +16,8 @@ from omnigraph.qlever import QLever, QLeverConfig
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.sparql_server import SparqlServer
 
+from omnigraph.virtuoso import VirtuosoConfig, Virtuoso
+
 
 class OmniServer:
     """
@@ -77,25 +79,24 @@ class OmniServer:
         Returns:
             SparqlServer instance of appropriate type
         """
-        server_instance = None
         if self.patch_config:
             self.patch_config(config)
         config_dict = asdict(config)
 
-        if config.server == "blazegraph":
-            blazegraph_config = BlazegraphConfig(**config_dict)
-            server_instance = Blazegraph(config=blazegraph_config, env=self.env)
-        elif config.server == "graphdb":
-            graphdb_config = GraphDBConfig(**config_dict)
-            server_instance = GraphDB(config=graphdb_config, env=self.env)
-        elif config.server == "jena":
-            jena_config = JenaConfig(**config_dict)
-            server_instance = Jena(config=jena_config, env=self.env)
-        elif config.server == "qlever":
-            qlever_config = QLeverConfig(**config_dict)
-            server_instance = QLever(config=qlever_config, env=self.env)
-        else:
+        server_mappings = {
+            "blazegraph": (BlazegraphConfig, Blazegraph),
+            "graphdb": (GraphDBConfig, GraphDB),
+            "jena": (JenaConfig, Jena),
+            "qlever": (QLeverConfig, QLever),
+            "virtuoso": (VirtuosoConfig, Virtuoso)
+        }
+
+        if config.server not in server_mappings:
             raise ValueError(f"Knowledge Graph Server {config.server} not supported yet")
+
+        config_class, server_class = server_mappings[config.server]
+        server_config = config_class(**config_dict)
+        server_instance = server_class(config=server_config, env=self.env)
 
         return server_instance
 

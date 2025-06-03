@@ -56,3 +56,16 @@ servers:
     test_port: 7700
     host: "localhost"
     active: false
+  virtuoso:
+    server: "virtuoso"
+    name: "virtuoso"
+    wikidata_id: "Q7935239"
+    container_name: "virtuoso-omnigraph"
+    image: "openlink/virtuoso-opensource-7:latest"
+    dataset: "KB"
+    port: 8890
+    test_port: 8390
+    host: "localhost"
+    auth_user: "dba"
+    auth_password: "dba"
+    active: true
