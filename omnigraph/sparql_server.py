@@ -311,30 +311,32 @@ class SparqlServer:
         server_name = self.config.name
         start_success = False
         try:
-            server_status = self.status()
-            operation_success = False
+            docker_status=self.docker_info()
+            operation_success = docker_status.success
+            if operation_success:
+                server_status = self.status()
 
-            if server_status.running:
-                self.log.log(
-                    "✅",
-                    container_name,
-                    f"Container {container_name} is already running",
-                )
-                operation_success = True
-            elif server_status.exists:
-                self.log.log(
-                    "✅",
-                    container_name,
-                    f"Container {container_name} exists, starting...",
-                )
-                start_cmd = f"docker start {container_name}"
-                start_result = self.run_shell_command(
-                    start_cmd,
-                    error_msg=f"Failed to start container {container_name}",
-                )
-                operation_success = start_result
-            else:
-                operation_success = self.docker_create()
+                if server_status.running:
+                    self.log.log(
+                        "✅",
+                        container_name,
+                        f"Container {container_name} is already running",
+                    )
+                    operation_success = True
+                elif server_status.exists:
+                    self.log.log(
+                        "✅",
+                        container_name,
+                        f"Container {container_name} exists, starting...",
+                    )
+                    start_cmd = f"docker start {container_name}"
+                    start_result = self.run_shell_command(
+                        start_cmd,
+                        error_msg=f"Failed to start container {container_name}",
+                    )
+                    operation_success = start_result
+                else:
+                    operation_success = self.docker_create()
 
             if operation_success:
                 start_success = self.wait_until_ready(show_progress=show_progress)
@@ -418,9 +420,9 @@ class SparqlServer:
 
     def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
         """
-        run the given docker commmand with the given options
+        create the given docker command with the given options
         """
-        container_name = self.config.container_name
+        container_name = "" if cmd =="info" else self.config.container_name
         if options:
             options = f" {options}"
         if args:
@@ -429,6 +431,9 @@ class SparqlServer:
         return full_cmd
 
     def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> ShellResult:
+        """
+        run the given docker commmand with the given options
+        """
         container_name = self.config.container_name
         full_cmd = self.docker_cmd(cmd, options, args)
         shell_result = self.run_shell_command(
@@ -442,6 +447,13 @@ class SparqlServer:
         """show the logs of the container"""
         logs_result = self.run_docker_cmd("logs")
         return logs_result
+
+    def docker_info(self) -> ShellResult:
+        """
+        Check if Docker is responsive on the host system.
+        """
+        info_result= self.run_docker_cmd("info")
+        return info_result
 
     def stop(self) -> ShellResult:
         """stop the server container"""

@@ -13,6 +13,7 @@ from lodstorage.rdf_format import RdfFormat
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.version import Version
+from omnigraph.persistent_log import Log
 
 
 class BaseCmd:
@@ -24,6 +25,7 @@ class BaseCmd:
         """
         Initialize CLI base.
         """
+        self.log=Log()
         self.ogp = OmnigraphPaths()
         self.version = Version()
         self.program_version_message = f"{self.version.name} {self.version.version}"
@@ -151,6 +153,8 @@ class BaseCmd:
             dataset = self.all_datasets.datasets.get(dataset_name)
             if dataset:
                 datasets[dataset_name] = dataset
+            else:
+                self.log.log("⚠️","omnigraph",f"invalid dataset '{dataset_name}'")
         return datasets
 
     @classmethod

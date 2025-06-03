@@ -129,11 +129,16 @@ class OmnigraphCmd(BaseCmd):
         """
         Iterator for load command that configures dumps_dir for each dataset.
         """
-        for dataset_name, dataset in self.datasets.items():
-            if self.debug:
-                print(f"loading {dataset_name}...")
+        total_datasets = len(self.datasets)
+        for i, (dataset_name, dataset) in enumerate(self.datasets.items(), 1):
+            if not self.quiet:
+                print(f"loading {dataset_name} ({i}/{total_datasets})...")
             self.configure_dumps_dir(server, dataset)
             yield
+
+        if not self.quiet:
+            print(f"Loaded {total_datasets} dataset(s)")
+
 
     def run_cmds(self, server: SparqlServer, cmds: List[str]) -> bool:
         """

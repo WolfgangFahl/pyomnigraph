@@ -52,16 +52,17 @@ class OmniServer:
             return f"{action} {s.name} ({s.config.container_name})"
 
         server_cmds = {
-            "start": lambda s: ServerCmd(title("start", s), s.start),
-            "stop": lambda s: ServerCmd(title("stop", s), s.stop),
-            "rm": lambda s: ServerCmd(title("remove", s), s.rm),
             "bash": lambda s: ServerCmd(title("bash into", s), s.bash),
-            "logs": lambda s: ServerCmd(title("logs of", s), s.logs),
-            "status": lambda s: ServerCmd(title("status", s), s.status),
             "clear": lambda s: ServerCmd(title("clear", s), s.clear),
-            "needed": lambda s: ServerCmd(title("check needed software for", s), s.check_needed_software),
             "count": lambda s: ServerCmd(title("triple count", s), s.count_triples),
+            "info": lambda s: ServerCmd(title("info", s), s.docker_info),
             "load": lambda s: ServerCmd(title("load dumps", s), s.load_dump_files),
+            "logs": lambda s: ServerCmd(title("logs of", s), s.logs),
+            "needed": lambda s: ServerCmd(title("check needed software for", s), s.check_needed_software),
+            "rm": lambda s: ServerCmd(title("remove", s), s.rm),
+            "start": lambda s: ServerCmd(title("start", s), s.start),
+            "status": lambda s: ServerCmd(title("status", s), s.status),
+            "stop": lambda s: ServerCmd(title("stop", s), s.stop),
             "webui": lambda s: ServerCmd(title("webui", s), s.webui),
         }
         return server_cmds
