@@ -56,6 +56,19 @@ servers:
     test_port: 7700
     host: "localhost"
     active: false
+  stardog:
+    server: "stardog"
+    name: "stardog"
+    wikidata_id: "Q91147741"
+    container_name: "stardog-omnigraph"
+    image: "stardog/stardog:latest"
+    dataset: "mydb"
+    port: 5820
+    test_port: 5320
+    host: "localhost"
+    auth_user: "admin"
+    auth_password: "admin"
+    active: true
   virtuoso:
     server: "virtuoso"
     name: "virtuoso"

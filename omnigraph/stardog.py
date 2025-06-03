@@ -1,7 +1,7 @@
 """
 Created on 2025-06-03
 
-OpenLink Virtuoso SPARQL support
+Stardog SPARQL support
 
 @author: wf
 """
@@ -13,9 +13,9 @@ from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
 @dataclass
-class VirtuosoConfig(ServerConfig):
+class StardogConfig(ServerConfig):
     """
-    Virtuoso configuration
+    Stardog configuration
     """
 
     def __post_init__(self):
@@ -25,11 +25,12 @@ class VirtuosoConfig(ServerConfig):
         super().__post_init__()
 
         # Clean URLs without credentials
-        self.status_url = f"{self.base_url}/sparql"
-        self.sparql_url = f"{self.base_url}/sparql"
-        self.update_url = f"{self.base_url}/sparql"
-        self.upload_url = f"{self.base_url}/sparql-graph-crud"
-        self.web_url = f"{self.base_url}/conductor"
+        stardog_base = f"{self.base_url}/{self.dataset}"
+        self.status_url = f"{self.base_url}/admin/status"
+        self.sparql_url = f"{stardog_base}/query"
+        self.update_url = f"{stardog_base}/update"
+        self.upload_url = f"{stardog_base}/add"
+        self.web_url = f"{self.base_url}/"
 
     def get_docker_run_command(self, data_dir) -> str:
         """
@@ -44,25 +45,25 @@ class VirtuosoConfig(ServerConfig):
         # Docker command setup
         env = ""
         if self.auth_password:
-            env = f"-e DBA_PASSWORD={self.auth_password}"
+            env = f"-e STARDOG_SERVER_JAVA_ARGS='-Dstardog.default.cli.server=http://localhost:5820'"
 
         docker_run_command = (
             f"docker run {self.docker_user_flag} {env} -d --name {self.container_name} "
-            f"-p {self.port}:8890 "
-            f"-v {data_dir}:/database "
+            f"-p {self.port}:5820 "
+            f"-v {data_dir}:/var/opt/stardog "
             f"{self.image}"
         )
         return docker_run_command
 
 
-class Virtuoso(SparqlServer):
+class Stardog(SparqlServer):
     """
-    Dockerized OpenLink Virtuoso SPARQL server
+    Dockerized Stardog SPARQL server
     """
 
     def __init__(self, config: ServerConfig, env: ServerEnv):
         """
-        Initialize the Virtuoso manager.
+        Initialize the Stardog manager.
 
         Args:
             config: Server configuration
@@ -80,7 +81,7 @@ class Virtuoso(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
 
-        if logs and "Server online at" in logs and "HTTP/WebDAV server online at" in logs:
+        if logs and "Stardog server started" in logs and "Server is ready" in logs:
             server_status.at = ServerLifecycleState.READY
         else:
             server_status.at = ServerLifecycleState.STARTING
