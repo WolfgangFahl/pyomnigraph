@@ -15,6 +15,31 @@ servers:
     test_port: 7898
     host: "localhost"
     active: true
+  graphdb:
+    server: "graphdb"
+    name: "graphdb"
+    wikidata_id: "Q58425577"
+    container_name: "graphdb-omnigraph"
+    image: "ontotext/graphdb:9.11.2-se"
+    dataset: "repo1"                    # GraphDB calls them repositories
+    port: 7200                          # GraphDB default port
+    test_port: 7700
+    host: "localhost"
+    # license issue
+    active: false
+  jena:
+    server: "jena"
+    name: "jena"
+    wikidata_id: "Q109376461"
+    container_name: "jena-omnigraph"
+    image: "stain/jena-fuseki:latest"
+    dataset: "ds"
+    port: 3030
+    test_port: 7030
+    host: "localhost"
+    auth_user: admin
+    auth_password: "Q109376461"
+    active: true
   qlever:
     server: "qlever"
     name: "qlever"
@@ -32,30 +57,6 @@ servers:
           info: "pip (Install with 'apt install python3-pip' or 'yum install python3-pip')"
         - command: "qlever"
           info: "qlever (Install via pip install qlever)"
-  jena:
-    server: "jena"
-    name: "jena"
-    wikidata_id: "Q109376461"
-    container_name: "jena-omnigraph"
-    image: "stain/jena-fuseki:latest"
-    dataset: "ds"
-    port: 3030
-    test_port: 7030
-    host: "localhost"
-    auth_user: admin
-    auth_password: "Q109376461"
-    active: true
-  graphdb:
-    server: "graphdb"
-    name: "graphdb"
-    wikidata_id: "Q58425577"
-    container_name: "graphdb-omnigraph"
-    image: "ontotext/graphdb:9.11.2-se"
-    dataset: "repo1"                    # GraphDB calls them repositories
-    port: 7200                          # GraphDB default port
-    test_port: 7700
-    host: "localhost"
-    active: false
   stardog:
     server: "stardog"
     name: "stardog"
@@ -68,7 +69,8 @@ servers:
     host: "localhost"
     auth_user: "admin"
     auth_password: "admin"
-    active: true
+    # license issue
+    active: false
   virtuoso:
     server: "virtuoso"
     name: "virtuoso"
