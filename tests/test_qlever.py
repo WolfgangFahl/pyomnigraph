@@ -7,7 +7,7 @@ Created on 2025-05-29
 import json
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.qlever import QLeverfile
+from omnigraph.servers.qlever import QLeverfile
 from tests.basetest import Basetest
 
 

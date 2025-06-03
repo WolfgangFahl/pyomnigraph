@@ -40,6 +40,17 @@ servers:
     auth_user: admin
     auth_password: "Q109376461"
     active: true
+  oxigraph:
+    server: "oxigraph"
+    name: "oxigraph"
+    wikidata_id: "Q118980507"
+    container_name: "oxigraph-omnigraph"
+    image: "oxigraph/oxigraph:latest"
+    dataset: "default"
+    port: 7878
+    test_port: 7378
+    host: "localhost"
+    active: true
   qlever:
     server: "qlever"
     name: "qlever"

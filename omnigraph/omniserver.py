@@ -8,16 +8,17 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Callable, Dict
 
-from omnigraph.blazegraph import Blazegraph, BlazegraphConfig
-from omnigraph.graphdb import GraphDB, GraphDBConfig
-from omnigraph.jena import Jena, JenaConfig
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.qlever import QLever, QLeverConfig
+from omnigraph.servers.qlever import QLever, QLeverConfig
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.sparql_server import SparqlServer
 
-from omnigraph.stardog import StardogConfig, Stardog
-from omnigraph.virtuoso import VirtuosoConfig, Virtuoso
+from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
+from omnigraph.servers.graphdb import GraphDB, GraphDBConfig
+from omnigraph.servers.jena import Jena, JenaConfig
+from omnigraph.servers.oxigraph import OxigraphConfig, Oxigraph
+from omnigraph.servers.stardog import StardogConfig, Stardog
+from omnigraph.servers.virtuoso import VirtuosoConfig, Virtuoso
 
 
 class OmniServer:
@@ -88,6 +89,7 @@ class OmniServer:
             "blazegraph": (BlazegraphConfig, Blazegraph),
             "graphdb": (GraphDBConfig, GraphDB),
             "jena": (JenaConfig, Jena),
+            "oxigraph": (OxigraphConfig, Oxigraph),
             "qlever": (QLeverConfig, QLever),
             "stardog": (StardogConfig, Stardog),
             "virtuoso": (VirtuosoConfig, Virtuoso)
