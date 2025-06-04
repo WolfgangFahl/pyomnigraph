@@ -1,0 +1,33 @@
+#
+#  pre-defined queries for omnigraph
+#  see # see https://github.com/WolfgangFahl/pyomnigraph
+#
+'Triplestore':
+  # Get detailed information about a triplestore from Wikidata
+  param_list:
+    - name: qid
+      type: str
+      default_value: "Q20127748"  # Blazegraph
+  sparql: |
+    PREFIX wd: <http://www.wikidata.org/entity/>
+    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX schema: <http://schema.org/>
+
+    SELECT ?label ?description ?website ?license ?programmingLanguage ?developer WHERE {
+      wd:{{qid}} rdfs:label ?label ;
+                 schema:description ?description .
+      FILTER(LANG(?label) = "en")
+      FILTER(LANG(?description) = "en")
+
+      OPTIONAL { wd:{{qid}} wdt:P856 ?website }
+      OPTIONAL { wd:{{qid}} wdt:P275 ?licenseEntity .
+                 ?licenseEntity rdfs:label ?license .
+                 FILTER(LANG(?license) = "en") }
+      OPTIONAL { wd:{{qid}} wdt:P277 ?progLangEntity .
+                 ?progLangEntity rdfs:label ?programmingLanguage .
+                 FILTER(LANG(?programmingLanguage) = "en") }
+      OPTIONAL { wd:{{qid}} wdt:P178 ?devEntity .
+                 ?devEntity rdfs:label ?developer .
+                 FILTER(LANG(?developer) = "en") }
+    }
