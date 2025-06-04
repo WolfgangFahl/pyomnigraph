@@ -77,7 +77,5 @@ class Oxigraph(SparqlServer):
 
         if logs and "Listening for requests at" in logs:
             server_status.at = ServerLifecycleState.READY
-        else:
-            server_status.at = ServerLifecycleState.STARTING
 
         return server_status

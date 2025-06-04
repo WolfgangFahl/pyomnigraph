@@ -147,9 +147,14 @@ class QLever(SparqlServer):
         ServerStatus object with status information
         """
         server_status = super().status()
-        # basically check state by trying to get triple count
+
+        # Treat UP as READY if triple count is obtainable
         self.add_triple_count2_server_status(server_status)
+        if server_status.at == ServerLifecycleState.UP and server_status.triple_count is not None:
+            server_status.at = ServerLifecycleState.READY
+
         return server_status
+
 
     def get_step_list(self) -> List[Step]:
         step_list = [

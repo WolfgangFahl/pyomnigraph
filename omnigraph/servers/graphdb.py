@@ -80,11 +80,9 @@ class GraphDB(SparqlServer):
         """
         server_status = super().status()
         logs = server_status.logs
-        if "GraphDB Workbench is running" in logs and "Started GraphDB" in logs:
+        if logs and "GraphDB Workbench is running" in logs and "Started GraphDB" in logs:
             lifecycle = ServerLifecycleState.READY
-        else:
-            lifecycle = ServerLifecycleState.STARTING
-        server_status.at = lifecycle
+            server_status.at = lifecycle
 
         if server_status.at == ServerLifecycleState.READY:
             self.add_triple_count2_server_status(server_status)

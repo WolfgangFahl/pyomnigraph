@@ -24,6 +24,7 @@ class ServerLifecycleState(Enum):
     a state in the servers lifecycle
     """
     READY = "ready ✅"
+    UP = "up 🟢"
     ERROR = "error ❌"
     UNKNOWN = "unknown ❓"
     STARTING = "starting 🔄"
@@ -56,7 +57,7 @@ class ServerStatus:
         """
         get a summary of the Server Status
         """
-        summary = f"{self.at.value} @ {self.timestamp.strftime('%H:%M:%S')}"
+        summary = f"@ {self.timestamp.strftime('%H:%M:%S')}"
         if self.http_status_code:
             summary += f" (HTTP {self.http_status_code})"
         if self.triple_count:

@@ -102,7 +102,7 @@ class SparqlServer:
     def flag(self)->str:
         flag="🟢️" if self.config.active else "🛑"
         if self.current_status:
-            state = self.current_status.at
+            state = self.current_status.at.value
             flag+=str(state)
         return flag
 
@@ -217,11 +217,20 @@ class SparqlServer:
         shell_result = ShellResult(proc, command_success)
         return shell_result
 
+    def get_web_url(self) -> str:
+        """
+        Return the service-specific Web UI URL.
+        Subclasses may override.
+        """
+        return self.config.web_url
+
+
     def webui(self):
         """
         open my webui
         """
-        webbrowser.open(self.config.web_url)
+        web_url=self.get_web_url()
+        webbrowser.open(web_url)
 
     def docker_inspect(self) -> Optional[Dict[str, Any]]:
         """
@@ -242,6 +251,15 @@ class SparqlServer:
                     print(f"Failed to parse Docker state JSON: {ex}")
         return inspect_dict
 
+    def status_info(self)->str:
+        """
+        Return one-line summary of server status e.g. for CLI use.
+        """
+        self.status()
+        summary=self.current_status.get_summary(self.debug)
+        info=f"{self.flag}{summary}"
+        return info
+
     def status(self) -> ServerStatus:
         """
         Check server status using a single docker inspect call.
@@ -259,7 +277,7 @@ class SparqlServer:
             server_status.docker_exit_code = state.get("ExitCode")
             self.refresh_logs(server_status)
             if server_status.running:
-                server_status.at = ServerLifecycleState.READY
+                server_status.at = ServerLifecycleState.UP
                 self.refresh_logs(server_status)
             else:
                 if server_status.docker_status == "exited" and server_status.docker_exit_code not in (0, None):

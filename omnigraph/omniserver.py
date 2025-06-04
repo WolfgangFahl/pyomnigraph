@@ -20,7 +20,6 @@ from omnigraph.servers.stardog import Stardog, StardogConfig
 from omnigraph.servers.virtuoso import Virtuoso, VirtuosoConfig
 from omnigraph.sparql_server import SparqlServer
 from tabulate import tabulate
-import yaml
 
 from omnigraph.prefix_config import PrefixConfigs
 
@@ -69,7 +68,7 @@ class OmniServer:
             "needed": lambda s: ServerCmd(title("check needed software for", s), s.check_needed_software),
             "rm": lambda s: ServerCmd(title("remove", s), s.rm),
             "start": lambda s: ServerCmd(title("start", s), s.start),
-            "status": lambda s: ServerCmd(title("status", s), s.status),
+            "status": lambda s: ServerCmd(title("status", s), s.status_info),
             "stop": lambda s: ServerCmd(title("stop", s), s.stop),
             "webui": lambda s: ServerCmd(title("webui", s), s.webui),
         }
@@ -216,18 +215,12 @@ class OmniServer:
             if server.config.active:
                 prefix_sets = getattr(server.config, 'prefix_sets', ['rdf'])
                 prefixes_text = prefix_configs.get_selected_declarations(prefix_sets)
-
-                # Build auth section if needed
-                auth_section = ""
-                if hasattr(server.config, 'auth_user') and server.config.auth_user:
-                    auth_section = f"""
-  auth: BASIC
-  user: {server.config.auth_user}"""
-                    if hasattr(server.config, 'auth_password') and server.config.auth_password:
-                        auth_section += f"\n  password: {server.config.auth_password}"
+                # optional elements
+                auth="\n  auth: BASIC" if server.config.auth_user else ""
+                user=f"\n  user: {server.config.auth_user}" if server.config.auth_user else ""
+                passwd=f"\n  passwd: {server.config.auth_password}" if server.config.auth_password else ""
                 # Indent prefixes for literal block scalar (4 spaces)
                 indented_prefixes = '\n'.join(f"    {line}" for line in prefixes_text.split('\n') if line.strip())
-
 
                 entry = f"""{server.name}:
   method: {getattr(server.config, 'method', 'POST')}
@@ -235,7 +228,7 @@ class OmniServer:
   name: {server.name}
   endpoint: {server.config.sparql_url}
   website: {server.config.base_url}
-  database: {server.config.server}{auth_section}
+  database: {server.config.server}{auth}{user}{passwd}
   prefixes: |
 {indented_prefixes}"""
 

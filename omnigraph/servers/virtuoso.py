@@ -29,7 +29,7 @@ class VirtuosoConfig(ServerConfig):
         self.sparql_url = f"{self.base_url}/sparql"
         self.update_url = f"{self.base_url}/sparql"
         self.upload_url = f"{self.base_url}/sparql-graph-crud"
-        self.web_url = f"{self.base_url}/conductor"
+        self.web_url = f"{self.base_url}/sparql"
 
     def get_docker_run_command(self, data_dir) -> str:
         """
@@ -46,8 +46,9 @@ class VirtuosoConfig(ServerConfig):
         if self.auth_password:
             env = f"-e DBA_PASSWORD={self.auth_password}"
 
+        # run as root - no user flag
         docker_run_command = (
-            f"docker run {self.docker_user_flag} {env} -d --name {self.container_name} "
+            f"docker run {env} -d --name {self.container_name} "
             f"-p {self.port}:8890 "
             f"-v {data_dir}:/database "
             f"{self.image}"
@@ -82,7 +83,13 @@ class Virtuoso(SparqlServer):
 
         if logs and "Server online at" in logs and "HTTP/WebDAV server online at" in logs:
             server_status.at = ServerLifecycleState.READY
-        else:
-            server_status.at = ServerLifecycleState.STARTING
 
         return server_status
+
+    def get_web_url(self) -> str:
+        web_url = self.config.web_url
+        if self.config.auth_user and self.config.auth_password:
+            proto, rest = web_url.split("://", 1)
+            auth=f"{self.config.auth_user}:{self.config.auth_password}@"
+            web_url=f"{proto}://{auth}{rest}"
+        return web_url

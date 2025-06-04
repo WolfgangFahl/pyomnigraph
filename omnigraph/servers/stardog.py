@@ -83,7 +83,4 @@ class Stardog(SparqlServer):
 
         if logs and "Stardog server started" in logs and "Server is ready" in logs:
             server_status.at = ServerLifecycleState.READY
-        else:
-            server_status.at = ServerLifecycleState.STARTING
-
         return server_status
