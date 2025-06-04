@@ -79,6 +79,7 @@ class SparqlServer:
         self.verbose = env.verbose
         self.shell = env.shell
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
+        self.current_status=None
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -99,7 +100,10 @@ class SparqlServer:
 
     @property
     def flag(self)->str:
-        flag="🟢" if self.config.active else "🔴"
+        flag="🟢️" if self.config.active else "🛑"
+        if self.current_status:
+            state = self.current_status.at
+            flag+=str(state)
         return flag
 
     def as_endpoint_conf(self, prefix_configs: PrefixConfigs, prefix_sets: List[str]) -> Endpoint:
@@ -268,6 +272,7 @@ class SparqlServer:
             server_status.exists = False
             server_status.running = False
 
+        self.current_status=server_status
         return server_status
 
     def refresh_logs(self, server_status=ServerStatus):

@@ -23,7 +23,6 @@ class ServerLifecycleState(Enum):
     """
     a state in the servers lifecycle
     """
-
     READY = "ready ✅"
     ERROR = "error ❌"
     UNKNOWN = "unknown ❓"

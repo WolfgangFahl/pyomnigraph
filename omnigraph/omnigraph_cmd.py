@@ -11,6 +11,7 @@ from typing import Dict, List
 from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
+from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.rdf_dataset import RdfDataset
 from omnigraph.sparql_server import ServerEnv, SparqlServer
 
@@ -30,6 +31,9 @@ class OmnigraphCmd(BaseCmd):
         self.omni_server = OmniServer(env=self.env)
         self.server_cmds = self.omni_server.get_server_commands()
         self.available_cmds = ", ".join(self.server_cmds.keys())
+        self.prefixes_yaml_path = self.ogp.examples_dir / "prefixes.yaml"
+        self.prefix_configs = PrefixConfigs.ofYaml(self.prefixes_yaml_path)
+
         super().__init__(description="Manage SPARQL server configurations and command execution")
 
     def get_arg_parser(self, description: str, version_msg: str) -> ArgumentParser:
@@ -48,14 +52,24 @@ class OmnigraphCmd(BaseCmd):
             default=str(self.default_yaml_path),
             help="Path to server configuration YAML file [default: %(default)s]",
         )
-        parser.add_argument("--cmd", nargs="+", help=f"commands to execute on servers: {self.available_cmds}")
+        parser.add_argument(
+            "--cmd",
+            nargs="+",
+            help=f"commands to execute on servers: {self.available_cmds}"
+        )
         parser.add_argument(
             "-df", "--doc-format", default="plain", help="The document format to use [default: %(default)s]"
         )
         parser.add_argument(
             "-gepy",
-            "--generate-endpoints-yaml",
+            "--endpoints-yaml",
             help="Generate and endpoints yaml file for the active servers [default: %(default)s]",
+        )
+        parser.add_argument(
+            "-ii",
+            "--include-inactive",
+            action="store_true",
+            help="Include inactive servers in available server list[default: %(default)s]",
         )
         parser.add_argument(
             "-l", "--list-servers", action="store_true", help="List available servers [default: %(default)s]"
@@ -98,6 +112,8 @@ class OmnigraphCmd(BaseCmd):
                     self.configure_dumps_dir(server)
                 server.config.rdf_format = self.args.rdf_format
                 servers[server_name] = server
+            else:
+                self.log.log("⚠️", "omnigraph", f"invalid or inactive server '{server_name}'")
         return servers
 
     def configure_dumps_dir(self, server: SparqlServer, dataset: RdfDataset = None):
@@ -179,7 +195,7 @@ class OmnigraphCmd(BaseCmd):
             if self.args.test:
                 patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)
             omni_server = OmniServer(env=env, patch_config=patch_config)
-            self.all_servers = omni_server.servers(self.args.config)
+            self.all_servers = omni_server.servers(self.args.config,filter_active=not self.args.include_inactive)
         else:
             print(f"Config file not found: {self.args.config}")
         self.servers = self.getServers()
@@ -190,6 +206,14 @@ class OmnigraphCmd(BaseCmd):
             for _name, server in self.servers.items():
                 print(f"  {server.full_name}")
 
+        if self.args.endpoints_yaml:
+            output_path=self.args.endpoints_yaml
+            _yaml_content = self.omni_server.generate_endpoints_yaml(
+                self.servers,
+                self.prefix_configs,
+                output_path=output_path
+            )
+            pass
         if self.args.apache:
             if self.args.apache:
                 for server in self.servers.values():
@@ -204,7 +228,7 @@ class OmnigraphCmd(BaseCmd):
         cmds = list(self.args.cmd or [])
         for server in self.servers.values():
             if not self.quiet:
-                print(f"  {server.full_name}:")
+                print(f"{server.flag}  {server.full_name}:")
             try:
                 self.run_cmds(server, cmds=cmds)
             except Exception as ex:
