@@ -26,6 +26,7 @@ class RdfDataset:
     expected_solutions: Optional[int] = None  # Expected number of solutions
     select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
     construct_template: Optional[str] = field(default="?s ?p ?o")
+    prefix_sets: Optional[list] = field(default_factory=list)
     active: Optional[bool] = False
     # fields to be configured by post_init
     id: Optional[str] = field(default=None)

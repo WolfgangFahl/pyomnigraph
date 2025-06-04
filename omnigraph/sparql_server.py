@@ -10,13 +10,15 @@ import time
 import traceback
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
+from lodstorage.query import Endpoint
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
+from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from omnigraph.software import SoftwareList
 
@@ -49,15 +51,16 @@ class ShellResult:
         self.success = success
 
     def __str__(self):
-        text=self.as_text()
+        text = self.as_text()
         return text
 
-    def as_text(self,debug:bool=False):
+    def as_text(self, debug: bool = False):
         if debug:
-            text= f"{self.proc.args} → rc={self.proc.returncode}, success={self.success}"
+            text = f"{self.proc.args} → rc={self.proc.returncode}, success={self.success}"
         else:
-            text="✅" if self.success else f"❌ → rc={self.proc.returncode}"
+            text = "✅" if self.success else f"❌ → rc={self.proc.returncode}"
         return text
+
 
 class SparqlServer:
     """
@@ -90,9 +93,52 @@ class SparqlServer:
                 self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
 
     @property
-    def full_name(self):
+    def full_name(self)->str:
         full_name = f"{self.name} {self.config.container_name}"
         return full_name
+
+    @property
+    def flag(self)->str:
+        flag="🟢" if self.config.active else "🔴"
+        return flag
+
+    def as_endpoint_conf(self, prefix_configs: PrefixConfigs, prefix_sets: List[str]) -> Endpoint:
+        """
+        Convert server configuration to Endpoint configuration.
+
+        Args:
+            prefix_configs: PrefixConfigs instance with prefix definitions
+            prefix_sets: List of prefix set names to include
+
+        Returns:
+            Endpoint: Endpoint configuration object
+        """
+        endpoint = Endpoint()
+
+        # Basic endpoint properties
+        endpoint.name = self.config.name
+        endpoint.lang = "sparql"
+        endpoint.endpoint = self.config.sparql_url
+        endpoint.website = self.config.web_url
+        endpoint.database = self.config.server
+        endpoint.method = "POST"
+
+        # Authentication if configured
+        if (
+            hasattr(self.config, "auth_user")
+            and self.config.auth_user
+            and hasattr(self.config, "auth_password")
+            and self.config.auth_password
+        ):
+            endpoint.auth = "BASIC"
+            endpoint.user = self.config.auth_user
+            endpoint.password = self.config.auth_password
+
+        # Get prefixes from provided prefix sets
+        declarations = prefix_configs.get_selected_declarations(prefix_sets)
+        endpoint.prefixes = declarations
+
+        return endpoint
 
     def handle_exception(self, context: str, ex: Exception):
         """
@@ -260,10 +306,10 @@ class SparqlServer:
         self.log.log("✅", container_name, f"Creating new {server_name} container {container_name}...")
         try:
             self.pre_create()
-            operation_success=True
+            operation_success = True
         except Exception as ex:
             self.handle_exception("pre_create", ex)
-            operation_success=False
+            operation_success = False
         if operation_success:
             base_data_dir = self.config.base_data_dir
             create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
@@ -311,7 +357,7 @@ class SparqlServer:
         server_name = self.config.name
         start_success = False
         try:
-            docker_status=self.docker_info()
+            docker_status = self.docker_info()
             operation_success = docker_status.success
             if operation_success:
                 server_status = self.status()
@@ -422,7 +468,7 @@ class SparqlServer:
         """
         create the given docker command with the given options
         """
-        container_name = "" if cmd =="info" else self.config.container_name
+        container_name = "" if cmd == "info" else self.config.container_name
         if options:
             options = f" {options}"
         if args:
@@ -452,7 +498,7 @@ class SparqlServer:
         """
         Check if Docker is responsive on the host system.
         """
-        info_result= self.run_docker_cmd("info")
+        info_result = self.run_docker_cmd("info")
         return info_result
 
     def stop(self) -> ShellResult:

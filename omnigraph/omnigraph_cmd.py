@@ -50,6 +50,14 @@ class OmnigraphCmd(BaseCmd):
         )
         parser.add_argument("--cmd", nargs="+", help=f"commands to execute on servers: {self.available_cmds}")
         parser.add_argument(
+            "-df", "--doc-format", default="plain", help="The document format to use [default: %(default)s]"
+        )
+        parser.add_argument(
+            "-gepy",
+            "--generate-endpoints-yaml",
+            help="Generate and endpoints yaml file for the active servers [default: %(default)s]",
+        )
+        parser.add_argument(
             "-l", "--list-servers", action="store_true", help="List available servers [default: %(default)s]"
         )
         parser.add_argument(
@@ -139,7 +147,6 @@ class OmnigraphCmd(BaseCmd):
         if not self.quiet:
             print(f"Loaded {total_datasets} dataset(s)")
 
-
     def run_cmds(self, server: SparqlServer, cmds: List[str]) -> bool:
         """
         Run commands on a specific server.
@@ -190,9 +197,9 @@ class OmnigraphCmd(BaseCmd):
                     print(config.to_apache_config(version=self.version, domain=self.args.apache))
 
         if self.args.list_servers:
-            print("Available servers:")
-            for server in self.all_servers.values():
-                print(f"  {server.full_name}")
+            table_format = self.args.doc_format if self.args.doc_format != "plain" else "simple"
+            markup = self.omni_server.list_servers(self.all_servers, table_format)
+            print(markup)
 
         cmds = list(self.args.cmd or [])
         for server in self.servers.values():

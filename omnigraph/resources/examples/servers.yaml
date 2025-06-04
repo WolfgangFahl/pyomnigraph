@@ -14,6 +14,7 @@ servers:
     port: 9898
     test_port: 7898
     host: "localhost"
+    prefix_sets: ["rdf", "blazegraph","gov","wikidata"]
     active: true
   graphdb:
     server: "graphdb"
@@ -39,6 +40,7 @@ servers:
     host: "localhost"
     auth_user: admin
     auth_password: "Q109376461"
+    prefix_sets: ["rdf", "gov","wikidata"]
     active: true
   oxigraph:
     server: "oxigraph"
@@ -62,6 +64,7 @@ servers:
     test_port: 7819
     host: "localhost"
     active: true
+    prefix_sets: ["rdf", "gov","wikidata"]
     needed_software:
       software_list:
         - command: "pip"

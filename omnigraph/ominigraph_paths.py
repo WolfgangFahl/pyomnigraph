@@ -7,6 +7,7 @@ Created on 2025-05-27
 from pathlib import Path
 from typing import Optional
 
+
 class OmnigraphPaths:
     """
     Omnigraph Default Paths
