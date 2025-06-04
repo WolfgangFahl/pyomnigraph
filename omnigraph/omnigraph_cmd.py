@@ -226,13 +226,14 @@ class OmnigraphCmd(BaseCmd):
             print(markup)
 
         cmds = list(self.args.cmd or [])
-        for server in self.servers.values():
-            if not self.quiet:
-                print(f"{server.flag}  {server.full_name}:")
-            try:
-                self.run_cmds(server, cmds=cmds)
-            except Exception as ex:
-                server.handle_exception(str(self.args.cmd), ex)
+        if len(cmds)>0:
+            for server in self.servers.values():
+                if not self.quiet:
+                    print(f"{server.flag}  {server.full_name}:")
+                try:
+                    self.run_cmds(server, cmds=cmds)
+                except Exception as ex:
+                    server.handle_exception(str(self.args.cmd), ex)
 
 
 def main():
