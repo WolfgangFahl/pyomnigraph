@@ -61,7 +61,9 @@ class TestSparqlServer(Basetest):
                 print(f"{server.name} already running")
         else:
             started = server.start()
-            self.assertTrue(started)
+            if not started:
+                pass
+            self.assertTrue(started,server.full_name)
         if verbose:
             status = server.status()
             if self.debug:

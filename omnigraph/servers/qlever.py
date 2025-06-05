@@ -148,10 +148,10 @@ class QLever(SparqlServer):
         """
         server_status = super().status()
 
-        # Treat UP as READY if triple count is obtainable
-        self.add_triple_count2_server_status(server_status)
-        if server_status.at == ServerLifecycleState.UP and server_status.triple_count is not None:
+        # Treat UP as READY
+        if server_status.at == ServerLifecycleState.UP:
             server_status.at = ServerLifecycleState.READY
+        self.add_triple_count2_server_status(server_status)
 
         return server_status
 
