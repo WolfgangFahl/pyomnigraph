@@ -129,7 +129,6 @@ class Blazegraph(SparqlServer):
                                     server_status.status_dict[sanitized_name] = sanitized_value
                                 break
 
-                server_status.http_status_code = (response.response.status_code if response.response else None,)
             else:
                 if response.error:
                     error = Exception(response.error)
@@ -140,10 +139,10 @@ class Blazegraph(SparqlServer):
                 else:
                     error = Exception("unknown error")
                     lifecycle = ServerLifecycleState.UNKNOWN
-
-                server_status.at = lifecycle
                 server_status.error = error
-                server_status.http_status_code = (response.response.status_code if response.response else None,)
+
+            server_status.at = lifecycle
+            server_status.http_status_code = (response.response.status_code if response.response else None,)
             if server_status.at == ServerLifecycleState.READY:
                 self.add_triple_count2_server_status(server_status)
         return server_status
