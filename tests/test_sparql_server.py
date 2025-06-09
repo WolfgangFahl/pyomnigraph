@@ -64,10 +64,9 @@ class TestSparqlServer(Basetest):
             if not started:
                 pass
             self.assertTrue(started,server.full_name)
-        if verbose:
-            status = server.status()
-            if self.debug:
-                print(status.get_summary(debug=self.debug))
+            if verbose:
+                if self.debug:
+                    print(server_status.get_summary(debug=self.debug))
             count_triples = server.count_triples()
             if self.debug:
                 print(f"{count_triples} triples found for {server.name}")

@@ -15,6 +15,40 @@ Unified Python interface for multiple graph databases
 
 ## Motivation
 
+The graph database landscape is fragmented, with each triple store having its own APIs, deployment methods, and operational quirks. Developers and researchers working with RDF data often need to:
+
+- **Switch between different triple stores** for performance comparisons
+- **Migrate data** from one system to another
+- **Test the same queries** across multiple backends
+- **Deploy applications** that work with various graph databases
+
+This leads to:
+- ❌ **Duplicated effort** writing database-specific code
+- ❌ **Vendor lock-in** making migrations difficult
+- ❌ **Inconsistent interfaces** slowing development
+- ❌ **Manual deployment** processes for each database
+
+**pyomnigraph solves this** by providing:
+- ✅ **Unified API** - Same Python interface for all supported databases
+- ✅ **Standardized deployment** - Consistent Docker-based setup
+- ✅ **Easy switching** - Change backends with a single parameter
+- ✅ **Comparative testing** - Run identical operations across multiple stores
+- ✅ **Simplified management** - Start, stop, load data with simple commands
+
+### Supported Triple Stores
+
+| Database | Status | Strengths |
+|----------|--------|-----------|
+| **Blazegraph** | 🟢 Working | High performance, easy setup |
+| **Apache Jena** | 🟢 Working | Robust, standards compliant |
+| **QLever** | 🟢 Working | Extremely fast queries |
+| **GraphDB** | 🛑 Planned | Enterprise features, reasoning |
+| **Virtuoso** | 🛑 In Progress | Mature, SQL integration |
+| **Stardog** | 🛑 Planned | Knowledge graphs, reasoning |
+| **Oxigraph** | 🛑 Planned | Rust-based, embedded |
+
+Whether you're building a semantic web application, conducting research, or evaluating different triple stores, pyomnigraph eliminates the complexity of working with multiple graph database systems.
+
 ## Examples
 ```bash
 omnigraph omnigraph --list --include-inactive --doc-format  github

@@ -42,9 +42,9 @@ class VirtuosoConfig(ServerConfig):
             Complete docker run command string
         """
         # Docker command setup
-        env = ""
+        env = "-e SPARQL_UPDATE=true"
         if self.auth_password:
-            env = f"-e DBA_PASSWORD={self.auth_password}"
+            env += f" -e DBA_PASSWORD={self.auth_password}"
 
         # run as root - no user flag
         docker_run_command = (
@@ -85,6 +85,17 @@ class Virtuoso(SparqlServer):
             server_status.at = ServerLifecycleState.READY
 
         return server_status
+
+    def get_clear_query(self)->str:
+        """
+        the clear query to be used
+        overrides the default query
+        """
+        clear_query="""DELETE WHERE {
+  GRAPH <urn:virtuoso:default> { ?s ?p ?o }
+}"""
+        return clear_query
+
 
     def get_web_url(self) -> str:
         web_url = self.config.web_url

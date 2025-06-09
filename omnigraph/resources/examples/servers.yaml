@@ -15,7 +15,7 @@ servers:
     test_port: 7898
     host: "localhost"
     prefix_sets: ["rdf", "blazegraph","gov","wikidata"]
-    active: true
+    active: false
   graphdb:
     server: "graphdb"
     name: "graphdb"
@@ -41,7 +41,7 @@ servers:
     auth_user: admin
     auth_password: "Q109376461"
     prefix_sets: ["rdf", "gov","wikidata"]
-    active: true
+    active: false
   oxigraph:
     server: "oxigraph"
     name: "oxigraph"
@@ -63,7 +63,6 @@ servers:
     port: 7019
     test_port: 7819
     host: "localhost"
-    active: true
     prefix_sets: ["rdf", "gov","wikidata"]
     needed_software:
       software_list:
@@ -71,6 +70,7 @@ servers:
           info: "pip (Install with 'apt install python3-pip' or 'yum install python3-pip')"
         - command: "qlever"
           info: "qlever (Install via pip install qlever)"
+    active: false
   stardog:
     server: "stardog"
     name: "stardog"

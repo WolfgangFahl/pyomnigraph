@@ -151,7 +151,11 @@ class SparqlServer:
         container_name = self.config.container_name
         self.log.log("❌", container_name, f"Exception {context}: {ex}")
         if self.debug:
-            traceback.print_exc()
+            # extract exception type, and trace back
+            ex_type = type(ex)
+            ex_tb = ex.__traceback__
+            # print exception stack details
+            traceback.print_exception(ex_type, ex, ex_tb)
 
     def make_request(self, method: str, url: str, **kwargs) -> Response:
         """
@@ -540,6 +544,14 @@ class SparqlServer:
         print(bash_cmd)
         return True
 
+    def get_clear_query(self)->str:
+        """
+        the clear query to be used
+        may be overriden by specific SPARQL server implementations
+        """
+        clear_query="DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        return clear_query
+
     def clear(self) -> int:
         """
         delete all triples
@@ -550,9 +562,11 @@ class SparqlServer:
         if count_triples >= self.config.unforced_clear_limit:
             self.log.log("❌", container_name, f"{msg} needs force option")
         else:
-            clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+            clear_query = self.get_clear_query()
             try:
-                self.sparql.insert(clear_query)
+                _reponse,ex=self.sparql.insert(clear_query)
+                if ex:
+                    self.handle_exception("DELETE", ex)
                 new_count = self.count_triples()
                 if new_count == 0:
                     self.log.log("✅", container_name, f"deleted {count_triples} triples")
