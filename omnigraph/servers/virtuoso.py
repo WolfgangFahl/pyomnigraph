@@ -9,7 +9,8 @@ OpenLink Virtuoso SPARQL support
 from dataclasses import dataclass
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer,\
+    ShellResult
 
 
 @dataclass
@@ -70,6 +71,38 @@ class Virtuoso(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+
+    def post_create(self):
+        """
+        Setup permissions after container creation.
+        """
+        super().post_create()
+        self.setup_permissions()
+
+    def run_isql_cmd(self, cmd: str) -> ShellResult:
+        """
+        Run SQL command via isql.
+        """
+        args = f"isql 1111 dba {self.config.auth_password or 'dba'} \"EXEC='{cmd}'\""
+        shell_result = self.run_docker_cmd("exec", args=args)
+        return shell_result
+
+    def setup_permissions(self) -> bool:
+        """
+        Grant necessary permissions to SPARQL user.
+        """
+        # Grant general SPARQL update capability
+        success=True
+        grants = [
+            "GRANT SPARQL_UPDATE TO \"SPARQL\";",
+            # workaround of 2023-01 as per https://community.openlinksw.com/t/sparul-insert-access-denied-even-after-granting-update-permission/3448/7
+            "DB.DBA.RDF_DEFAULT_USER_PERMS_SET ('nobody', 7);"
+        ]
+        for sql in grants:
+            shell_result = self.run_isql_cmd(sql)
+            success=success and shell_result.success
+
+        return success
 
     def status(self) -> ServerStatus:
         """

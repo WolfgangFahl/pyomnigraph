@@ -317,7 +317,13 @@ class SparqlServer:
 
     def pre_create(self):
         """
-        abstract pre-create step
+        abstract pre docker create step
+        implement a special version if need be
+        """
+
+    def post_create(self):
+        """
+        abstract post docker create step
         implement a special version if need be
         """
 
@@ -354,6 +360,13 @@ class SparqlServer:
                     container_name,
                     f"Creating new {server_name} container failed – invalid container ID '{container_id}' from command: {create_cmd}",
                 )
+                operation_success = False
+
+        if operation_success:
+            try:
+                self.post_create()
+            except Exception as ex:
+                self.handle_exception("pre_create", ex)
                 operation_success = False
 
         if operation_success:
