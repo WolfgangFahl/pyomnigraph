@@ -3,13 +3,17 @@ Created on 2025-05-28
 
 @author: wf
 """
-import traceback
+
 import json
+import traceback
 from dataclasses import asdict
 from pathlib import Path
 from typing import Callable, Dict
 
+from tabulate import tabulate
+
 from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.servers.graphdb import GraphDB, GraphDBConfig
@@ -19,9 +23,6 @@ from omnigraph.servers.qlever import QLever, QLeverConfig
 from omnigraph.servers.stardog import Stardog, StardogConfig
 from omnigraph.servers.virtuoso import Virtuoso, VirtuosoConfig
 from omnigraph.sparql_server import SparqlServer
-from tabulate import tabulate
-
-from omnigraph.prefix_config import PrefixConfigs
 
 
 class OmniServer:
@@ -107,7 +108,7 @@ class OmniServer:
 
         return server_instance
 
-    def servers(self, yaml_path: Path,filter_active:bool=True) -> Dict[str, SparqlServer]:
+    def servers(self, yaml_path: Path, filter_active: bool = True) -> Dict[str, SparqlServer]:
         """
         Load active servers from YAML configuration.
 
@@ -141,7 +142,7 @@ class OmniServer:
         Returns:
             str: Formatted table markup
         """
-        headers = ["Active","Name", "Container Name", "Wikidata", "Image", "Port", "Test Port", "Dataset", "User"]
+        headers = ["Active", "Name", "Container Name", "Wikidata", "Image", "Port", "Test Port", "Dataset", "User"]
         table_data = []
 
         def format_link(text: str, url: str, format_type: str) -> str:
@@ -160,7 +161,7 @@ class OmniServer:
                 return text
 
         for server in servers.values():
-            active_str=server.flag
+            active_str = server.flag
 
             wikidata_id = getattr(server.config, "wikidata_id", "")
             wikidata_link = (
@@ -201,10 +202,7 @@ class OmniServer:
         return markup
 
     def generate_endpoints_yaml(
-        self,
-        servers: Dict[str, SparqlServer],
-        prefix_configs: PrefixConfigs,
-        output_path: str = None
+        self, servers: Dict[str, SparqlServer], prefix_configs: PrefixConfigs, output_path: str = None
     ) -> str:
         """
         Generate endpoints.yaml from server configurations.
@@ -213,14 +211,14 @@ class OmniServer:
 
         for server in servers.values():
             if server.config.active:
-                prefix_sets = getattr(server.config, 'prefix_sets', ['rdf'])
+                prefix_sets = getattr(server.config, "prefix_sets", ["rdf"])
                 prefixes_text = prefix_configs.get_selected_declarations(prefix_sets)
                 # optional elements
-                auth="\n  auth: BASIC" if server.config.auth_user else ""
-                user=f"\n  user: {server.config.auth_user}" if server.config.auth_user else ""
-                passwd=f"\n  passwd: {server.config.auth_password}" if server.config.auth_password else ""
+                auth = "\n  auth: BASIC" if server.config.auth_user else ""
+                user = f"\n  user: {server.config.auth_user}" if server.config.auth_user else ""
+                passwd = f"\n  passwd: {server.config.auth_password}" if server.config.auth_password else ""
                 # Indent prefixes for literal block scalar (4 spaces)
-                indented_prefixes = '\n'.join(f"    {line}" for line in prefixes_text.split('\n') if line.strip())
+                indented_prefixes = "\n".join(f"    {line}" for line in prefixes_text.split("\n") if line.strip())
 
                 entry = f"""{server.name}:
   method: {getattr(server.config, 'method', 'POST')}
@@ -234,12 +232,12 @@ class OmniServer:
 
                 yaml_entries.append(entry)
 
-        yaml_header="# SPARQL endpoints for snapquery, sparqlquery and omnigraph tools\n"
-        yaml_header+=server.config.generator_header()+"\n"
-        yaml_content = yaml_header+"\n".join(yaml_entries)
+        yaml_header = "# SPARQL endpoints for snapquery, sparqlquery and omnigraph tools\n"
+        yaml_header += server.config.generator_header() + "\n"
+        yaml_content = yaml_header + "\n".join(yaml_entries)
 
         if output_path:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 f.write(yaml_content)
 
         return yaml_content

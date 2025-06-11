@@ -4,23 +4,24 @@ Created on 2025-05-27
 @author: wf
 """
 
-from pathlib import Path
 import re
 import time
 import traceback
-from typing import List
 import webbrowser
+from pathlib import Path
+from typing import List
 
+import requests
 from lodstorage.query import Endpoint
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
+from tqdm import tqdm
+
 from omnigraph.docker_util import DockerUtil
 from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from omnigraph.shell import ShellResult
 from omnigraph.software import SoftwareList
-import requests
-from tqdm import tqdm
 
 
 class Response:
@@ -41,9 +42,6 @@ class Response:
         self.error = error
 
 
-
-
-
 class SparqlServer:
     """
     Base class for dockerized SPARQL servers
@@ -61,8 +59,10 @@ class SparqlServer:
         self.verbose = env.verbose
         self.shell = env.shell
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
-        self.current_status=None
-        self.docker_util=DockerUtil(shell=self.shell,container_name=self.config.container_name,verbose=self.verbose,debug=self.debug)
+        self.current_status = None
+        self.docker_util = DockerUtil(
+            shell=self.shell, container_name=self.config.container_name, verbose=self.verbose, debug=self.debug
+        )
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -77,16 +77,16 @@ class SparqlServer:
                 self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
 
     @property
-    def full_name(self)->str:
+    def full_name(self) -> str:
         full_name = f"{self.name} {self.config.container_name}"
         return full_name
 
     @property
-    def flag(self)->str:
-        flag="🟢️" if self.config.active else "🛑"
+    def flag(self) -> str:
+        flag = "🟢️" if self.config.active else "🛑"
         if self.current_status:
             state = self.current_status.at.value
-            flag+=str(state)
+            flag += str(state)
         return flag
 
     def as_endpoint_conf(self, prefix_configs: PrefixConfigs, prefix_sets: List[str]) -> Endpoint:
@@ -171,8 +171,6 @@ class SparqlServer:
             response = Response(None, ex)
         return response
 
-
-
     def get_web_url(self) -> str:
         """
         Return the service-specific Web UI URL.
@@ -180,22 +178,20 @@ class SparqlServer:
         """
         return self.config.web_url
 
-
     def webui(self):
         """
         open my webui
         """
-        web_url=self.get_web_url()
+        web_url = self.get_web_url()
         webbrowser.open(web_url)
 
-
-    def status_info(self)->str:
+    def status_info(self) -> str:
         """
         Return one-line summary of server status e.g. for CLI use.
         """
         self.status()
-        summary=self.current_status.get_summary(self.debug)
-        info=f"{self.flag}{summary}"
+        summary = self.current_status.get_summary(self.debug)
+        info = f"{self.flag}{summary}"
         return info
 
     def status(self) -> ServerStatus:
@@ -228,7 +224,7 @@ class SparqlServer:
             server_status.exists = False
             server_status.running = False
 
-        self.current_status=server_status
+        self.current_status = server_status
         return server_status
 
     def refresh_logs(self, server_status=ServerStatus):
@@ -466,14 +462,12 @@ class SparqlServer:
 
         return ready_status
 
-
-
-    def get_clear_query(self)->str:
+    def get_clear_query(self) -> str:
         """
         the clear query to be used
         may be overriden by specific SPARQL server implementations
         """
-        clear_query="DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
         return clear_query
 
     def clear(self) -> int:
@@ -488,7 +482,7 @@ class SparqlServer:
         else:
             clear_query = self.get_clear_query()
             try:
-                _reponse,ex=self.sparql.insert(clear_query)
+                _reponse, ex = self.sparql.insert(clear_query)
                 if ex:
                     self.handle_exception("DELETE", ex)
                 new_count = self.count_triples()

@@ -16,6 +16,7 @@ import threading
 from pathlib import Path
 from typing import Dict, List
 
+
 class ShellResult:
     """
     result of a command line call
@@ -35,6 +36,7 @@ class ShellResult:
         else:
             text = "✅" if self.success else f"❌ → rc={self.proc.returncode}"
         return text
+
 
 class StreamTee:
     """

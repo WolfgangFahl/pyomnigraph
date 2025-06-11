@@ -44,8 +44,7 @@ class PrefixConfigs:
         return prefix_configs
 
     def __post_init__(self):
-        """
-        """
+        """ """
         self.all_prefixes = {}
         for prefix_config in self.prefix_sets.values():
             self.all_prefixes.update(prefix_config.prefixes)

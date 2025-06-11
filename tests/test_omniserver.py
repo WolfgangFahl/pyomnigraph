@@ -3,6 +3,7 @@ Created on 2025-06-04
 
 @author: wf
 """
+
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
 from omnigraph.prefix_config import PrefixConfigs
@@ -35,7 +36,7 @@ class TestOmniServer(Basetest):
         if not self.servers_yaml_path.exists():
             self.skipTest(f"Server config file not found: {self.servers_yaml_path}")
 
-        servers_dict = self.omni_server.servers(self.servers_yaml_path,filter_active=False)
+        servers_dict = self.omni_server.servers(self.servers_yaml_path, filter_active=False)
 
         if self.debug:
             print(f"Loaded {len(servers_dict)} servers")
@@ -46,7 +47,6 @@ class TestOmniServer(Basetest):
         for _server_name, server in servers_dict.items():
             self.assertIsInstance(server, SparqlServer)
 
-
     def test_get_server_commands(self):
         """
         test retrieving server command factories
@@ -54,8 +54,18 @@ class TestOmniServer(Basetest):
         server_cmds = self.omni_server.get_server_commands()
 
         expected_commands = [
-            "bash", "clear", "count", "info", "load",
-            "logs", "needed", "rm", "start", "status", "stop", "webui"
+            "bash",
+            "clear",
+            "count",
+            "info",
+            "load",
+            "logs",
+            "needed",
+            "rm",
+            "start",
+            "status",
+            "stop",
+            "webui",
         ]
 
         self.assertIsInstance(server_cmds, dict)
@@ -90,11 +100,8 @@ class TestOmniServer(Basetest):
         if not self.servers_yaml_path.exists():
             self.skipTest(f"Server config file not found: {self.servers_yaml_path}")
 
-        servers_dict = self.omni_server.servers(self.servers_yaml_path,filter_active=False)
-        yaml_content = self.omni_server.generate_endpoints_yaml(
-            servers_dict,
-            self.prefix_configs
-        )
+        servers_dict = self.omni_server.servers(self.servers_yaml_path, filter_active=False)
+        yaml_content = self.omni_server.generate_endpoints_yaml(servers_dict, self.prefix_configs)
 
         if self.debug:
             print("Generated endpoints YAML:")

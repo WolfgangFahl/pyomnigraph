@@ -63,7 +63,7 @@ class TestSparqlServer(Basetest):
             started = server.start()
             if not started:
                 pass
-            self.assertTrue(started,server.full_name)
+            self.assertTrue(started, server.full_name)
             if verbose:
                 if self.debug:
                     print(server_status.get_summary(debug=self.debug))

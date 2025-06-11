@@ -86,6 +86,6 @@ class TestPrefixConfig(Basetest):
         if self.debug:
             print(f"Selected declarations for {prefix_sets}:")
             print(declarations)
-        expected_prefixes=["rdf","bd","gov"]
+        expected_prefixes = ["rdf", "bd", "gov"]
         for prefix in expected_prefixes:
             self.assertIn(prefix, declarations)

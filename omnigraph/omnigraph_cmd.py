@@ -52,11 +52,7 @@ class OmnigraphCmd(BaseCmd):
             default=str(self.default_yaml_path),
             help="Path to server configuration YAML file [default: %(default)s]",
         )
-        parser.add_argument(
-            "--cmd",
-            nargs="+",
-            help=f"commands to execute on servers: {self.available_cmds}"
-        )
+        parser.add_argument("--cmd", nargs="+", help=f"commands to execute on servers: {self.available_cmds}")
         parser.add_argument(
             "-df", "--doc-format", default="plain", help="The document format to use [default: %(default)s]"
         )
@@ -195,7 +191,7 @@ class OmnigraphCmd(BaseCmd):
             if self.args.test:
                 patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)
             omni_server = OmniServer(env=env, patch_config=patch_config)
-            self.all_servers = omni_server.servers(self.args.config,filter_active=not self.args.include_inactive)
+            self.all_servers = omni_server.servers(self.args.config, filter_active=not self.args.include_inactive)
         else:
             print(f"Config file not found: {self.args.config}")
         self.servers = self.getServers()
@@ -207,11 +203,9 @@ class OmnigraphCmd(BaseCmd):
                 print(f"  {server.full_name}")
 
         if self.args.endpoints_yaml:
-            output_path=self.args.endpoints_yaml
+            output_path = self.args.endpoints_yaml
             _yaml_content = self.omni_server.generate_endpoints_yaml(
-                self.servers,
-                self.prefix_configs,
-                output_path=output_path
+                self.servers, self.prefix_configs, output_path=output_path
             )
             pass
         if self.args.apache:
@@ -226,7 +220,7 @@ class OmnigraphCmd(BaseCmd):
             print(markup)
 
         cmds = list(self.args.cmd or [])
-        if len(cmds)>0:
+        if len(cmds) > 0:
             for server in self.servers.values():
                 if not self.quiet:
                     print(f"{server.flag}  {server.full_name}:")

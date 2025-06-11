@@ -3,11 +3,13 @@ Created on 2025-05-14
 
 @author: wf
 """
+
 import json
 import os
 import subprocess
+import traceback
 from tempfile import NamedTemporaryFile
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from omnigraph.shell import Shell, ShellResult
 
@@ -17,15 +19,24 @@ class DockerUtil:
     docker utilities
     """
 
-    def __init__(self,
-        shell: Shell,
-        container_name: str,
-        verbose: bool=False,
-        debug: bool = False):
+    def __init__(self, shell: Shell, container_name: str, verbose: bool = False, debug: bool = False):
         self.shell = shell
         self.container_name = container_name
-        self.verbose=verbose
+        self.verbose = verbose
         self.debug = debug
+
+    def handle_exception(self, context: str, ex: Exception):
+        """
+        handle the given exception
+        """
+        container_name = container_name
+        self.log.log("❌", container_name, f"Exception {context}: {ex}")
+        if self.debug:
+            # extract exception type, and trace back
+            ex_type = type(ex)
+            ex_tb = ex.__traceback__
+            # print exception stack details
+            traceback.print_exception(ex_type, ex, ex_tb)
 
     def patch_file(self, file_path: str, callback, push_back: bool = True):
         """

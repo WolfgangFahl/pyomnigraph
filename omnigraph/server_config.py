@@ -23,6 +23,7 @@ class ServerLifecycleState(Enum):
     """
     a state in the servers lifecycle
     """
+
     READY = "ready ✅"
     UP = "up 🟢"
     ERROR = "error ❌"
