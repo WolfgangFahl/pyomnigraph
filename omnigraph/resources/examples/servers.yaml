@@ -97,4 +97,4 @@ servers:
     host: "localhost"
     auth_user: "dba"
     auth_password: "dba"
-    active: false
+    active: fals

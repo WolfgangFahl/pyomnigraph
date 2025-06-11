@@ -199,12 +199,7 @@ class ServerConfig:
     ErrorLog ${{APACHE_LOG_DIR}}/{short_name}_error{log_suffix}.log
     CustomLog ${{APACHE_LOG_DIR}}/{short_name}{log_suffix}.log combined
 
-    RewriteEngine On
-    RewriteCond %{{HTTP:Upgrade}} =websocket [NC]
-    RewriteRule /(.*) ws://localhost:{default_port}/$1 [P,L]
-    RewriteCond %{{HTTP:Upgrade}} !=websocket [NC]
-    RewriteRule /(.*) http://localhost:{default_port}/$1 [P,L]
-
+    ProxyPass / http://localhost:{default_port}/
     ProxyPassReverse / http://localhost:{default_port}/
 </VirtualHost>
 """
