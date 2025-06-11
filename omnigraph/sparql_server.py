@@ -4,23 +4,22 @@ Created on 2025-05-27
 @author: wf
 """
 
-import json
+from pathlib import Path
 import re
 import time
 import traceback
+from typing import List
 import webbrowser
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
-import requests
 from lodstorage.query import Endpoint
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
-from tqdm import tqdm
-
+from omnigraph.docker_util import DockerUtil
 from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from omnigraph.software import SoftwareList
+import requests
+from tqdm import tqdm
 
 
 class Response:
@@ -80,6 +79,7 @@ class SparqlServer:
         self.shell = env.shell
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
         self.current_status=None
+        self.docker_util=DockerUtil(container_name=self.config.container_name,debug=self.debug)
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
@@ -236,24 +236,6 @@ class SparqlServer:
         web_url=self.get_web_url()
         webbrowser.open(web_url)
 
-    def docker_inspect(self) -> Optional[Dict[str, Any]]:
-        """
-        Retrieve full .State of the Docker container.
-
-        Returns:
-            dict: parsed .State structure or None on error
-        """
-        inspect_dict = None
-        cmd = f'docker inspect -f "{{{{json .State}}}}" {self.config.container_name}'
-        result = self.shell.run(cmd, debug=self.debug)
-        if result.returncode == 0:
-            try:
-                json_text = result.stdout.strip()
-                inspect_dict = json.loads(json_text)
-            except Exception as ex:
-                if self.debug:
-                    print(f"Failed to parse Docker state JSON: {ex}")
-        return inspect_dict
 
     def status_info(self)->str:
         """
@@ -272,7 +254,7 @@ class SparqlServer:
             ServerStatus: object with detailed container state
         """
         server_status = ServerStatus(at=ServerLifecycleState.UNKNOWN)
-        state = self.docker_inspect()
+        state = self.docker_util.inspect()
 
         if state:
             server_status.exists = True

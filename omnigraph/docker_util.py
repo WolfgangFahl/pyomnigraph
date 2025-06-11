@@ -3,10 +3,11 @@ Created on 2025-05-14
 
 @author: wf
 """
-
+import json
 import os
 import subprocess
 from tempfile import NamedTemporaryFile
+from typing import Optional, Dict, Any
 
 from omnigraph.shell import Shell
 
@@ -132,3 +133,23 @@ class DockerUtil:
         """
         process = self.shell.run(cmd, tee=tee, debug=self.debug)
         return process
+
+    def inspect(self) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve full .State of the Docker container.
+
+        Returns:
+            dict: parsed .State structure or None on error
+        """
+        inspect_dict = None
+        cmd = f'docker inspect -f "{{{{json .State}}}}" {self.container_name}'
+        result = self.shell.run(cmd, debug=self.debug)
+        if result.returncode == 0:
+            try:
+                json_text = result.stdout.strip()
+                inspect_dict = json.loads(json_text)
+            except Exception as ex:
+                if self.debug:
+                    print(f"Failed to parse Docker state JSON: {ex}")
+        return inspect_dict
+
