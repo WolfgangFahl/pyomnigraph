@@ -171,38 +171,7 @@ class SparqlServer:
             response = Response(None, ex)
         return response
 
-    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> ShellResult:
-        """
-        Helper function for running shell commands with consistent error handling.
 
-        Args:
-            command: Shell command to run
-            success_msg: Message to log on success
-            error_msg: Message to log on error
-
-        Returns:
-            True if command succeeded (returncode 0)
-        """
-        container_name = self.config.container_name
-        command_success = False
-        proc = None
-        try:
-            proc = self.shell.run(command, debug=self.debug, tee=self.verbose)
-            if proc.returncode == 0:
-                if success_msg:
-                    self.log.log("✅", container_name, success_msg)
-                command_success = True
-            else:
-                error_detail = error_msg or f"Command failed: {command}"
-                if proc.stderr:
-                    error_detail += f" - {proc.stderr}"
-                self.log.log("❌", container_name, error_detail)
-                command_success = False
-        except Exception as ex:
-            self.handle_exception(f"command '{command}'", ex)
-            command_success = False
-        shell_result = ShellResult(proc, command_success)
-        return shell_result
 
     def get_web_url(self) -> str:
         """
@@ -339,7 +308,7 @@ class SparqlServer:
         if operation_success:
             base_data_dir = self.config.base_data_dir
             create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
-            create_result = self.run_shell_command(
+            create_result = self.docker_util.docker_util.run_shell_command(
                 create_cmd,
                 error_msg=f"Failed to create container {container_name}",
             )
@@ -409,7 +378,7 @@ class SparqlServer:
                         f"Container {container_name} exists, starting...",
                     )
                     start_cmd = f"docker start {container_name}"
-                    start_result = self.run_shell_command(
+                    start_result = self.docker_util.run_shell_command(
                         start_cmd,
                         error_msg=f"Failed to start container {container_name}",
                     )
