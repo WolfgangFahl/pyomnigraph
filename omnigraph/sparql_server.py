@@ -280,6 +280,34 @@ class SparqlServer:
         except Exception as ex:
             server_status.error = ex
 
+    def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
+        """create the given docker command with the given options"""
+        return self.docker_util.docker_cmd(cmd, options, args)
+
+    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> ShellResult:
+        """run the given docker commmand with the given options"""
+        return self.docker_util.run_docker_cmd(cmd, options, args)
+
+    def logs(self) -> ShellResult:
+        """show the logs of the container"""
+        return self.docker_util.logs()
+
+    def docker_info(self) -> ShellResult:
+        """Check if Docker is responsive on the host system."""
+        return self.docker_util.docker_info()
+
+    def stop(self) -> ShellResult:
+        """stop the server container"""
+        return self.docker_util.stop()
+
+    def rm(self) -> ShellResult:
+        """remove the server container."""
+        return self.docker_util.rm()
+
+    def bash(self) -> bool:
+        """bash into the server container."""
+        return self.docker_util.bash()
+
     def pre_create(self):
         """
         abstract pre docker create step
@@ -469,58 +497,7 @@ class SparqlServer:
 
         return ready_status
 
-    def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
-        """
-        create the given docker command with the given options
-        """
-        container_name = "" if cmd == "info" else self.config.container_name
-        if options:
-            options = f" {options}"
-        if args:
-            args = f" {args}"
-        full_cmd = f"docker {cmd}{options} {container_name}{args}"
-        return full_cmd
 
-    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> ShellResult:
-        """
-        run the given docker commmand with the given options
-        """
-        container_name = self.config.container_name
-        full_cmd = self.docker_cmd(cmd, options, args)
-        shell_result = self.run_shell_command(
-            full_cmd,
-            success_msg=f"{cmd} container {container_name}",
-            error_msg=f"Failed to {cmd} container {container_name}",
-        )
-        return shell_result
-
-    def logs(self) -> ShellResult:
-        """show the logs of the container"""
-        logs_result = self.run_docker_cmd("logs")
-        return logs_result
-
-    def docker_info(self) -> ShellResult:
-        """
-        Check if Docker is responsive on the host system.
-        """
-        info_result = self.run_docker_cmd("info")
-        return info_result
-
-    def stop(self) -> ShellResult:
-        """stop the server container"""
-        stop_result = self.run_docker_cmd("stop")
-        return stop_result
-
-    def rm(self) -> ShellResult:
-        """remove the server container."""
-        rm_result = self.run_docker_cmd("rm")
-        return rm_result
-
-    def bash(self) -> bool:
-        """bash into the server container."""
-        bash_cmd = self.docker_cmd("exec", "-it", "/bin/bash")
-        print(bash_cmd)
-        return True
 
     def get_clear_query(self)->str:
         """
