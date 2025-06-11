@@ -17,9 +17,14 @@ class DockerUtil:
     docker utilities
     """
 
-    def __init__(self, shell: Shell, container_name: str, debug: bool = False):
+    def __init__(self,
+        shell: Shell,
+        container_name: str,
+        verbose: bool=False,
+        debug: bool = False):
         self.shell = shell
         self.container_name = container_name
+        self.verbose=verbose
         self.debug = debug
 
     def patch_file(self, file_path: str, callback, push_back: bool = True):
