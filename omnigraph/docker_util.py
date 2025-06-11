@@ -165,7 +165,7 @@ class DockerUtil:
         Returns:
             True if command succeeded (returncode 0)
         """
-        container_name = self.config.container_name
+        container_name = self.container_name
         command_success = False
         proc = None
         try:
