@@ -7,10 +7,11 @@ Created on 2025-05-14
 import json
 import os
 import subprocess
-import traceback
 from tempfile import NamedTemporaryFile
+import traceback
 from typing import Any, Dict, Optional
 
+from omnigraph.persistent_log import Log
 from omnigraph.shell import Shell, ShellResult
 
 
@@ -19,9 +20,15 @@ class DockerUtil:
     docker utilities
     """
 
-    def __init__(self, shell: Shell, container_name: str, verbose: bool = False, debug: bool = False):
+    def __init__(self,
+        shell: Shell,
+        container_name: str,
+        log:Log,
+        verbose: bool = False,
+        debug: bool = False):
         self.shell = shell
         self.container_name = container_name
+        self.log=log
         self.verbose = verbose
         self.debug = debug
 
