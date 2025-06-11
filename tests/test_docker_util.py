@@ -6,6 +6,7 @@ Created on 2025-05-28
 
 from omnigraph.docker_util import DockerUtil
 from omnigraph.shell import Shell
+from omnigraph.persistent_log import Log
 from tests.basetest import Basetest
 
 
@@ -17,8 +18,9 @@ class TestDockerUtil(Basetest):
     def setUp(self, debug=False, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.shell = Shell()
+        self.log=Log()
         self.container_name = "test_container"
-        self.docker_util = DockerUtil(self.shell, self.container_name, debug=debug)
+        self.docker_util = DockerUtil(self.shell, self.container_name,log=self.log,debug=debug)
 
     def test_initialization(self):
         """
