@@ -169,7 +169,7 @@ class DockerUtil:
         """
         run the given docker commmand with the given options
         """
-        container_name = self.config.container_name
+        container_name = self.container_name
         full_cmd = self.docker_cmd(cmd, options, args)
         shell_result = self.run_shell_command(
             full_cmd,
