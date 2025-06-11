@@ -308,7 +308,7 @@ class SparqlServer:
         if operation_success:
             base_data_dir = self.config.base_data_dir
             create_cmd = self.config.get_docker_run_command(data_dir=base_data_dir)
-            create_result = self.docker_util.docker_util.run_shell_command(
+            create_result = self.docker_util.run_shell_command(
                 create_cmd,
                 error_msg=f"Failed to create container {container_name}",
             )
