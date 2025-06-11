@@ -29,7 +29,7 @@ class DockerUtil:
         """
         handle the given exception
         """
-        container_name = container_name
+        container_name = self.container_name
         self.log.log("❌", container_name, f"Exception {context}: {ex}")
         if self.debug:
             # extract exception type, and trace back
