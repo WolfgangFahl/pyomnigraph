@@ -249,6 +249,13 @@ class SparqlServer:
         except Exception as ex:
             server_status.error = ex
 
+    # delegates
+    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> ShellResult:
+        """
+        Helper function for running shell commands with consistent error handling.
+        """
+        return self.docker_util.run_shell_command(command, success_msg, error_msg)
+
     def docker_cmd(self, cmd: str, options: str = "", args: str = "") -> str:
         """create the given docker command with the given options"""
         return self.docker_util.docker_cmd(cmd, options, args)

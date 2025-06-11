@@ -186,7 +186,7 @@ class DockerUtil:
             error_msg: Message to log on error
 
         Returns:
-            True if command succeeded (returncode 0)
+            shell_result: a shell result
         """
         container_name = self.container_name
         command_success = False
