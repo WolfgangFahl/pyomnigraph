@@ -199,6 +199,9 @@ class ServerConfig:
     ErrorLog ${{APACHE_LOG_DIR}}/{short_name}_error{log_suffix}.log
     CustomLog ${{APACHE_LOG_DIR}}/{short_name}{log_suffix}.log combined
 
+    ProxyPreserveHost On
+    ProxyTimeout {proxy_timeout}
+
     ProxyPass / http://localhost:{default_port}/
     ProxyPassReverse / http://localhost:{default_port}/
 </VirtualHost>
