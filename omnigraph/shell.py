@@ -16,6 +16,25 @@ import threading
 from pathlib import Path
 from typing import Dict, List
 
+class ShellResult:
+    """
+    result of a command line call
+    """
+
+    def __init__(self, proc, success: bool):
+        self.proc = proc
+        self.success = success
+
+    def __str__(self):
+        text = self.as_text()
+        return text
+
+    def as_text(self, debug: bool = False):
+        if debug:
+            text = f"{self.proc.args} → rc={self.proc.returncode}, success={self.success}"
+        else:
+            text = "✅" if self.success else f"❌ → rc={self.proc.returncode}"
+        return text
 
 class StreamTee:
     """

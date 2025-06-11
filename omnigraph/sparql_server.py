@@ -17,6 +17,7 @@ from lodstorage.sparql import SPARQL
 from omnigraph.docker_util import DockerUtil
 from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
+from omnigraph.shell import ShellResult
 from omnigraph.software import SoftwareList
 import requests
 from tqdm import tqdm
@@ -40,25 +41,7 @@ class Response:
         self.error = error
 
 
-class ShellResult:
-    """
-    result of a command line call
-    """
 
-    def __init__(self, proc, success: bool):
-        self.proc = proc
-        self.success = success
-
-    def __str__(self):
-        text = self.as_text()
-        return text
-
-    def as_text(self, debug: bool = False):
-        if debug:
-            text = f"{self.proc.args} → rc={self.proc.returncode}, success={self.success}"
-        else:
-            text = "✅" if self.success else f"❌ → rc={self.proc.returncode}"
-        return text
 
 
 class SparqlServer:
@@ -79,7 +62,7 @@ class SparqlServer:
         self.shell = env.shell
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
         self.current_status=None
-        self.docker_util=DockerUtil(container_name=self.config.container_name,debug=self.debug)
+        self.docker_util=DockerUtil(shell=self.shell,container_name=self.config.container_name,debug=self.debug)
 
         # Subclasses must set these URLs
         if self.config.sparql_url:
