@@ -61,7 +61,11 @@ class SparqlServer:
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
         self.current_status = None
         self.docker_util = DockerUtil(
-            shell=self.shell, container_name=self.config.container_name, verbose=self.verbose, debug=self.debug
+            shell=self.shell,
+            container_name=self.config.container_name,
+            log=self.log,
+            verbose=self.verbose,
+            debug=self.debug
         )
 
         # Subclasses must set these URLs
