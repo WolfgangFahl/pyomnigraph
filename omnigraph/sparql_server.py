@@ -52,6 +52,7 @@ class SparqlServer:
         Initialize the SPARQL server manager.
 
         """
+        self.env=env
         self.log = env.log
         self.config = config
         self.name = self.config.name
@@ -488,7 +489,8 @@ class SparqlServer:
         container_name = self.config.container_name
         count_triples = self.count_triples()
         msg = f"deleting {count_triples} triples ..."
-        if count_triples >= self.config.unforced_clear_limit:
+        protected=count_triples >= self.config.unforced_clear_limit
+        if protected and not self.env.force:
             self.log.log("❌", container_name, f"{msg} needs force option")
         else:
             clear_query = self.get_clear_query()

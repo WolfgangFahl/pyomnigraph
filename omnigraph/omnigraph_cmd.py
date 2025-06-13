@@ -186,7 +186,7 @@ class OmnigraphCmd(BaseCmd):
         super().handle_args(args)
         self.all_servers = {}
         if Path(self.args.config).exists():
-            env = ServerEnv(debug=self.debug, verbose=self.args.verbose)
+            env = ServerEnv(force=self.force,debug=self.debug, verbose=self.args.verbose)
             patch_config = None
             if self.args.test:
                 patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)

@@ -76,13 +76,14 @@ class ServerEnv:
     Server environment configuration.
     """
 
-    def __init__(self, log: Log = None, shell: Shell = None, debug: bool = False, verbose: bool = False):
+    def __init__(self, log: Log = None, shell: Shell = None, force:bool=False, debug: bool = False, verbose: bool = False):
         """
         Initialize server environment.
 
         Args:
             log: Log instance for logging
             shell: Shell instance for command execution
+            force: if True enable actions that are otherwise protected e.g. deletion of data
             debug: Enable debug mode
             verbose: Enable verbose output
         """
@@ -93,6 +94,7 @@ class ServerEnv:
         if shell is None:
             shell = Shell()
         self.shell = shell
+        self.force=force
         self.debug = debug
         self.verbose = verbose
 
