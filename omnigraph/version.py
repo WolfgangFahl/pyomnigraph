@@ -4,7 +4,7 @@ Created on 2025-05-28
 @author: wf
 """
 
-from lodstorage.yamlable import lod_storable
+from basemkit.yamlable import lod_storable
 
 import omnigraph
 

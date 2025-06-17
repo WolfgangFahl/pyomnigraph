@@ -18,9 +18,13 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 
 dependencies = [
+	# https://pypi.org/project/pybasemkit/
+	# https://github.com/WolfgangFahl/pybasemkit
+	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
+	"pybasemkit>=0.0.3",
 	# platform independent knowledge graph ready list of dicts (table) handling
     # https://pypi.org/project/pyLodStorage/
-    "pyLodStorage>=0.16.2",
+    "pyLodStorage>=0.16.4",
     # https://pypi.org/project/tqdm/
 	# progress bar
 	"tdqm",

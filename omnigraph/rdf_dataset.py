@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 from lodstorage.query import Query
 from lodstorage.sparql import SPARQL
-from lodstorage.yamlable import lod_storable
+from basemkit.yamlable import lod_storable
 
 
 @dataclass
