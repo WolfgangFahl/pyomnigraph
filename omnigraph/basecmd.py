@@ -11,7 +11,7 @@ from typing import Dict
 from lodstorage.rdf_format import RdfFormat
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.persistent_log import Log
+from basemkit.persistent_log import Log
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.version import Version
 

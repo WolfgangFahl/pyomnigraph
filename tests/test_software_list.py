@@ -4,8 +4,8 @@ Created on 2025-05-28
 @author: wf
 """
 
-from omnigraph.persistent_log import Log
-from omnigraph.shell import Shell
+from basemkit.persistent_log import Log
+from basemkit.shell import Shell
 from omnigraph.software import Software, SoftwareList
 from tests.basetest import Basetest
 

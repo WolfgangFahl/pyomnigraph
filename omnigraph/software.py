@@ -4,8 +4,8 @@ from typing import List
 
 from basemkit.yamlable import lod_storable
 
-from omnigraph.persistent_log import Log
-from omnigraph.shell import Shell
+from basemkit.persistent_log import Log
+from basemkit.shell import Shell
 
 
 @dataclass

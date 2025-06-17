@@ -69,7 +69,9 @@ servers:
         - command: "pip"
           info: "pip (Install with 'apt install python3-pip' or 'yum install python3-pip')"
         - command: "qlever"
-          info: "qlever (Install via pip install qlever)"
+          info: "qlever (Install via pipx install qlever)"
+        - command: "unzip"
+          info: "needed by qlever script (Install e.g. via apt install unzip)"
     active: true
   stardog:
     server: "stardog"

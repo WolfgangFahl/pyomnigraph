@@ -11,8 +11,8 @@ from tempfile import NamedTemporaryFile
 import traceback
 from typing import Any, Dict, Optional
 
-from omnigraph.persistent_log import Log
-from omnigraph.shell import Shell, ShellResult
+from basemkit.persistent_log import Log
+from basemkit.shell import Shell, ShellResult
 
 
 class DockerUtil:

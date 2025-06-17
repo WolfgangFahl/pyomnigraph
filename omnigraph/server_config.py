@@ -13,8 +13,8 @@ from typing import Callable, Dict, Optional
 
 from basemkit.yamlable import lod_storable
 
-from omnigraph.persistent_log import Log
-from omnigraph.shell import Shell
+from basemkit.persistent_log import Log
+from basemkit.shell import Shell
 from omnigraph.software import SoftwareList
 from omnigraph.version import Version
 

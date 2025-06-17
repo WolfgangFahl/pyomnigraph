@@ -5,8 +5,8 @@ Created on 2025-05-28
 """
 
 from omnigraph.docker_util import DockerUtil
-from omnigraph.shell import Shell
-from omnigraph.persistent_log import Log
+from basemkit.shell import Shell
+from basemkit.persistent_log import Log
 from tests.basetest import Basetest
 
 
