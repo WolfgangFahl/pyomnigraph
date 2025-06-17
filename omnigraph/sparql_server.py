@@ -3,7 +3,7 @@ Created on 2025-05-27
 
 @author: wf
 """
-
+import psutil
 import re
 import time
 import traceback
@@ -131,6 +131,10 @@ class SparqlServer:
         endpoint.prefixes = declarations
 
         return endpoint
+
+    def avail_mem_gb(self)->float:
+        avail_mem = psutil.virtual_memory().available / (1024 ** 3)
+        return avail_mem
 
     def handle_exception(self, context: str, ex: Exception):
         """
@@ -578,7 +582,9 @@ class SparqlServer:
             self.log.log("⚠️", container_name, f"No files found matching pattern: {file_pattern}")
         else:
             self.log.log("✅", container_name, f"Found {len(files)} files to load")
-            for filepath in tqdm(files, desc="Loading files"):
+            pbar = tqdm(files, dynamic_ncols=True)
+            for filepath in pbar:
+                pbar.set_description(f"Mem: {self.avail_mem_gb():.1f} GB → {filepath.name}")
                 file_result = self.load_file(filepath)
                 if file_result:
                     loaded_count += 1
