@@ -20,7 +20,7 @@ from tqdm import tqdm
 from omnigraph.docker_util import DockerUtil
 from omnigraph.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
-from omnigraph.shell import ShellResult
+from basemkit.shell import ShellResult
 from omnigraph.software import SoftwareList
 
 
