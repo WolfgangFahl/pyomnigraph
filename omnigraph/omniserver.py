@@ -11,7 +11,7 @@ from typing import Callable, Dict
 from tabulate import tabulate
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.prefix_config import PrefixConfigs
+from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.servers.graphdb import GraphDB, GraphDBConfig

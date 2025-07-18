@@ -11,7 +11,7 @@ from typing import Dict, List
 from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
-from omnigraph.prefix_config import PrefixConfigs
+from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.rdf_dataset import RdfDataset
 from omnigraph.sparql_server import ServerEnv, SparqlServer
 

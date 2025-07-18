@@ -18,7 +18,7 @@ from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
 from omnigraph.docker_util import DockerUtil
-from omnigraph.prefix_config import PrefixConfigs
+from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from basemkit.shell import ShellResult
 from omnigraph.software import SoftwareList
