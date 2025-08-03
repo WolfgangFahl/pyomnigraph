@@ -17,7 +17,7 @@ from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
-from omnigraph.docker_util import DockerUtil
+from basemkit.docker_util import DockerUtil
 from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from basemkit.shell import ShellResult
