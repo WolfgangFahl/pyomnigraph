@@ -229,6 +229,7 @@ class ServerConfig:
             short_name=self.name,
             log_suffix="",
             default_port=self.port,
+            proxy_timeout=self.proxy_timeout,
             ssl_config_part="",
         )
 
