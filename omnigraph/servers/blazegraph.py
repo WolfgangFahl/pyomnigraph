@@ -24,6 +24,7 @@ class BlazegraphConfig(ServerConfig):
         self.status_url = f"{blazegraph_base}/status"
         self.sparql_url = f"{blazegraph_base}/namespace/{self.dataset}/sparql"
         self.upload_url = self.sparql_url
+        self.update_url = self.sparql_url
         self.web_url = f"{blazegraph_base}/#query"
         self.dataloader_url = f"{blazegraph_base}/dataloader"
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 # WF 2023-07-19
+# WF 2025-11-12 - fixes missing qlever script
 # Check if running in GitHub Actions and apt-get is available
 if [[ -n "$GITHUB_ACTIONS" && -x "$(command -v apt-get)" ]]; then
     echo "Running in GitHub Actions with apt-get available. Installing dependencies..."
@@ -9,5 +10,19 @@ if [[ -n "$GITHUB_ACTIONS" && -x "$(command -v apt-get)" ]]; then
     # install qlever
     pip install qlever
 fi
+# Check if pipx is available, install if not
+if ! command -v pipx &> /dev/null; then
+    echo "pipx not found, installing..."
+    python3 -m pip install --user pipx
+    python3 -m pipx ensurepath
+fi
+
+# Install qlever if not already installed
+if ! command -v qlever &> /dev/null; then
+    echo "qlever not found, installing via pipx..."
+    pipx install qlever || echo "Warning: qlever installation failed (optional)"
+fi
+
+
 # simple install via pyproject.toml
 pip install .

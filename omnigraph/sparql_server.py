@@ -486,20 +486,37 @@ class SparqlServer:
         clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
         return clear_query
 
+    def execute_update_query(self, update_query: str) -> tuple[any, Exception]:
+        """
+        Execute a SPARQL UPDATE query (INSERT/DELETE).
+
+        This method can be overridden by subclasses to handle server-specific
+        requirements (e.g., different content types, endpoints).
+
+        Args:
+            update_query: SPARQL UPDATE query string
+
+        Returns:
+            Tuple of (response, exception)
+        """
+        return self.sparql.insert(update_query)
+
+
     def clear(self) -> int:
         """
-        delete all triples
+        Delete all triples.
         """
         container_name = self.config.container_name
         count_triples = self.count_triples()
         msg = f"deleting {count_triples} triples ..."
-        protected=count_triples >= self.config.unforced_clear_limit
+        protected = count_triples >= self.config.unforced_clear_limit
+
         if protected and not self.env.force:
             self.log.log("❌", container_name, f"{msg} needs force option")
         else:
             clear_query = self.get_clear_query()
             try:
-                _reponse, ex = self.sparql.insert(clear_query)
+                _response, ex = self.execute_update_query(clear_query)
                 if ex:
                     self.handle_exception("DELETE", ex)
                 new_count = self.count_triples()
@@ -510,6 +527,7 @@ class SparqlServer:
                 count_triples = new_count
             except Exception as ex:
                 self.handle_exception("clear triples", ex)
+
         return count_triples
 
     def upload_request(self, file_content: bytes) -> Response:
