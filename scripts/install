@@ -21,6 +21,16 @@ fi
 if ! command -v qlever &> /dev/null; then
     echo "qlever not found, installing via pipx..."
     pipx install qlever || echo "Warning: qlever installation failed (optional)"
+
+    # **FIX: Immediately update PATH for current session**
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Verify qlever is now available
+    if command -v qlever &> /dev/null; then
+        echo "✅ qlever successfully installed and available"
+    else
+        echo "❌ Warning: qlever still not found in PATH after installation"
+    fi
 fi
 
 
