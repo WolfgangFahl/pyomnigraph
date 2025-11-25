@@ -42,8 +42,9 @@ This leads to:
 | **Blazegraph** | 🟢 Working | High performance, easy setup |
 | **Apache Jena** | 🟢 Working | Robust, standards compliant |
 | **QLever** | 🟢 Working | Extremely fast queries |
-| **GraphDB** | 🛑 Planned | Enterprise features, reasoning |
 | **Virtuoso** | 🛑 In Progress | Mature, SQL integration |
+| **MillenniumDB** | 🛑 In Progress | Property Graph + RDF; SPARQL 1.1 (RDF) and MQL (PG); import-first workflow |
+| **GraphDB** | 🛑 Planned | Enterprise features, reasoning |
 | **Stardog** | 🛑 Planned | Knowledge graphs, reasoning |
 | **Oxigraph** | 🛑 Planned | Rust-based, embedded |
 

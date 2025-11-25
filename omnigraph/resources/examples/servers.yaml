@@ -100,3 +100,16 @@ servers:
     auth_user: "dba"
     auth_password: "dba"
     active: false
+  millenniumdb:
+    server: "millenniumdb"
+    name: "millenniumdb"
+    wikidata_id: "Q118954995"
+    container_name: "millenniumdb-omnigraph"
+    # https://hub.docker.com/r/imfd/millenniumdb
+    image: "imfd/millenniumdb"
+    dataset: "default"
+    port: 1234
+    test_port: 1734
+    host: "localhost"
+    prefix_sets: ["rdf", "wikidata"]
+    active: true
