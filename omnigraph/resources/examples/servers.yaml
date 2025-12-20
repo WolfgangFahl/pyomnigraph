@@ -112,4 +112,4 @@ servers:
     test_port: 1734
     host: "localhost"
     prefix_sets: ["rdf", "wikidata"]
-    active: true
+    active: false
