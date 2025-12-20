@@ -32,11 +32,16 @@ class Response:
 
     @property
     def success(self) -> bool:
+        is_success=False
         if self.error is not None:
-            return False
+            is_success=False
         if self.response is not None:
-            return self.response.status_code in [200, 204]
-        return False
+            # HTTP status codes
+            # 200 OK (request succeeded)
+            # 201 Created (resource created)
+            # 204 No Content (success with no response body)
+            is_success=self.response.status_code in [200, 201, 204]
+        return is_success
 
     def __init__(self, response=None, error=None):
         self.response = response
@@ -492,6 +497,41 @@ class SparqlServer:
         """
         clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
         return clear_query
+
+    from typing import Any, Optional
+
+    def execute_update_query_with_post(self, update_query: str) -> tuple[Optional[Any], Optional[Exception]]:
+        """
+        Execute SPARQL UPDATE query
+        using application/sparql-update content type for UPDATE operations.
+
+        Args:
+            update_query: SPARQL UPDATE query string
+
+        Returns:
+            Tuple of (response, exception)
+        """
+        result: Optional[Any] = None
+        error: Optional[Exception] = None
+
+        try:
+            resp = self.make_request(
+                "POST",
+                self.config.update_url,
+                headers={"Content-Type": "application/sparql-update"},
+                data=update_query,
+                timeout=self.config.upload_timeout,
+            )
+
+            result = resp.response
+            if not resp.success:
+                status = resp.response.status_code if resp.response else "unknown"
+                error = resp.error or Exception(f"HTTP {status}")
+
+        except Exception as ex:
+            error = ex
+
+        return result, error
 
     def execute_update_query(self, update_query: str) -> tuple[any, Exception]:
         """

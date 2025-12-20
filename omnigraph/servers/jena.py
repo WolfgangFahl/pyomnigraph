@@ -96,21 +96,7 @@ class Jena(SparqlServer):
         Returns:
             Tuple of (response, exception)
         """
-        try:
-            response = self.make_request(
-                "POST",
-                self.config.update_url,
-                headers={"Content-Type": "application/sparql-update"},
-                data=update_query,
-                timeout=self.config.upload_timeout
-            )
+        result,error=self.execute_update_query_with_post(update_query)
+        return result,error
 
-            if response.success:
-                return (response.response, None)
-            else:
-                error = response.error if response.error else Exception(f"HTTP {response.response.status_code if response.response else 'unknown'}")
-                return (response.response, error)
-
-        except Exception as ex:
-            return (None, ex)
 

@@ -85,3 +85,19 @@ class Oxigraph(SparqlServer):
                 self.add_triple_count2_server_status(server_status)
 
         return server_status
+
+    def execute_update_query(self, update_query: str) -> tuple[any, Exception]:
+        """
+        Execute SPARQL UPDATE query using Oxigraphs's update endpoint.
+
+        Oxigraph requires application/sparql-update content type for UPDATE operations.
+        see also how Jena does this
+
+        Args:
+            update_query: SPARQL UPDATE query string
+
+        Returns:
+            Tuple of (response, exception)
+        """
+        result,error=self.execute_update_query_with_post(update_query)
+        return result,error

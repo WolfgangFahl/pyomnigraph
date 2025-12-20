@@ -28,7 +28,7 @@ dependencies = [
 	"psutil>=7.0.0",
 	# platform independent knowledge graph ready list of dicts (table) handling
     # https://pypi.org/project/pyLodStorage/
-    "pyLodStorage>=0.18.6",
+    "pyLodStorage>=0.18.7",
     # https://pypi.org/project/tqdm/
 	# progress bar
 	"tdqm",
@@ -41,6 +41,8 @@ dependencies = [
     # tabulate
     # https://pypi.org/project/tabulate/
     "tabulate>=0.9.0",
+    # https://pypi.org/project/qlever/
+    "qlever>=0.5.35"
 ]
 
 requires-python = ">=3.10"
