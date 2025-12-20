@@ -36,6 +36,7 @@ class GraphDBConfig(ServerConfig):
     def get_docker_run_command(self, data_dir) -> str:
         """
         Generate docker run command with bind mount for data directory.
+        Handles image swapping (effective_image) and conditional license injection.
 
         Args:
             data_dir: Host directory path to bind mount to container
@@ -43,15 +44,27 @@ class GraphDBConfig(ServerConfig):
         Returns:
             Complete docker run command string
         """
-        env = ""
-        if self.auth_password:
-            env = f"-e GDB_JAVA_OPTS='-Dgraphdb.auth.token.secret={self.auth_password}'"
+        # 1. Determine which image to use (Enterprise vs Free/Community)
+        target_image = self.effective_image
 
+        # 2. Build Environment Variables
+        env_parts = []
+        if self.auth_password:
+            env_parts.append(f"-e GDB_JAVA_OPTS='-Dgraphdb.auth.token.secret={self.auth_password}'")
+
+        # 3. Only inject the License Key if we are using the Enterprise image.
+        # This prevents sending the license env var to the free/free-edition image if swapped.
+        if target_image == self.image and self.license_env_var:
+            env_parts.append(f"-e {self.license_env_var}")
+
+        env_str = " " + " ".join(env_parts) if env_parts else ""
+
+        # 4. Construct Command
         docker_run_command = (
-            f"docker run {env}-d --name {self.container_name} "
+            f"docker run {self.docker_user_flag}{env_str} -d --name {self.container_name} "
             f"-p 127.0.0.1:{self.port}:7200 "
             f"-v {data_dir}:/opt/graphdb/home "
-            f"{self.image}"
+            f"{target_image}"
         )
         return docker_run_command
 

@@ -18,12 +18,47 @@ from basemkit.shell import Shell
 from omnigraph.software import SoftwareList
 from omnigraph.version import Version
 
+class SupportStatus(Enum):
+    """
+    Determines if and how a server can run based on environment/licenses.
+    """
+    SUPPORTED = "supported ✅"
+    LIMITED = "limited ⚠️"
+    MISSING_LICENSE = "no_license 🛑"
+    MISSING_SOFTWARE = "no_software 🛑"
+    MANUAL_DISABLED = "disabled ⛔"
+
+    def can_start(self) -> bool:
+        """Check if server can be started with this status."""
+        return self in (SupportStatus.SUPPORTED, SupportStatus.LIMITED)
+
+    def is_blocking(self) -> bool:
+        """Check if this status blocks server operations."""
+        return not self.can_start()
+
+    def log_status(self, log: Log, container_name: str, config: 'ServerConfig') -> None:
+        """Log appropriate message for this status."""
+        if self == SupportStatus.MANUAL_DISABLED:
+            log.log("🛑", container_name, "Server is manually disabled in configuration")
+
+        elif self == SupportStatus.MISSING_SOFTWARE:
+            log.log("🛑", container_name, "Required software missing - cannot start")
+
+        elif self == SupportStatus.MISSING_LICENSE:
+            log.log("🛑", container_name,
+                   f"License required (set {config.license_env_var}) and no free fallback available")
+
+        elif self == SupportStatus.LIMITED:
+            log.log("⚠️", container_name,
+                   f"Using free/community image: {config.effective_image}")
+
+        elif self == SupportStatus.SUPPORTED:
+            log.log("✅", container_name, "Server fully supported")
 
 class ServerLifecycleState(Enum):
     """
     a state in the servers lifecycle
     """
-
     READY = "ready ✅"
     UP = "up 🟢"
     ERROR = "error ❌"
@@ -106,15 +141,17 @@ class ServerConfig:
     potentially provided by a docker container and often
     implemented as a SPARQL endpoint
     """
-
     server: str
     name: str
     wikidata_id: str
     container_name: str
-    image: str
     port: int
     test_port: int
+    image: str
+    free_image: Optional[str] = None       # Fallback image if license is missing
+    license_env_var: Optional[str] = None  # Name of EnvVar holding the key
     active: bool = True
+    has_license: bool=False
     protocol: str = "http"
     host: str = "localhost"
     rdf_format: str = "turtle"
@@ -141,6 +178,44 @@ class ServerConfig:
     def __post_init__(self):
         if self.base_url is None:
             self.base_url = f"{self.protocol}://{self.host}:{self.port}"
+        # Check if we have a license available
+        self.has_license = self.license_env_var and os.environ.get(self.license_env_var)
+
+    @property
+    def support_status(self) -> SupportStatus:
+        """
+        Determine support status based on configuration and environment.
+
+        Returns:
+            SupportStatus enum indicating if/how server can run
+        """
+        status = SupportStatus.SUPPORTED
+
+        # Check if manually disabled
+        if not self.active:
+            status = SupportStatus.MANUAL_DISABLED
+        elif self.license_env_var:
+            # Check license requirements
+            if self.has_license:
+                status = SupportStatus.SUPPORTED
+            elif self.free_image:
+                status = SupportStatus.LIMITED
+            else:
+                status = SupportStatus.MISSING_LICENSE
+
+        return status
+
+    @property
+    def effective_image(self) -> str:
+        # Default to the main image
+        target_image = self.image
+
+        # Downgrade to free image ONLY if we have no license AND a free alternative exists
+        if self.free_image and not self.has_license:
+            target_image = self.free_image
+            if target_image.startswith("https://github.com/"):
+                target_image=target_image.split('/')[-1].replace('.git', '') + ":local"
+        return target_image
 
     @property
     def docker_user_flag(self) -> str:

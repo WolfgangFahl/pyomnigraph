@@ -3,26 +3,26 @@ Created on 2025-05-27
 
 @author: wf
 """
-import sys
-import psutil
+from dataclasses import dataclass
+from pathlib import Path
 import re
+import sys
 import time
 import traceback
+from typing import List, Optional
 import webbrowser
-from pathlib import Path
-from typing import List
 
-import requests
+from basemkit.docker_util import DockerUtil
+from basemkit.shell import ShellResult
+from lodstorage.prefix_config import PrefixConfigs
 from lodstorage.query import Endpoint
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
-from tqdm import tqdm
-
-from basemkit.docker_util import DockerUtil
-from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
-from basemkit.shell import ShellResult
 from omnigraph.software import SoftwareList
+import psutil
+import requests
+from tqdm import tqdm
 
 
 class Response:
@@ -47,6 +47,39 @@ class Response:
         self.response = response
         self.error = error
 
+@dataclass
+class Step:
+    """
+    a setup step
+    """
+
+    name: str
+    data_dir: Path
+    setup_cmd: Optional[str] = None
+    file_name: Optional[str] = None
+    step: int = 0
+    success: bool = False
+
+    @property
+    def path(self) -> Optional[Path]:
+        if self.file_name:
+            return self.data_dir / self.file_name
+        return None
+
+    def perform(self, server: 'SparqlServer'):
+        """
+        perform the setup_cmd if self.path is not created yet
+        """
+        if self.path and self.path.exists():
+            self.success = True
+            msg = f"{self.path} already exists"
+            server.log.log("✅", self.name, msg)
+        else:
+            command = f"cd {self.data_dir};{self.setup_cmd}"
+            success_msg = f"{self.name} done"
+            error_msg = f"{self.name} failed"
+            shell_result = server.run_shell_command(command, success_msg, error_msg)
+            self.success = shell_result.success
 
 class SparqlServer:
     """
@@ -381,43 +414,48 @@ class SparqlServer:
         """
         container_name = self.config.container_name
         server_name = self.config.name
+        # Check support status
+        support = self.config.support_status
+        support.log_status(self.log, container_name, self.config)
+
         start_success = False
-        try:
-            docker_status = self.docker_info()
-            operation_success = docker_status.success
-            if operation_success:
-                server_status = self.status()
+        if not support.is_blocking():
+            try:
+                docker_status = self.docker_info()
+                operation_success = docker_status.success
+                if operation_success:
+                    server_status = self.status()
 
-                if server_status.running:
-                    self.log.log(
-                        "✅",
-                        container_name,
-                        f"Container {container_name} is already running",
-                    )
-                    operation_success = True
-                elif server_status.exists:
-                    self.log.log(
-                        "✅",
-                        container_name,
-                        f"Container {container_name} exists, starting...",
-                    )
-                    start_cmd = f"docker start {container_name}"
-                    start_result = self.docker_util.run_shell_command(
-                        start_cmd,
-                        error_msg=f"Failed to start container {container_name}",
-                    )
-                    operation_success = start_result
+                    if server_status.running:
+                        self.log.log(
+                            "✅",
+                            container_name,
+                            f"Container {container_name} is already running",
+                        )
+                        operation_success = True
+                    elif server_status.exists:
+                        self.log.log(
+                            "✅",
+                            container_name,
+                            f"Container {container_name} exists, starting...",
+                        )
+                        start_cmd = f"docker start {container_name}"
+                        start_result = self.docker_util.run_shell_command(
+                            start_cmd,
+                            error_msg=f"Failed to start container {container_name}",
+                        )
+                        operation_success = start_result
+                    else:
+                        operation_success = self.docker_create()
+
+                if operation_success:
+                    start_success = self.wait_until_ready(show_progress=show_progress)
                 else:
-                    operation_success = self.docker_create()
+                    start_success = False
 
-            if operation_success:
-                start_success = self.wait_until_ready(show_progress=show_progress)
-            else:
+            except Exception as ex:
+                self.handle_exception(f"starting {server_name}", ex)
                 start_success = False
-
-        except Exception as ex:
-            self.handle_exception(f"starting {server_name}", ex)
-            start_success = False
         return start_success
 
     def count_triples(self) -> int:
@@ -495,7 +533,8 @@ class SparqlServer:
         the clear query to be used
         may be overriden by specific SPARQL server implementations
         """
-        clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        #clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        clear_query = "CLEAR ALL"
         return clear_query
 
     from typing import Any, Optional

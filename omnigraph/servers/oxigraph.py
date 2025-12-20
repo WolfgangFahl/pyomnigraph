@@ -11,7 +11,7 @@ https://pyoxigraph.readthedocs.io/en/stable/
 from dataclasses import dataclass
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, Response
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
 @dataclass

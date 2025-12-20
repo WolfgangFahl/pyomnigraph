@@ -90,6 +90,8 @@ class TestSparqlServer(Basetest):
         """
         Test loading dump files using the server's load_dump_files method.
         """
+        debug=self.debug
+        debug=True
         if not dumps_dir.exists():
             self.skipTest(f"Dumps directory {dumps_dir} not available")
 
@@ -99,12 +101,12 @@ class TestSparqlServer(Basetest):
         server.config.dumps_dir = dumps_dir
         loaded_count = server.load_dump_files()
 
-        if self.debug:
-            print(f"Successfully loaded {loaded_count} dump files from {dumps_dir}")
+        if debug:
+            print(f"Successfully loaded {loaded_count} dump files from {dumps_dir} to {server.name}")
 
         final_count = server.count_triples()
-        if self.debug:
-            print(f"Total triples after loading: {final_count:,}")
+        if debug:
+            print(f"Total triples after loading: {final_count:,} for {server.name}")
 
-        self.assertGreater(loaded_count, 0)
-        self.assertGreater(final_count, 0)
+        self.assertGreater(loaded_count, 0,server.name)
+        self.assertGreater(final_count, 0,server.name)

@@ -17,17 +17,21 @@ servers:
     prefix_sets: ["rdf", "blazegraph","gov","wikidata"]
     active: true
   graphdb:
+    # actuarlly graphdb-free
+    # https://hub.docker.com/r/khaller/graphdb-free
     server: "graphdb"
     name: "graphdb"
     wikidata_id: "Q58425577"
     container_name: "graphdb-omnigraph"
-    image: "ontotext/graphdb:9.11.2-se"
+    license_env_var: "GRAPHDB_LICENSE_KEY"
+    image: "ontotext/graphdb:11.2.0"
+    free_image: "khaller/graphdb-free:latest"
     dataset: "repo1"                    # GraphDB calls them repositories
     port: 7200                          # GraphDB default port
     test_port: 7700
     host: "localhost"
     # license issue
-    active: false
+    active: true
   jena:
     server: "jena"
     name: "jena"
@@ -79,6 +83,8 @@ servers:
     wikidata_id: "Q91147741"
     container_name: "stardog-omnigraph"
     image: "stardog/stardog:latest"
+    license_env_var: "STARDOG_LICENSE_KEY"
+    free_image: "https://github.com/zazuko/stardog-docker"
     dataset: "mydb"
     port: 5820
     test_port: 5320
@@ -86,7 +92,7 @@ servers:
     auth_user: "admin"
     auth_password: "admin"
     # license issue
-    active: false
+    active: true
   virtuoso:
     server: "virtuoso"
     name: "virtuoso"
@@ -99,7 +105,7 @@ servers:
     host: "localhost"
     auth_user: "dba"
     auth_password: "dba"
-    active: false
+    active: true
   millenniumdb:
     server: "millenniumdb"
     name: "millenniumdb"
@@ -112,4 +118,4 @@ servers:
     test_port: 1734
     host: "localhost"
     prefix_sets: ["rdf", "wikidata"]
-    active: false
+    active: true

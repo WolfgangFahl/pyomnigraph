@@ -13,7 +13,7 @@ from typing import List, Optional
 import rdflib
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
+from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer, Step
 
 
 class QLeverfile:
@@ -87,42 +87,6 @@ class QLeverConfig(ServerConfig):
         # the docker run command is dynamically created by the qlever (control) command later
         self.docker_run_command = None
         #  docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
-
-
-@dataclass
-class Step:
-    """
-    a setup step
-    """
-
-    name: str
-    data_dir: Path
-    setup_cmd: Optional[str] = None
-    file_name: Optional[str] = None
-    step: int = 0
-    success: bool = False
-
-    @property
-    def path(self) -> Optional[Path]:
-        if self.file_name:
-            return self.data_dir / self.file_name
-        return None
-
-    def perform(self, server: SparqlServer):
-        """
-        perform the setup_cmd if self.path is not created yet
-        """
-        if self.path and self.path.exists():
-            self.success = True
-            msg = f"{self.path} already exists"
-            server.log.log("✅", self.name, msg)
-        else:
-            command = f"cd {self.data_dir};{self.setup_cmd}"
-            success_msg = f"{self.name} done"
-            error_msg = f"{self.name} failed"
-            shell_result = server.run_shell_command(command, success_msg, error_msg)
-            self.success = shell_result.success
-
 
 class QLever(SparqlServer):
     """
