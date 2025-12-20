@@ -402,6 +402,16 @@ class SparqlServer:
 
         return operation_success
 
+    def post_start(self, first_start: bool):
+        """
+        Abstract post start step.
+
+        Args:
+            first_start: True if this is the first time starting (new container)
+        """
+        pass
+
+
     def start(self, show_progress: bool = True) -> bool:
         """
         Start SPARQL server in Docker container.
@@ -419,6 +429,8 @@ class SparqlServer:
         support.log_status(self.log, container_name, self.config)
 
         start_success = False
+        first_start = False  # Track if this is first start
+
         if not support.is_blocking():
             try:
                 docker_status = self.docker_info()
@@ -447,9 +459,12 @@ class SparqlServer:
                         operation_success = start_result
                     else:
                         operation_success = self.docker_create()
+                        first_start=True
 
                 if operation_success:
                     start_success = self.wait_until_ready(show_progress=show_progress)
+                    if start_success:
+                        self.post_start(first_start)
                 else:
                     start_success = False
 

@@ -7,8 +7,6 @@ Ontotext GraphDB SPARQL support
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict
-
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
@@ -61,7 +59,7 @@ class GraphDBConfig(ServerConfig):
 
         # 4. Construct Command
         docker_run_command = (
-            f"docker run {self.docker_user_flag}{env_str} -d --name {self.container_name} "
+            f"docker run {env_str} -d --name {self.container_name} "
             f"-p 127.0.0.1:{self.port}:7200 "
             f"-v {data_dir}:/opt/graphdb/home "
             f"{target_image}"
@@ -84,6 +82,60 @@ class GraphDB(SparqlServer):
         """
         super().__init__(config=config, env=env)
 
+    def post_start(self, first_start:bool):
+        """Create repository after container starts.
+
+        References:
+            - https://graphdb.ontotext.com/documentation/11.2/manage-repos-with-restapi.html
+        """
+        if not first_start:
+            return
+        config = f"""@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+    @prefix rep: <http://www.openrdf.org/config/repository#>.
+    @prefix sr: <http://www.openrdf.org/config/repository/sail#>.
+    @prefix sail: <http://www.openrdf.org/config/sail#>.
+    @prefix graphdb: <http://www.ontotext.com/config/graphdb#>.
+
+    [] a rep:Repository ;
+        rep:repositoryID "{self.config.dataset}" ;
+        rdfs:label "{self.config.dataset}" ;
+        rep:repositoryImpl [
+            rep:repositoryType "graphdb:SailRepository" ;
+            sr:sailImpl [
+                sail:sailType "graphdb:Sail" ;
+                graphdb:read-only "false" ;
+                graphdb:ruleset "rdfsplus-optimized" ;
+                graphdb:disable-sameAs "true" ;
+                graphdb:check-for-inconsistencies "false" ;
+                graphdb:entity-id-size "32" ;
+                graphdb:enable-context-index "false" ;
+                graphdb:enablePredicateList "true" ;
+                graphdb:enable-fts-index "false" ;
+                graphdb:query-timeout "0" ;
+                graphdb:throw-QueryEvaluationException-on-timeout "false" ;
+                graphdb:query-limit-results "0" ;
+                graphdb:base-URL "http://example.org/owlim#" ;
+                graphdb:defaultNS "" ;
+                graphdb:imports "" ;
+                graphdb:repository-type "file-repository" ;
+                graphdb:storage-folder "storage" ;
+                graphdb:entity-index-size "10000000" ;
+                graphdb:in-memory-literal-properties "true" ;
+                graphdb:enable-literal-index "true" ;
+            ]
+        ] ."""
+
+        files = {'config': ('repo-config.ttl', config, 'application/x-turtle')}
+
+        response=self.make_request(
+            "POST",
+            f"{self.config.base_url}/rest/repositories",
+            files=files
+        )
+        if not response.success:
+            raise Exception(f"Failed to create repository: {response.error}")
+
+
     def status(self) -> ServerStatus:
         """
         Check GraphDB server status from container logs.
@@ -93,7 +145,7 @@ class GraphDB(SparqlServer):
         """
         server_status = super().status()
         logs = server_status.logs
-        if logs and "GraphDB Workbench is running" in logs and "Started GraphDB" in logs:
+        if logs and "Started GraphDB" in logs:
             lifecycle = ServerLifecycleState.READY
             server_status.at = lifecycle
 
