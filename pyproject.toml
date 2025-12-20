@@ -21,14 +21,14 @@ dependencies = [
 	# https://pypi.org/project/pybasemkit/
 	# https://github.com/WolfgangFahl/pybasemkit
 	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
-	"pybasemkit>=0.1.0",
+	"pybasemkit>=0.1.3",
 	# https://pypi.org/project/psutil/
 	# Cross-platform lib for process and system monitoring in Python
 	# e.g. memory display
 	"psutil>=7.0.0",
 	# platform independent knowledge graph ready list of dicts (table) handling
     # https://pypi.org/project/pyLodStorage/
-    "pyLodStorage>=0.17.0",
+    "pyLodStorage>=0.18.6",
     # https://pypi.org/project/tqdm/
 	# progress bar
 	"tdqm",
