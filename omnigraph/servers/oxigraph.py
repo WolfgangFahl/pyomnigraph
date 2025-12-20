@@ -2,6 +2,8 @@
 Created on 2025-06-03
 
 Oxigraph SPARQL support
+https://github.com/oxigraph/oxigraph
+https://pyoxigraph.readthedocs.io/en/stable/
 
 @author: wf
 """
@@ -9,7 +11,7 @@ Oxigraph SPARQL support
 from dataclasses import dataclass
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, Response
 
 
 @dataclass
@@ -45,7 +47,7 @@ class OxigraphConfig(ServerConfig):
             f"docker run {self.docker_user_flag} -d --name {self.container_name} "
             f"-p {self.port}:7878 "
             f"-v {data_dir}:/data "
-            f"{self.image} --bind 0.0.0.0:7878 /data"
+            f"{self.image} serve --bind 0.0.0.0:7878 --location /data"
         )
         return docker_run_command
 

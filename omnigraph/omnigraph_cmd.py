@@ -32,7 +32,7 @@ class OmnigraphCmd(BaseCmd):
         self.server_cmds = self.omni_server.get_server_commands()
         self.available_cmds = ", ".join(self.server_cmds.keys())
         self.prefixes_yaml_path = self.ogp.examples_dir / "prefixes.yaml"
-        self.prefix_configs = PrefixConfigs.ofYaml(self.prefixes_yaml_path)
+        self.prefix_configs = PrefixConfigs.of_yaml(self.prefixes_yaml_path)
 
         super().__init__(description="Manage SPARQL server configurations and command execution")
 

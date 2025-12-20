@@ -3,6 +3,7 @@ Created on 2025-05-27
 
 @author: wf
 """
+import sys
 import psutil
 import re
 import time
@@ -271,7 +272,13 @@ class SparqlServer:
 
     def logs(self) -> ShellResult:
         """show the logs of the container"""
-        return self.docker_util.logs()
+        logs=self.docker_util.logs()
+        logs.success=not logs.proc.stderr
+        # Print to respective streams
+        print(logs.proc.stdout, file=sys.stdout, end='')
+        print(logs.proc.stderr, file=sys.stderr, end='')
+
+        return logs
 
     def docker_info(self) -> ShellResult:
         """Check if Docker is responsive on the host system."""
