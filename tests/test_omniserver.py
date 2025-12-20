@@ -27,7 +27,7 @@ class TestOmniServer(Basetest):
         self.prefixes_yaml_path = self.ogp.examples_dir / "prefixes.yaml"
         self.env = ServerEnv(debug=self.debug)
         self.omni_server = OmniServer(env=self.env)
-        self.prefix_configs = PrefixConfigs.ofYaml(self.prefixes_yaml_path)
+        self.prefix_configs = PrefixConfigs.of_yaml(self.prefixes_yaml_path)
 
     def test_load_servers(self):
         """

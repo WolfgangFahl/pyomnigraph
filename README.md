@@ -44,9 +44,9 @@ This leads to:
 | **QLever** | 🟢 Working | Extremely fast queries |
 | **Virtuoso** | 🛑 In Progress | Mature, SQL integration |
 | **MillenniumDB** | 🛑 In Progress | Property Graph + RDF; SPARQL 1.1 (RDF) and MQL (PG); import-first workflow |
+| **Oxigraph** | 🛑 In Progress | Rust-based, embedded |
 | **GraphDB** | 🛑 Planned | Enterprise features, reasoning |
 | **Stardog** | 🛑 Planned | Knowledge graphs, reasoning |
-| **Oxigraph** | 🛑 Planned | Rust-based, embedded |
 
 Whether you're building a semantic web application, conducting research, or evaluating different triple stores, pyomnigraph eliminates the complexity of working with multiple graph database systems.
 
