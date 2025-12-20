@@ -52,7 +52,7 @@ servers:
     port: 7878
     test_port: 7378
     host: "localhost"
-    active: false
+    active: true
   qlever:
     server: "qlever"
     name: "qlever"

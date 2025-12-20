@@ -75,7 +75,11 @@ class Oxigraph(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
 
-        if logs and "Listening for requests at" in logs:
-            server_status.at = ServerLifecycleState.READY
+        if logs and ("Listening for requests at" in logs or "Oxigraph server started" in logs):
+            # Also try a lightweight HTTP request to confirm it's actually responding
+            response = self.make_request("GET", self.config.status_url)
+            if response.success:
+                server_status.at = ServerLifecycleState.READY
+                self.add_triple_count2_server_status(server_status)
 
         return server_status
