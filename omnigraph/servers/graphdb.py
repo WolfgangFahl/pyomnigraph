@@ -81,6 +81,7 @@ class GraphDB(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+        self.repo_created=False
 
     def post_start(self, first_start:bool):
         """Create repository after container starts.
@@ -134,6 +135,8 @@ class GraphDB(SparqlServer):
         )
         if not response.success:
             raise Exception(f"Failed to create repository: {response.error}")
+        else:
+            self.repo_created=True
 
 
     def status(self) -> ServerStatus:
@@ -145,10 +148,12 @@ class GraphDB(SparqlServer):
         """
         server_status = super().status()
         logs = server_status.logs
-        if logs and "Started GraphDB" in logs:
-            lifecycle = ServerLifecycleState.READY
-            server_status.at = lifecycle
+        if logs:
+            if "Started GraphDB" in logs:
+                lifecycle = ServerLifecycleState.READY
+                server_status.at = lifecycle
 
         if server_status.at == ServerLifecycleState.READY:
-            self.add_triple_count2_server_status(server_status)
+            if self.repo_created:
+                self.add_triple_count2_server_status(server_status)
         return server_status
