@@ -4,9 +4,10 @@ Created on 2025-06-04
 @author: wf
 """
 
+from lodstorage.prefix_config import PrefixConfigs
+
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
-from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.server_config import ServerEnv
 from omnigraph.sparql_server import SparqlServer
 from tests.basetest import Basetest

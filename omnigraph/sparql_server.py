@@ -3,26 +3,28 @@ Created on 2025-05-27
 
 @author: wf
 """
-from dataclasses import dataclass
-from pathlib import Path
+
 import re
 import sys
 import time
 import traceback
-from typing import List, Optional
 import webbrowser
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, List, Optional
 
+import psutil
+import requests
 from basemkit.docker_util import DockerUtil
 from basemkit.shell import ShellResult
 from lodstorage.prefix_config import PrefixConfigs
 from lodstorage.query import Endpoint
 from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
+from tqdm import tqdm
+
 from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from omnigraph.software import SoftwareList
-import psutil
-import requests
-from tqdm import tqdm
 
 
 class Response:
@@ -32,20 +34,21 @@ class Response:
 
     @property
     def success(self) -> bool:
-        is_success=False
+        is_success = False
         if self.error is not None:
-            is_success=False
+            is_success = False
         if self.response is not None:
             # HTTP status codes
             # 200 OK (request succeeded)
             # 201 Created (resource created)
             # 204 No Content (success with no response body)
-            is_success=self.response.status_code in [200, 201, 204]
+            is_success = self.response.status_code in [200, 201, 204]
         return is_success
 
     def __init__(self, response=None, error=None):
         self.response = response
         self.error = error
+
 
 @dataclass
 class Step:
@@ -66,7 +69,7 @@ class Step:
             return self.data_dir / self.file_name
         return None
 
-    def perform(self, server: 'SparqlServer'):
+    def perform(self, server: "SparqlServer"):
         """
         perform the setup_cmd if self.path is not created yet
         """
@@ -81,6 +84,7 @@ class Step:
             shell_result = server.run_shell_command(command, success_msg, error_msg)
             self.success = shell_result.success
 
+
 class SparqlServer:
     """
     Base class for dockerized SPARQL servers
@@ -91,7 +95,7 @@ class SparqlServer:
         Initialize the SPARQL server manager.
 
         """
-        self.env=env
+        self.env = env
         self.log = env.log
         self.config = config
         self.name = self.config.name
@@ -105,7 +109,7 @@ class SparqlServer:
             container_name=self.config.container_name,
             log=self.log,
             verbose=self.verbose,
-            debug=self.debug
+            debug=self.debug,
         )
 
         # Subclasses must set these URLs
@@ -171,8 +175,8 @@ class SparqlServer:
 
         return endpoint
 
-    def avail_mem_gb(self)->float:
-        avail_mem = psutil.virtual_memory().available / (1024 ** 3)
+    def avail_mem_gb(self) -> float:
+        avail_mem = psutil.virtual_memory().available / (1024**3)
         return avail_mem
 
     def handle_exception(self, context: str, ex: Exception):
@@ -310,11 +314,11 @@ class SparqlServer:
 
     def logs(self) -> ShellResult:
         """show the logs of the container"""
-        logs=self.docker_util.logs()
-        logs.success=not logs.proc.stderr
+        logs = self.docker_util.logs()
+        logs.success = not logs.proc.stderr
         # Print to respective streams
-        print(logs.proc.stdout, file=sys.stdout, end='')
-        print(logs.proc.stderr, file=sys.stderr, end='')
+        print(logs.proc.stdout, file=sys.stdout, end="")
+        print(logs.proc.stderr, file=sys.stderr, end="")
 
         return logs
 
@@ -355,7 +359,11 @@ class SparqlServer:
         """
         container_name = self.config.container_name
         server_name = self.config.name
-        self.log.log("✅", container_name, f"Creating new {server_name} container {container_name}...")
+        self.log.log(
+            "✅",
+            container_name,
+            f"Creating new {server_name} container {container_name}...",
+        )
         try:
             self.pre_create()
             operation_success = True
@@ -411,7 +419,6 @@ class SparqlServer:
         """
         pass
 
-
     def start(self, show_progress: bool = True) -> bool:
         """
         Start SPARQL server in Docker container.
@@ -459,7 +466,7 @@ class SparqlServer:
                         operation_success = start_result
                     else:
                         operation_success = self.docker_create()
-                        first_start=True
+                        first_start = True
 
                 if operation_success:
                     start_success = self.wait_until_ready(show_progress=show_progress)
@@ -548,11 +555,9 @@ class SparqlServer:
         the clear query to be used
         may be overriden by specific SPARQL server implementations
         """
-        #clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
+        # clear_query = "DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }"
         clear_query = "CLEAR ALL"
         return clear_query
-
-    from typing import Any, Optional
 
     def execute_update_query_with_post(self, update_query: str) -> tuple[Optional[Any], Optional[Exception]]:
         """
@@ -602,7 +607,6 @@ class SparqlServer:
         """
         return self.sparql.insert(update_query)
 
-
     def clear(self) -> int:
         """
         Delete all triples.
@@ -624,7 +628,11 @@ class SparqlServer:
                 if new_count == 0:
                     self.log.log("✅", container_name, f"deleted {count_triples} triples")
                 else:
-                    self.log.log("❌", container_name, f"delete failed: {new_count} triples remain")
+                    self.log.log(
+                        "❌",
+                        container_name,
+                        f"delete failed: {new_count} triples remain",
+                    )
                 count_triples = new_count
             except Exception as ex:
                 self.handle_exception("clear triples", ex)
@@ -722,5 +730,9 @@ class SparqlServer:
         software_list = SoftwareList.from_dict2(self.config.needed_software)  # @UndefinedVariable
         missing = software_list.check_installed(self.log, self.shell, verbose=True)
         if missing > 0:
-            self.log.log("❌", container_name, "Please install the missing commands before running this script.")
+            self.log.log(
+                "❌",
+                container_name,
+                "Please install the missing commands before running this script.",
+            )
         return missing

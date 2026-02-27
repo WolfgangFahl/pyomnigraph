@@ -8,10 +8,10 @@ import webbrowser
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from typing import Dict
 
+from basemkit.persistent_log import Log
 from lodstorage.rdf_format import RdfFormat
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from basemkit.persistent_log import Log
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.version import Version
 

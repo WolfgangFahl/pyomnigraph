@@ -8,10 +8,11 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict, List
 
+from lodstorage.prefix_config import PrefixConfigs
+
 from omnigraph.basecmd import BaseCmd
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
-from lodstorage.prefix_config import PrefixConfigs
 from omnigraph.rdf_dataset import RdfDataset
 from omnigraph.sparql_server import ServerEnv, SparqlServer
 
@@ -186,7 +187,7 @@ class OmnigraphCmd(BaseCmd):
         super().handle_args(args)
         self.all_servers = {}
         if Path(self.args.config).exists():
-            env = ServerEnv(force=self.force,debug=self.debug, verbose=self.args.verbose)
+            env = ServerEnv(force=self.force, debug=self.debug, verbose=self.args.verbose)
             patch_config = None
             if self.args.test:
                 patch_config = lambda config: OmniServer.patch_test_config(config, self.ogp)

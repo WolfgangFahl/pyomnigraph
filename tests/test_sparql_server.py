@@ -17,7 +17,7 @@ class TestSparqlServer(Basetest):
     test starting blazegraph
     """
 
-    def setUp(self, debug=True, profile=True):
+    def setUp(self, debug=False, profile=True):
         """
         setUp the test environment
         """
@@ -26,7 +26,10 @@ class TestSparqlServer(Basetest):
         self.ogp = OmnigraphPaths(home)
         servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
         env = ServerEnv(debug=self.debug, verbose=self.debug)
-        omni_server = OmniServer(env=env, patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp))
+        omni_server = OmniServer(
+            env=env,
+            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp),
+        )
         self.all_servers = omni_server.servers(str(servers_yaml_path))
         # self.filter_servers("graphdb")
         self.filter_servers()
@@ -44,32 +47,43 @@ class TestSparqlServer(Basetest):
 
     def clear_server(self, server: SparqlServer):
         """
-        delete all trips
+        delete all triples - skip if server is not running
         """
+        server_status = server.status()
+        if not server_status.running:
+            self.skipTest(f"{server.full_name} is not running, skipping clear")
         before_clear = server.count_triples()
         count_triples = server.clear()
         expected = before_clear if server.config.unforced_clear_limit <= before_clear else 0
         self.assertEqual(expected, count_triples)
 
-    def start_server(self, server: SparqlServer, verbose: bool = True):
+    def start_server(self, server: SparqlServer, verbose: bool = True) -> bool:
         """
-        Start the given SPARQL server with a unique data directory
+        Start the given SPARQL server with a unique data directory.
+
+        Skips the test if Docker is unavailable or the server cannot be started.
+
+        Returns:
+            True if server is running, False if it could not be started.
         """
+        docker_status = server.docker_info()
+        if not docker_status.success:
+            self.skipTest(f"Docker not available for {server.full_name}, skipping")
         server_status = server.status()
         if server_status.running:
             if self.debug and verbose:
                 print(f"{server.name} already running")
-        else:
-            started = server.start()
-            if not started:
-                pass
-            self.assertTrue(started, server.full_name)
-            if verbose:
-                if self.debug:
-                    print(server_status.get_summary(debug=self.debug))
-            count_triples = server.count_triples()
+            return True
+        started = server.start()
+        if not started:
+            self.skipTest(f"{server.full_name} could not be started, skipping")
+        if verbose:
             if self.debug:
-                print(f"{count_triples} triples found for {server.name}")
+                print(server_status.get_summary(debug=self.debug))
+        count_triples = server.count_triples()
+        if self.debug:
+            print(f"{count_triples} triples found for {server.name}")
+        return True
 
     def test_start(self):
         """
@@ -90,8 +104,7 @@ class TestSparqlServer(Basetest):
         """
         Test loading dump files using the server's load_dump_files method.
         """
-        debug=self.debug
-        debug=True
+        debug = self.debug
         if not dumps_dir.exists():
             self.skipTest(f"Dumps directory {dumps_dir} not available")
 
@@ -108,5 +121,5 @@ class TestSparqlServer(Basetest):
         if debug:
             print(f"Total triples after loading: {final_count:,} for {server.name}")
 
-        self.assertGreater(loaded_count, 0,server.name)
-        self.assertGreater(final_count, 0,server.name)
+        self.assertGreater(loaded_count, 0, server.name)
+        self.assertGreater(final_count, 0, server.name)

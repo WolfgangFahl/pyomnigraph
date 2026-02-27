@@ -9,19 +9,19 @@ from pathlib import Path
 from typing import Callable, Dict
 
 from lodstorage.prefix_config import PrefixConfigs
+from tabulate import tabulate
+
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.servers.graphdb import GraphDB, GraphDBConfig
 from omnigraph.servers.jena import Jena, JenaConfig
+from omnigraph.servers.millenniumdb import MillenniumDB, MillenniumDBConfig
 from omnigraph.servers.oxigraph import Oxigraph, OxigraphConfig
 from omnigraph.servers.qlever import QLever, QLeverConfig
 from omnigraph.servers.stardog import Stardog, StardogConfig
 from omnigraph.servers.virtuoso import Virtuoso, VirtuosoConfig
 from omnigraph.sparql_server import SparqlServer
-from tabulate import tabulate
-
-from omnigraph.servers.millenniumdb import MillenniumDBConfig, MillenniumDB
 
 
 class OmniServer:

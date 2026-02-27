@@ -11,17 +11,19 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Dict, Optional
 
-from basemkit.yamlable import lod_storable
-
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
+from basemkit.yamlable import lod_storable
+
 from omnigraph.software import SoftwareList
 from omnigraph.version import Version
+
 
 class SupportStatus(Enum):
     """
     Determines if and how a server can run based on environment/licenses.
     """
+
     SUPPORTED = "supported ✅"
     LIMITED = "limited ⚠️"
     MISSING_LICENSE = "no_license 🛑"
@@ -36,7 +38,7 @@ class SupportStatus(Enum):
         """Check if this status blocks server operations."""
         return not self.can_start()
 
-    def log_status(self, log: Log, container_name: str, config: 'ServerConfig') -> None:
+    def log_status(self, log: Log, container_name: str, config: "ServerConfig") -> None:
         """Log appropriate message for this status."""
         if self == SupportStatus.MANUAL_DISABLED:
             log.log("🛑", container_name, "Server is manually disabled in configuration")
@@ -45,20 +47,22 @@ class SupportStatus(Enum):
             log.log("🛑", container_name, "Required software missing - cannot start")
 
         elif self == SupportStatus.MISSING_LICENSE:
-            log.log("🛑", container_name,
-                   f"License required (set {config.license_env_var}) and no free fallback available")
+            log.log(
+                "🛑", container_name, f"License required (set {config.license_env_var}) and no free fallback available"
+            )
 
         elif self == SupportStatus.LIMITED:
-            log.log("⚠️", container_name,
-                   f"Using free/community image: {config.effective_image}")
+            log.log("⚠️", container_name, f"Using free/community image: {config.effective_image}")
 
         elif self == SupportStatus.SUPPORTED:
             log.log("✅", container_name, "Server fully supported")
+
 
 class ServerLifecycleState(Enum):
     """
     a state in the servers lifecycle
     """
+
     READY = "ready ✅"
     UP = "up 🟢"
     ERROR = "error ❌"
@@ -111,7 +115,9 @@ class ServerEnv:
     Server environment configuration.
     """
 
-    def __init__(self, log: Log = None, shell: Shell = None, force:bool=False, debug: bool = False, verbose: bool = False):
+    def __init__(
+        self, log: Log = None, shell: Shell = None, force: bool = False, debug: bool = False, verbose: bool = False
+    ):
         """
         Initialize server environment.
 
@@ -129,7 +135,7 @@ class ServerEnv:
         if shell is None:
             shell = Shell()
         self.shell = shell
-        self.force=force
+        self.force = force
         self.debug = debug
         self.verbose = verbose
 
@@ -141,6 +147,7 @@ class ServerConfig:
     potentially provided by a docker container and often
     implemented as a SPARQL endpoint
     """
+
     server: str
     name: str
     wikidata_id: str
@@ -148,10 +155,10 @@ class ServerConfig:
     port: int
     test_port: int
     image: str
-    free_image: Optional[str] = None       # Fallback image if license is missing
+    free_image: Optional[str] = None  # Fallback image if license is missing
     license_env_var: Optional[str] = None  # Name of EnvVar holding the key
     active: bool = True
-    has_license: bool=False
+    has_license: bool = False
     protocol: str = "http"
     host: str = "localhost"
     rdf_format: str = "turtle"
@@ -214,7 +221,7 @@ class ServerConfig:
         if self.free_image and not self.has_license:
             target_image = self.free_image
             if target_image.startswith("https://github.com/"):
-                target_image=target_image.split('/')[-1].replace('.git', '') + ":local"
+                target_image = target_image.split("/")[-1].replace(".git", "") + ":local"
         return target_image
 
     @property

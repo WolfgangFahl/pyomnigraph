@@ -7,9 +7,9 @@ Created on 2025-05-30
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
+from basemkit.yamlable import lod_storable
 from lodstorage.query import Query
 from lodstorage.sparql import SPARQL
-from basemkit.yamlable import lod_storable
 
 
 @dataclass

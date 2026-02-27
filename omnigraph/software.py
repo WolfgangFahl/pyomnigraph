@@ -2,10 +2,9 @@ import os
 from dataclasses import dataclass, field
 from typing import List
 
-from basemkit.yamlable import lod_storable
-
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
+from basemkit.yamlable import lod_storable
 
 
 @dataclass
