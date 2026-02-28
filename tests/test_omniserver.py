@@ -18,7 +18,7 @@ class TestOmniServer(Basetest):
     Test OmniServer functionality
     """
 
-    def setUp(self, debug=True, profile=True):
+    def setUp(self, debug=False, profile=True):
         """
         setUp the test environment
         """
