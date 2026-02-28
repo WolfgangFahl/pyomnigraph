@@ -30,7 +30,9 @@ class OxigraphConfig(ServerConfig):
         self.status_url = f"{self.base_url}/"
         self.sparql_url = f"{self.base_url}/query"
         self.update_url = f"{self.base_url}/update"
-        self.upload_url = f"{self.base_url}/store"
+        # Oxigraph follows SPARQL 1.1 HTTP RDF Update Protocol:
+        # POST to /store creates a new named graph, use /store?default for default graph
+        self.upload_url = f"{self.base_url}/store?default"
         self.web_url = f"{self.base_url}/"
 
     def get_docker_run_command(self, data_dir) -> str:
@@ -77,7 +79,9 @@ class Oxigraph(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
 
-        if logs and ("Listening for requests at" in logs or "Oxigraph server started" in logs):
+        if logs and (
+            "Listening for requests at" in logs or "Oxigraph server started" in logs
+        ):
             # Also try a lightweight HTTP request to confirm it's actually responding
             response = self.make_request("GET", self.config.status_url)
             if response.success:
@@ -99,5 +103,5 @@ class Oxigraph(SparqlServer):
         Returns:
             Tuple of (response, exception)
         """
-        result,error=self.execute_update_query_with_post(update_query)
-        return result,error
+        result, error = self.execute_update_query_with_post(update_query)
+        return result, error

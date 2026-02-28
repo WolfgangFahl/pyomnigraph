@@ -31,7 +31,7 @@ servers:
     test_port: 7700
     host: "localhost"
     # license issue
-    active: true
+    active: false
   jena:
     server: "jena"
     name: "jena"
