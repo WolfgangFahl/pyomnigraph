@@ -104,7 +104,8 @@ servers:
     host: "localhost"
     auth_user: "dba"
     auth_password: "dba"
-    active: true
+    # Permissions issue with default graph writes - needs investigation
+    active: false
   millenniumdb:
     server: "millenniumdb"
     name: "millenniumdb"

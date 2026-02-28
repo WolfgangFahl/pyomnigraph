@@ -13,7 +13,13 @@ from typing import List, Optional
 import rdflib
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer, Step
+from omnigraph.sparql_server import (
+    Response,
+    ServerConfig,
+    ServerEnv,
+    SparqlServer,
+    Step,
+)
 
 
 class QLeverfile:
@@ -63,7 +69,10 @@ class QLeverfile:
         """
         Return full config as nested dictionary
         """
-        return {section: dict(self.config.items(section)) for section in self.config.sections()}
+        return {
+            section: dict(self.config.items(section))
+            for section in self.config.sections()
+        }
 
     def save(self):
         """
@@ -87,6 +96,7 @@ class QLeverConfig(ServerConfig):
         # the docker run command is dynamically created by the qlever (control) command later
         self.docker_run_command = None
         #  docker_run_command = f"docker run -d --name {self.container_name} -e UID=$(id -u) -e GID=$(id -g) -v {self.data_dir}:/data -w /data -p {self.port}:7001 {self.image}"
+
 
 class QLever(SparqlServer):
     """
@@ -118,7 +128,6 @@ class QLever(SparqlServer):
         self.add_triple_count2_server_status(server_status)
 
         return server_status
-
 
     def get_step_list(self) -> List[Step]:
         step_list = [
@@ -204,16 +213,46 @@ class QLever(SparqlServer):
 
         return started
 
+    def _get_access_token(self) -> Optional[str]:
+        """
+        Get the access token for QLever authentication.
+
+        First checks if already set in config, otherwise reads from QLeverfile.
+
+        Returns:
+            Access token string or None if not found
+        """
+        # Return cached token if available
+        if hasattr(self.config, "access_token") and self.config.access_token:
+            return self.config.access_token
+
+        # Try to read from QLeverfile
+        if self.config.data_dir:
+            qleverfile_path = Path(self.config.data_dir) / "Qleverfile"
+            qlever_file = QLeverfile.ofFile(qleverfile_path)
+            if qlever_file:
+                access_token = qlever_file.get("server", "ACCESS_TOKEN")
+                # Cache it for future use
+                self.config.access_token = access_token
+                return access_token
+
+        return None
+
     def upload_request(self, file_content: bytes) -> Response:
         """Upload request for QLever using SPARQL INSERT statements."""
         turtle_data = file_content.decode("utf-8")
         sparql_insert = self._convert_turtle_to_insert(turtle_data)
-        access_token = self.config.access_token
+
+        # Get access token - read from QLeverfile if not already set
+        access_token = self._get_access_token()
 
         response = self.make_request(
             "POST",
             self.config.sparql_url,
-            headers={"Content-Type": "application/sparql-update", "Authorization": f"Bearer {access_token}"},
+            headers={
+                "Content-Type": "application/sparql-update",
+                "Authorization": f"Bearer {access_token}",
+            },
             data=sparql_insert,
             timeout=self.config.upload_timeout,
         )

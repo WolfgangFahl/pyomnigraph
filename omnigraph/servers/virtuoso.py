@@ -9,8 +9,7 @@ OpenLink Virtuoso SPARQL support
 from dataclasses import dataclass
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer,\
-    ShellResult
+from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, ShellResult
 
 
 @dataclass
@@ -83,7 +82,11 @@ class Virtuoso(SparqlServer):
         """
         Run SQL command via isql.
         """
-        args = f"isql 1111 dba {self.config.auth_password or 'dba'} \"EXEC='{cmd}'\""
+        # Escape double quotes in the SQL command for proper shell handling
+        escaped_cmd = cmd.replace('"', '\\"')
+        args = (
+            f'isql 1111 dba {self.config.auth_password or "dba"} "EXEC={escaped_cmd}"'
+        )
         shell_result = self.run_docker_cmd("exec", args=args)
         return shell_result
 
@@ -92,15 +95,17 @@ class Virtuoso(SparqlServer):
         Grant necessary permissions to SPARQL user.
         """
         # Grant general SPARQL update capability
-        success=True
+        success = True
         grants = [
-            "GRANT SPARQL_UPDATE TO \"SPARQL\";",
+            'GRANT SPARQL_UPDATE TO "SPARQL";',
             # workaround of 2023-01 as per https://community.openlinksw.com/t/sparul-insert-access-denied-even-after-granting-update-permission/3448/7
-            "DB.DBA.RDF_DEFAULT_USER_PERMS_SET ('nobody', 7);"
+            "DB.DBA.RDF_DEFAULT_USER_PERMS_SET ('nobody', 7);",
+            # Grant write permissions on default graph for SPARQL user
+            "DB.DBA.RDF_DEFAULT_USER_PERMS_SET ('SPARQL', 7);",
         ]
         for sql in grants:
             shell_result = self.run_isql_cmd(sql)
-            success=success and shell_result.success
+            success = success and shell_result.success
 
         return success
 
@@ -114,26 +119,40 @@ class Virtuoso(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
 
-        if logs and "Server online at" in logs and "HTTP/WebDAV server online at" in logs:
+        if (
+            logs
+            and "Server online at" in logs
+            and "HTTP/WebDAV server online at" in logs
+        ):
             server_status.at = ServerLifecycleState.READY
 
         return server_status
 
-    def get_clear_query(self)->str:
+    def ensure_permissions(self):
+        """
+        Ensure permissions are set (can be called even if server is already running).
+        """
+        status = self.status()
+        if status.running:
+            self.setup_permissions()
+
+    def get_clear_query(self) -> str:
         """
         the clear query to be used
         overrides the default query
         """
-        clear_query="""DELETE WHERE {
-  GRAPH <urn:virtuoso:default> { ?s ?p ?o }
-}"""
-        return clear_query
+        # Ensure permissions are set before clearing
+        self.ensure_permissions()
 
+        # Use CLEAR GRAPH instead of DELETE for better Virtuoso compatibility
+        # This requires fewer permissions than DELETE
+        clear_query = "CLEAR GRAPH <urn:virtuoso:default>"
+        return clear_query
 
     def get_web_url(self) -> str:
         web_url = self.config.web_url
         if self.config.auth_user and self.config.auth_password:
             proto, rest = web_url.split("://", 1)
-            auth=f"{self.config.auth_user}:{self.config.auth_password}@"
-            web_url=f"{proto}://{auth}{rest}"
+            auth = f"{self.config.auth_user}:{self.config.auth_password}@"
+            web_url = f"{proto}://{auth}{rest}"
         return web_url
