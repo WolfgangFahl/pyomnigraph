@@ -41,7 +41,9 @@ class TestSparqlServer(Basetest):
             if server:
                 self.servers = {server_name: server}
             else:
-                raise ValueError(f"Server '{server_name}' not found. Available: {list(self.all_servers.keys())}")
+                raise ValueError(
+                    f"Server '{server_name}' not found. Available: {list(self.all_servers.keys())}"
+                )
         else:
             self.servers = self.all_servers
 
@@ -53,9 +55,19 @@ class TestSparqlServer(Basetest):
         if not server_status.running:
             self.skipTest(f"{server.full_name} is not running, skipping clear")
         before_clear = server.count_triples()
+        if before_clear == -1:
+            self.fail(
+                f"{server.full_name}: Failed to count triples before clear (endpoint error)"
+            )
         count_triples = server.clear()
-        expected = before_clear if server.config.unforced_clear_limit <= before_clear else 0
-        self.assertEqual(expected, count_triples)
+        expected = (
+            before_clear if server.config.unforced_clear_limit <= before_clear else 0
+        )
+        self.assertEqual(
+            expected,
+            count_triples,
+            f"{server.full_name}: Expected {expected} triples after clear, got {count_triples}",
+        )
 
     def start_server(self, server: SparqlServer, verbose: bool = True) -> bool:
         """
@@ -115,11 +127,21 @@ class TestSparqlServer(Basetest):
         loaded_count = server.load_dump_files()
 
         if debug:
-            print(f"Successfully loaded {loaded_count} dump files from {dumps_dir} to {server.name}")
+            print(
+                f"Successfully loaded {loaded_count} dump files from {dumps_dir} to {server.name}"
+            )
 
         final_count = server.count_triples()
         if debug:
             print(f"Total triples after loading: {final_count:,} for {server.name}")
 
-        self.assertGreater(loaded_count, 0, server.name)
-        self.assertGreater(final_count, 0, server.name)
+        self.assertGreater(
+            loaded_count,
+            0,
+            f"{server.full_name}: Expected to load at least 1 file, got {loaded_count}",
+        )
+        self.assertGreater(
+            final_count,
+            0,
+            f"{server.full_name}: Expected triples after loading, got {final_count}",
+        )

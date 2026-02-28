@@ -84,7 +84,6 @@ servers:
     container_name: "stardog-omnigraph"
     image: "stardog/stardog:latest"
     license_env_var: "STARDOG_LICENSE_KEY"
-    free_image: "https://github.com/zazuko/stardog-docker"
     dataset: "mydb"
     port: 5820
     test_port: 5320
@@ -92,7 +91,7 @@ servers:
     auth_user: "admin"
     auth_password: "admin"
     # license issue
-    active: true
+    active: false
   virtuoso:
     server: "virtuoso"
     name: "virtuoso"
@@ -118,4 +117,4 @@ servers:
     test_port: 1734
     host: "localhost"
     prefix_sets: ["rdf", "wikidata"]
-    active: true
+    active: false

@@ -23,7 +23,12 @@ from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
-from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
+from omnigraph.server_config import (
+    ServerConfig,
+    ServerEnv,
+    ServerLifecycleState,
+    ServerStatus,
+)
 from omnigraph.software import SoftwareList
 
 
@@ -122,7 +127,9 @@ class SparqlServer:
                 and hasattr(self.config, "auth_user")
                 and self.config.auth_user
             ):
-                self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
+                self.sparql.addAuthentication(
+                    self.config.auth_user, self.config.auth_password
+                )
 
     @property
     def full_name(self) -> str:
@@ -137,7 +144,9 @@ class SparqlServer:
             flag += str(state)
         return flag
 
-    def as_endpoint_conf(self, prefix_configs: PrefixConfigs, prefix_sets: List[str]) -> Endpoint:
+    def as_endpoint_conf(
+        self, prefix_configs: PrefixConfigs, prefix_sets: List[str]
+    ) -> Endpoint:
         """
         Convert server configuration to Endpoint configuration.
 
@@ -184,7 +193,9 @@ class SparqlServer:
         handle the given exception
         """
         container_name = self.config.container_name
-        self.log.log("❌", container_name, f"Exception {context}: {ex}")
+        self.log.log(
+            "❌", container_name, f"[{self.full_name}] Exception {context}: {ex}"
+        )
         if self.debug:
             # extract exception type, and trace back
             ex_type = type(ex)
@@ -212,7 +223,9 @@ class SparqlServer:
                 and hasattr(self.config, "auth_user")
                 and self.config.auth_user
             ):
-                kwargs.setdefault("auth", (self.config.auth_user, self.config.auth_password))
+                kwargs.setdefault(
+                    "auth", (self.config.auth_user, self.config.auth_password)
+                )
             # for Jena Fuseki we do this via url
             # Only set timeout if not already provided
             kwargs.setdefault("timeout", self.config.timeout)
@@ -266,7 +279,10 @@ class SparqlServer:
                 server_status.at = ServerLifecycleState.UP
                 self.refresh_logs(server_status)
             else:
-                if server_status.docker_status == "exited" and server_status.docker_exit_code not in (0, None):
+                if (
+                    server_status.docker_status == "exited"
+                    and server_status.docker_exit_code not in (0, None)
+                ):
                     server_status.at = ServerLifecycleState.ERROR
                 elif server_status.docker_status == "created":
                     server_status.at = ServerLifecycleState.STARTING
@@ -298,7 +314,9 @@ class SparqlServer:
             server_status.error = ex
 
     # delegates
-    def run_shell_command(self, command: str, success_msg: str = None, error_msg: str = None) -> ShellResult:
+    def run_shell_command(
+        self, command: str, success_msg: str = None, error_msg: str = None
+    ) -> ShellResult:
         """
         Helper function for running shell commands with consistent error handling.
         """
@@ -308,7 +326,9 @@ class SparqlServer:
         """create the given docker command with the given options"""
         return self.docker_util.docker_cmd(cmd, options, args)
 
-    def run_docker_cmd(self, cmd: str, options: str = "", args: str = "") -> ShellResult:
+    def run_docker_cmd(
+        self, cmd: str, options: str = "", args: str = ""
+    ) -> ShellResult:
         """run the given docker commmand with the given options"""
         return self.docker_util.run_docker_cmd(cmd, options, args)
 
@@ -405,7 +425,9 @@ class SparqlServer:
                     f"Container exited with status='{server_status.docker_status}', exit_code={server_status.docker_exit_code}",
                 )
                 if server_status.logs:
-                    self.log.log("ℹ️", container_name, f"Logs:\n{server_status.logs.strip()}")
+                    self.log.log(
+                        "ℹ️", container_name, f"Logs:\n{server_status.logs.strip()}"
+                    )
                 operation_success = False
 
         return operation_success
@@ -559,7 +581,9 @@ class SparqlServer:
         clear_query = "CLEAR ALL"
         return clear_query
 
-    def execute_update_query_with_post(self, update_query: str) -> tuple[Optional[Any], Optional[Exception]]:
+    def execute_update_query_with_post(
+        self, update_query: str
+    ) -> tuple[Optional[Any], Optional[Exception]]:
         """
         Execute SPARQL UPDATE query
         using application/sparql-update content type for UPDATE operations.
@@ -626,12 +650,14 @@ class SparqlServer:
                     self.handle_exception("DELETE", ex)
                 new_count = self.count_triples()
                 if new_count == 0:
-                    self.log.log("✅", container_name, f"deleted {count_triples} triples")
+                    self.log.log(
+                        "✅", container_name, f"deleted {count_triples} triples"
+                    )
                 else:
                     self.log.log(
                         "❌",
                         container_name,
-                        f"delete failed: {new_count} triples remain",
+                        f"[{self.full_name}] delete failed: {new_count} triples remain",
                     )
                 count_triples = new_count
             except Exception as ex:
@@ -678,7 +704,9 @@ class SparqlServer:
                     status_code = response.response.status_code
                     content = response.response.text
                     error_msg = f"HTTP {status_code} → {content}"
-                self.log.log("❌", container_name, f"Failed to load {filepath}: {error_msg}")
+                self.log.log(
+                    "❌", container_name, f"Failed to load {filepath}: {error_msg}"
+                )
                 load_success = False
 
         except Exception as ex:
@@ -706,12 +734,16 @@ class SparqlServer:
         container_name = self.config.container_name
 
         if not files:
-            self.log.log("⚠️", container_name, f"No files found matching pattern: {file_pattern}")
+            self.log.log(
+                "⚠️", container_name, f"No files found matching pattern: {file_pattern}"
+            )
         else:
             self.log.log("✅", container_name, f"Found {len(files)} files to load")
             pbar = tqdm(files, dynamic_ncols=True)
             for filepath in pbar:
-                pbar.set_description(f"Mem: {self.avail_mem_gb():.1f} GB → {filepath.name}")
+                pbar.set_description(
+                    f"Mem: {self.avail_mem_gb():.1f} GB → {filepath.name}"
+                )
                 file_result = self.load_file(filepath)
                 if file_result:
                     loaded_count += 1
@@ -727,7 +759,9 @@ class SparqlServer:
         container_name = self.config.container_name
         if self.config.needed_software is None:
             return
-        software_list = SoftwareList.from_dict2(self.config.needed_software)  # @UndefinedVariable
+        software_list = SoftwareList.from_dict2(
+            self.config.needed_software
+        )  # @UndefinedVariable
         missing = software_list.check_installed(self.log, self.shell, verbose=True)
         if missing > 0:
             self.log.log(
