@@ -1,0 +1,35 @@
+#!/bin/bash
+# WF 2026-02-28
+# Build the free Stardog Docker image from zazuko/stardog-docker
+
+repo_url="https://github.com/zazuko/stardog-docker"
+image_name="stardog-docker:local"
+
+# Check if Docker is available
+if ! command -v docker &> /dev/null; then
+  echo "Docker not available, skipping Stardog build"
+  exit 0
+fi
+
+# Check if image already exists
+if docker images -q "$image_name" 2>/dev/null | grep -q .; then
+  echo "✅ Image $image_name already exists"
+  exit 0
+fi
+
+# Check for existing clone in order of preference
+if [ -d "$HOME/source/docker/stardog-docker" ]; then
+  build_dir="$HOME/source/docker/stardog-docker"
+  echo "Using existing clone at $build_dir"
+elif [ -d "/tmp/stardog-docker" ]; then
+  build_dir="/tmp/stardog-docker"
+  echo "Using existing clone at $build_dir"
+else
+  build_dir="/tmp/stardog-docker"
+  echo "Cloning $repo_url to $build_dir..."
+  git clone "$repo_url" "$build_dir" || exit 1
+fi
+
+echo "Building $image_name from $build_dir..."
+cd "$build_dir" && docker build -t "$image_name" . || exit 1
+echo "✅ Built $image_name"

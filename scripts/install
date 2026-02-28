@@ -1,6 +1,7 @@
 #!/bin/bash
 # WF 2023-07-19
 # WF 2025-11-12 - fixes missing qlever script
+# WF 2026-02-28
 # Check if running in GitHub Actions and apt-get is available
 if [[ -n "$GITHUB_ACTIONS" && -x "$(command -v apt-get)" ]]; then
     echo "Running in GitHub Actions with apt-get available. Installing dependencies..."
@@ -33,6 +34,12 @@ if ! command -v qlever &> /dev/null; then
     fi
 fi
 
+
+# Build free Stardog Docker image if in CI
+if [[ -n "$GHACTIONS" ]]; then
+    echo "Building free Stardog Docker image for CI..."
+    scripts/build-stardog-free
+fi
 
 # simple install via pyproject.toml
 pip install .
