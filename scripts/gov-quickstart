@@ -22,10 +22,15 @@ else
     echo "✅ Using cached: ${TAR_FILE}"
 fi
 
-echo "Extracting..."
-cd "${DOWNLOAD_DIR}"
-tar -xzf $TAR_FILE
-echo "✅ Extracted"
+# Check if extraction already happened (look for .ttl or .nt files)
+if find "${DOWNLOAD_DIR}" -maxdepth 1 -type f \( -name "*.ttl" -o -name "*.nt" -o -name "*.rdf" \) -print -quit | grep -q .; then
+    echo "✅ Already extracted"
+else
+    echo "Extracting..."
+    cd "${DOWNLOAD_DIR}"
+    tar -xzf $TAR_FILE
+    echo "✅ Extracted"
+fi
 
 echo "Starting Blazegraph..."
 omnigraph -s blazegraph --cmd start
