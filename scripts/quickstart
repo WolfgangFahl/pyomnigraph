@@ -6,7 +6,9 @@
 # Default values
 DATASET="wikidata_triplestores"
 TRIPLESTORE="blazegraph"
-DOWNLOAD_URL="https://genwiki-farm.genealogy.net/downloads/${DATASET}.tar.gz"
+DOWNLOAD_URL="https://genwiki-farm.genealogy.net/downloads"
+DO_DOWNLOAD="false"
+OPEN_WEBUI="true"
 
 # Source bash_messages with fallback
 if ! type success &>/dev/null; then
@@ -28,16 +30,26 @@ fi
 #
 usage() {
   cat << EOF
-usage: $0 --dataset <dataset_name> [options]
+usage: $0 [options]
   --dataset <name>      Dataset name (default: wikidata_triplestores)
   --triplestore <name>  Triple store to use (default: blazegraph)
-  --url <url>           Download URL (default: auto-generated)
+  --download            Download dataset (for big external datasets)
+  --url <url>           Download URL (default: auto-generated from dataset name)
   --no-webui            Don't open web UI after loading
   -h|--help             Show this help message
+
+This script uses RDF dumps from ~/.omnigraph/rdf_dumps/<dataset>/
+For creating dumps, use rdfdump, for example:
+  rdfdump -ds gov_full -4o --dump --limit 100000
+
+The -4o flag uses the omnigraph default location.
+
+See https://wiki.bitplan.com/index.php/Pyomnigraph#Quickstart for more info.
 
 Examples:
   $0
   $0 --dataset gov_full --triplestore jena
+  $0 --dataset gov_full --download --url https://example.com/gov_full.tar.gz
 EOF
   exit 1
 }
@@ -116,25 +128,40 @@ open_webui() {
 # run_quickstart - main quickstart workflow
 # $1: l_dataset - dataset name
 # $2: l_triplestore - triplestore name
-# $3: l_download_url - download URL
-# $4: l_open_webui - whether to open webui (true/false)
+# $3: l_do_download - whether to download (true/false)
+# $4: l_download_url_base - base download URL
+# $5: l_open_webui - whether to open webui (true/false)
 #
 run_quickstart() {
   local l_dataset="$1"
   local l_triplestore="$2"
-  local l_download_url="$3"
-  local l_open_webui="$4"
+  local l_do_download="$3"
+  local l_download_url_base="$4"
+  local l_open_webui="$5"
 
   local l_download_dir="${HOME}/.omnigraph/rdf_dumps/$l_dataset"
-  local l_tar_file="${l_download_dir}/${l_dataset}.tar.gz"
 
   action "Dataset: $l_dataset"
   action "Triple store: $l_triplestore"
 
-  mkdir -p "$l_download_dir" || error "Cannot create directory $l_download_dir"
+  # Only download and extract if --download flag is set
+  if [[ "$l_do_download" == "true" ]]; then
+    # Calculate full download URL from base URL and dataset name
+    local l_full_url="${l_download_url_base}/${l_dataset}.tar.gz"
+    local l_tar_file="${l_download_dir}/${l_dataset}.tar.gz"
+    mkdir -p "$l_download_dir" || error "Cannot create directory $l_download_dir"
+    download_dataset "$l_tar_file" "$l_full_url"
+    extract_dataset "$l_download_dir" "$l_tar_file"
+  else
+    # Verify RDF dumps exist
+    if [[ ! -d "$l_download_dir" ]]; then
+      error "RDF dump directory not found: $l_download_dir
+Use rdfdump to create dumps, e.g.:
+  rdfdump -ds $l_dataset -4o --dump --limit 100000
+Or use --download flag for external datasets"
+    fi
+  fi
 
-  download_dataset "$l_tar_file" "$l_download_url"
-  extract_dataset "$l_download_dir" "$l_tar_file"
   start_triplestore "$l_triplestore"
   load_dataset "$l_triplestore" "$l_dataset"
 
@@ -161,6 +188,9 @@ case $# in
           TRIPLESTORE="$2"
           shift
           ;;
+        --download)
+          DO_DOWNLOAD="true"
+          ;;
         --url)
           DOWNLOAD_URL="$2"
           shift
@@ -174,6 +204,7 @@ case $# in
       esac
       shift
     done
-    run_quickstart "$DATASET" "$TRIPLESTORE" "$DOWNLOAD_URL" "$OPEN_WEBUI"
+
+    run_quickstart "$DATASET" "$TRIPLESTORE" "$DO_DOWNLOAD" "$DOWNLOAD_URL" "$OPEN_WEBUI"
     ;;
 esac

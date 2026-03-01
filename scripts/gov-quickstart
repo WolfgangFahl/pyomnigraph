@@ -7,4 +7,5 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Call the general quickstart script with GOV-specific parameters
-exec "$SCRIPT_DIR/quickstart" --dataset gov_full --triplestore blazegraph "$@"
+# GOV is a big external dataset, so use --download flag
+exec "$SCRIPT_DIR/quickstart" --dataset gov_full --triplestore blazegraph --download "$@"
