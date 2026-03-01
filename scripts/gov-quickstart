@@ -3,40 +3,8 @@
 # Quick start script for GOV dataset
 # see https://github.com/WolfgangFahl/pyomnigraph/issues/32
 
-set -e
-NAME="GOV"
-DATASET="gov_full"
-DOWNLOAD_URL="https://genwiki-farm.genealogy.net/downloads/$DATASET.tar.gz"
-DOWNLOAD_DIR="${HOME}/.omnigraph/rdf_dumps/$DATASET"
-TAR_FILE="${DOWNLOAD_DIR}/$DATASET.tar.gz"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "=== $NAME Dataset Quick Start ==="
-
-mkdir -p "${DOWNLOAD_DIR}"
-
-if [ ! -f "${TAR_FILE}" ]; then
-    echo "Downloading $NAME dataset..."
-    curl -L -o "${TAR_FILE}" "${DOWNLOAD_URL}"
-    echo "✅ Download complete"
-else
-    echo "✅ Using cached: ${TAR_FILE}"
-fi
-
-# Check if extraction already happened (look for .ttl or .nt files)
-if find "${DOWNLOAD_DIR}" -maxdepth 1 -type f \( -name "*.ttl" -o -name "*.nt" -o -name "*.rdf" \) -print -quit | grep -q .; then
-    echo "✅ Already extracted"
-else
-    echo "Extracting..."
-    cd "${DOWNLOAD_DIR}"
-    tar -xzf $TAR_FILE
-    echo "✅ Extracted"
-fi
-
-echo "Starting Blazegraph..."
-omnigraph -s blazegraph --cmd start
-
-echo "Loading $NAME dataset..."
-omnigraph -s blazegraph --cmd load --datasets $DATASET
-
-echo "✅ Done! Opening web UI..."
-omnigraph -s blazegraph --cmd webui
+# Call the general quickstart script with GOV-specific parameters
+exec "$SCRIPT_DIR/quickstart" --dataset gov_full --triplestore blazegraph "$@"

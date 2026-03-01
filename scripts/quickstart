@@ -1,0 +1,179 @@
+#!/bin/bash
+# WF 2026-03-01
+# Parameterized quick start script for RDF datasets
+# see https://github.com/WolfgangFahl/pyomnigraph/issues/32
+
+# Default values
+DATASET="wikidata_triplestores"
+TRIPLESTORE="blazegraph"
+DOWNLOAD_URL="https://genwiki-farm.genealogy.net/downloads/${DATASET}.tar.gz"
+
+# Source bash_messages with fallback
+if ! type success &>/dev/null; then
+    BASH_MP="$HOME/source/bash/mp"
+    if [[ -f "$BASH_MP/bash_messages" ]]; then
+        source "$BASH_MP/bash_messages"
+    else
+        # Fallback implementations
+        error() { echo "✗ Error: $1" >&2; exit "${2:-1}"; }
+        success() { echo "✓ $1"; }
+        action() { echo "➜ $1"; }
+        warn() { echo "⚠ $1"; }
+    fi
+fi
+
+
+#
+# usage - show help
+#
+usage() {
+  cat << EOF
+usage: $0 --dataset <dataset_name> [options]
+  --dataset <name>      Dataset name (default: wikidata_triplestores)
+  --triplestore <name>  Triple store to use (default: blazegraph)
+  --url <url>           Download URL (default: auto-generated)
+  --no-webui            Don't open web UI after loading
+  -h|--help             Show this help message
+
+Examples:
+  $0
+  $0 --dataset gov_full --triplestore jena
+EOF
+  exit 1
+}
+
+#
+# download_dataset - download the dataset if not cached
+# $1: l_tar_file - path to tar file
+# $2: l_url - download URL
+#
+download_dataset() {
+  local l_tar_file="$1"
+  local l_url="$2"
+
+  if [[ ! -f "$l_tar_file" ]]; then
+    action "Downloading dataset from $l_url"
+    curl -L -o "$l_tar_file" "$l_url" || error "Download failed"
+    success "Download complete"
+  else
+    success "Using cached: $l_tar_file"
+  fi
+}
+
+#
+# extract_dataset - extract dataset if not already extracted
+# $1: l_download_dir - directory containing the tar file
+# $2: l_tar_file - path to tar file
+#
+extract_dataset() {
+  local l_download_dir="$1"
+  local l_tar_file="$2"
+
+  # Check if extraction already happened (look for .ttl or .nt files)
+  if find "$l_download_dir" -maxdepth 1 -type f \( -name "*.ttl" -o -name "*.nt" -o -name "*.rdf" \) -print -quit | grep -q .; then
+    success "Already extracted"
+  else
+    action "Extracting $l_tar_file"
+    cd "$l_download_dir" || error "Cannot cd to $l_download_dir"
+    tar -xzf "$l_tar_file" || error "Extraction failed"
+    success "Extracted"
+  fi
+}
+
+#
+# start_triplestore - start the triplestore
+# $1: l_triplestore - name of triplestore
+#
+start_triplestore() {
+  local l_triplestore="$1"
+  action "Starting $l_triplestore"
+  omnigraph -s "$l_triplestore" --cmd start || error "Failed to start $l_triplestore"
+}
+
+#
+# load_dataset - load dataset into triplestore
+# $1: l_triplestore - name of triplestore
+# $2: l_dataset - dataset name
+#
+load_dataset() {
+  local l_triplestore="$1"
+  local l_dataset="$2"
+  action "Loading $l_dataset dataset into $l_triplestore"
+  omnigraph -s "$l_triplestore" --cmd load --datasets "$l_dataset" || error "Failed to load dataset"
+}
+
+#
+# open_webui - open the web UI
+# $1: l_triplestore - name of triplestore
+#
+open_webui() {
+  local l_triplestore="$1"
+  success "Done! Opening web UI"
+  omnigraph -s "$l_triplestore" --cmd webui
+}
+
+#
+# run_quickstart - main quickstart workflow
+# $1: l_dataset - dataset name
+# $2: l_triplestore - triplestore name
+# $3: l_download_url - download URL
+# $4: l_open_webui - whether to open webui (true/false)
+#
+run_quickstart() {
+  local l_dataset="$1"
+  local l_triplestore="$2"
+  local l_download_url="$3"
+  local l_open_webui="$4"
+
+  local l_download_dir="${HOME}/.omnigraph/rdf_dumps/$l_dataset"
+  local l_tar_file="${l_download_dir}/${l_dataset}.tar.gz"
+
+  action "Dataset: $l_dataset"
+  action "Triple store: $l_triplestore"
+
+  mkdir -p "$l_download_dir" || error "Cannot create directory $l_download_dir"
+
+  download_dataset "$l_tar_file" "$l_download_url"
+  extract_dataset "$l_download_dir" "$l_tar_file"
+  start_triplestore "$l_triplestore"
+  load_dataset "$l_triplestore" "$l_dataset"
+
+  if [[ "$l_open_webui" == "true" ]]; then
+    open_webui "$l_triplestore"
+  else
+    success "Done!"
+  fi
+}
+
+# Main loop
+case $# in
+  *)
+    while [[ "$1" != "" ]]; do
+      case "$1" in
+        -h|--help)
+          usage
+          ;;
+        --dataset)
+          DATASET="$2"
+          shift
+          ;;
+        --triplestore)
+          TRIPLESTORE="$2"
+          shift
+          ;;
+        --url)
+          DOWNLOAD_URL="$2"
+          shift
+          ;;
+        --no-webui)
+          OPEN_WEBUI="false"
+          ;;
+        *)
+          error "Unknown option: $1" 1
+          ;;
+      esac
+      shift
+    done
+    run_quickstart "$DATASET" "$TRIPLESTORE" "$DOWNLOAD_URL" "$OPEN_WEBUI"
+    ;;
+esac
