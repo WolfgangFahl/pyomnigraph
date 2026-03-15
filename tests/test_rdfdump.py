@@ -40,6 +40,16 @@ class TestRdfDumpDownloader(Basetest):
         }
         self.assertIsNotNone(self.datasets)
         for name, dataset in self.datasets.datasets.items():
+            # Skip inactive datasets
+            if not dataset.active:
+                if self.debug:
+                    print(f"Skipping inactive dataset: {name}")
+                continue
+            # Skip gov endpoints in public CI (not publicly accessible yet)
+            if self.inPublicCI() and name.startswith("gov"):
+                if self.debug:
+                    print(f"Skipping {name} in public CI")
+                continue
             database = databases.get(name)
             tryit_url = dataset.getTryItUrl(database)
             if self.debug:
