@@ -123,6 +123,10 @@ class OmnigraphCmd(BaseCmd):
         """
         if dataset is None:
             server.config.dumps_dir = self.ogp.examples_dir
+        elif dataset.rdf_file:
+            # If rdf_file is specified, set dumps_dir to the parent directory of the file
+            rdf_file_path = Path(dataset.rdf_file).expanduser().resolve()
+            server.config.dumps_dir = rdf_file_path.parent
         else:
             server.config.dumps_dir = self.ogp.dumps_dir / dataset.id
 

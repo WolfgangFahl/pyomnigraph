@@ -19,8 +19,8 @@ class RdfDataset:
     """
 
     name: str  # Human-readable dataset name
-    base_url: str  # Base URL e.g. for tryit
-    endpoint_url: str  # SPARQL endpoint URL
+    base_url: Optional[str] = None  # Base URL e.g. for tryit
+    endpoint_url: Optional[str] = None  # SPARQL endpoint URL
     description: Optional[str] = None  # Optional dataset description
     database: Optional[str] = "jena"  # the database type of the endpoint
     expected_solutions: Optional[int] = None  # Expected number of solutions
@@ -28,6 +28,7 @@ class RdfDataset:
     construct_template: Optional[str] = field(default="?s ?p ?o")
     prefix_sets: Optional[list] = field(default_factory=list)
     active: Optional[bool] = False
+    rdf_file: Optional[str] = None  # Path to local RDF file (alternative to endpoint_url)
     # fields to be configured by post_init
     id: Optional[str] = field(default=None)
     count_query: Optional[Query] = field(default=None)
@@ -37,20 +38,22 @@ class RdfDataset:
     def __post_init__(self):
         """
         Generate count_query and construct_pattern from select_pattern.
+        Only initialize SPARQL-related fields if endpoint_url is provided.
         """
-        self.count_query = Query(
-            name=f"{self.name}_count",
-            query=f"SELECT (COUNT(*) AS ?count) WHERE {{ {self.select_pattern} }}",
-            endpoint=self.endpoint_url,
-            description=f"Count query for {self.name}",
-        )
-        self.select_query = Query(
-            name=f"{self.name}_select",
-            query=f"SELECT * WHERE {{ {self.select_pattern} }}",
-            endpoint=self.endpoint_url,
-            description=f"Select query for {self.name}",
-        )
-        self.sparql = SPARQL(self.endpoint_url)
+        if self.endpoint_url:
+            self.count_query = Query(
+                name=f"{self.name}_count",
+                query=f"SELECT (COUNT(*) AS ?count) WHERE {{ {self.select_pattern} }}",
+                endpoint=self.endpoint_url,
+                description=f"Count query for {self.name}",
+            )
+            self.select_query = Query(
+                name=f"{self.name}_select",
+                query=f"SELECT * WHERE {{ {self.select_pattern} }}",
+                endpoint=self.endpoint_url,
+                description=f"Select query for {self.name}",
+            )
+            self.sparql = SPARQL(self.endpoint_url)
 
     @property
     def full_name(self):

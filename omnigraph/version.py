@@ -18,7 +18,7 @@ class Version:
     name = "omnigraph"
     version = omnigraph.__version__
     date = "2025-11-01"
-    updated = "2026-02-28"
+    updated = "2026-03-15"
     description = "Unified Python interface for multiple graph databases"
 
     authors = "Wolfgang Fahl"

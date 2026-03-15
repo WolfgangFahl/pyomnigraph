@@ -4,10 +4,14 @@ Created on 2025-06-04
 @author: wf
 """
 
+from pathlib import Path
+
 from lodstorage.prefix_config import PrefixConfigs
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.omnigraph_cmd import OmnigraphCmd
 from omnigraph.omniserver import OmniServer
+from omnigraph.rdf_dataset import RdfDatasets
 from omnigraph.server_config import ServerEnv
 from omnigraph.sparql_server import SparqlServer
 from tests.basetest import Basetest
@@ -133,3 +137,53 @@ class TestOmniServer(Basetest):
             self.assertTrue(server.config.container_name.endswith("-test"))
             expected_test_dir = self.ogp.omnigraph_dir / "test" / server.name / "data"
             self.assertEqual(server.config.base_data_dir, expected_test_dir)
+
+    def test_configure_dumps_dir_with_local_file(self):
+        """
+        Test configuring dumps directory with local rdf_file in dataset.
+        """
+        test_dataset_yaml = "/tmp/omnigraph_test/farm_dataset.yaml"
+        test_rdf_file = "/tmp/omnigraph_test/apache_configs.ttl"
+
+        # Skip if test files don't exist
+        if not Path(test_dataset_yaml).exists():
+            self.skipTest(f"Test dataset YAML not found: {test_dataset_yaml}")
+        if not Path(test_rdf_file).exists():
+            self.skipTest(f"Test RDF file not found: {test_rdf_file}")
+
+        # Load datasets
+        datasets = RdfDatasets.ofYaml(test_dataset_yaml)
+        self.assertIn("apache_configs", datasets.datasets)
+        dataset = datasets.datasets["apache_configs"]
+
+        # Verify dataset has rdf_file
+        self.assertEqual(dataset.rdf_file, test_rdf_file)
+
+        # Create an OmnigraphCmd instance to test configure_dumps_dir
+        cmd = OmnigraphCmd()
+
+        # Load servers configuration
+        if not self.servers_yaml_path.exists():
+            self.skipTest(f"Server config file not found: {self.servers_yaml_path}")
+
+        servers_dict = self.omni_server.servers(self.servers_yaml_path, filter_active=False)
+
+        # Get a test server (use jena since that's what the dataset specifies)
+        if "jena" not in servers_dict:
+            self.skipTest("Jena server not found in configuration")
+
+        server = servers_dict["jena"]
+
+        # Test configure_dumps_dir with local file dataset
+        cmd.configure_dumps_dir(server, dataset)
+
+        # Verify dumps_dir is set to the parent directory of the rdf_file
+        expected_dumps_dir = Path(test_rdf_file).expanduser().resolve().parent
+        actual_dumps_dir = Path(server.config.dumps_dir)
+
+        if self.debug:
+            print(f"Dataset rdf_file: {dataset.rdf_file}")
+            print(f"Expected dumps_dir: {expected_dumps_dir}")
+            print(f"Actual dumps_dir: {actual_dumps_dir}")
+
+        self.assertEqual(actual_dumps_dir, expected_dumps_dir)
