@@ -42,7 +42,7 @@ class BlazegraphConfig(ServerConfig):
             f"docker run -d --name {self.container_name} "
             f"-e BLAZEGRAPH_UID={os.getuid()} "
             f"-e BLAZEGRAPH_GID={os.getgid()} "
-            f"-p {self.port}:8080 "
+            f"-p {self.docker_bind}:{self.port}:8080 "
             f"-v {data_dir}/RWStore.properties:/RWStore.properties "
             f"-v {data_dir}:/data "
             f"{self.image}"

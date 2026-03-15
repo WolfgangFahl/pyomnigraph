@@ -161,6 +161,7 @@ class ServerConfig:
     has_license: bool = False
     protocol: str = "http"
     host: str = "localhost"
+    docker_bind: str = "127.0.0.1"  # Docker port bind address (default: localhost-only for security)
     rdf_format: str = "turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None

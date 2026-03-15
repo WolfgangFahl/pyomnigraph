@@ -49,7 +49,7 @@ class VirtuosoConfig(ServerConfig):
         # run as root - no user flag
         docker_run_command = (
             f"docker run {env} -d --name {self.container_name} "
-            f"-p {self.port}:8890 "
+            f"-p {self.docker_bind}:{self.port}:8890 "
             f"-v {data_dir}:/database "
             f"{self.image}"
         )

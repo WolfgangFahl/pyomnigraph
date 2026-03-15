@@ -14,6 +14,7 @@ servers:
     port: 9898
     test_port: 7898
     host: "localhost"
+    # docker_bind: "0.0.0.0"  # Optional: Uncomment to allow external access (default: "127.0.0.1" for localhost-only, recommended for security)
     prefix_sets: ["rdf", "blazegraph","gov","wikidata"]
     active: true
   graphdb:

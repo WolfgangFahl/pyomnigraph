@@ -62,8 +62,8 @@ class MillenniumDBConfig(ServerConfig):
 
         docker_run_command = (
             f"docker run -d --name {self.container_name} "
-            f"-p {self.sparql_port}:1234 "
-            f"-p {self.web_port}:4321 "
+            f"-p {self.docker_bind}:{self.sparql_port}:1234 "
+            f"-p {self.docker_bind}:{self.web_port}:4321 "
             f"-v {data_dir}:/data "
             f"{self.image} "
             f"mdb-server {db_path}"

@@ -62,7 +62,7 @@ class StardogConfig(ServerConfig):
         # 4. Construct Command using target_image
         docker_run_command = (
             f"docker run {self.docker_user_flag}{env_str} -d --name {self.container_name} "
-            f"-p {self.port}:5820 "
+            f"-p {self.docker_bind}:{self.port}:5820 "
             f"-v {data_dir}:/var/opt/stardog "
             f"{target_image}"
         )
