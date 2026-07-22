@@ -66,3 +66,39 @@ datasets:
     # Optional dataset description
     description: "W2306 postal code coordinates"
     active: false
+  papers_of_my_network_wikidata:
+    # npq (named parameterized query) example - issue #36
+    # ORCID is the join key; {{ orcids }} is the VALUES scaling knob;
+    # endpoint is late-bound - own copy answers completely and fastest,
+    # see the endpoint matrix in the issue
+    name: "Papers of my network (wikidata)"
+    base_url: "https://qlever-api.wikidata.dbis.rwth-aachen.de"
+    endpoint_url: "https://qlever-api.wikidata.dbis.rwth-aachen.de/"
+    database: "qlever"
+    select_pattern: |
+      VALUES ?orcid { {{ orcids }} }
+      ?author <http://www.wikidata.org/prop/direct/P496> ?orcid .
+      ?work <http://www.wikidata.org/prop/direct/P50> ?author .
+      ?work ?p ?o
+    construct_template: "?work ?p ?o"
+    params:
+      orcids: '"0000-0002-0821-6995" "0000-0003-2533-6363" "0000-0001-9879-3827" "0000-0001-6324-7164"'
+    description: "Papers authored by the co-author network, seeded by ORCIDs"
+    active: false
+  papers_of_my_network_dblp:
+    # npq companion - same {{ orcids }} param drives the dblp graph
+    name: "Papers of my network (dblp)"
+    base_url: "https://sparql.dblp.org"
+    endpoint_url: "https://sparql.dblp.org/sparql"
+    database: "qlever"
+    select_pattern: |
+      VALUES ?orcid { {{ orcids }} }
+      BIND(IRI(CONCAT("https://orcid.org/", ?orcid)) AS ?orcid_uri)
+      ?author <https://dblp.org/rdf/schema#orcid> ?orcid_uri .
+      ?paper <https://dblp.org/rdf/schema#authoredBy> ?author .
+      ?paper ?p ?o
+    construct_template: "?paper ?p ?o"
+    params:
+      orcids: '"0000-0002-0821-6995" "0000-0003-2533-6363" "0000-0001-9879-3827" "0000-0001-6324-7164"'
+    description: "Papers authored by the co-author network in dblp, same ORCID seed"
+    active: false

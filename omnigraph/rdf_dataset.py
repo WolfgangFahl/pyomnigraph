@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 from basemkit.yamlable import lod_storable
+from lodstorage.params import Params
 from lodstorage.query import Query
 from lodstorage.sparql import SPARQL
 
@@ -26,6 +27,7 @@ class RdfDataset:
     expected_solutions: Optional[int] = None  # Expected number of solutions
     select_pattern: str = "?s ?p ?o"  # Basic Graph Pattern for queries
     construct_template: Optional[str] = field(default="?s ?p ?o")
+    params: Optional[Dict[str, str]] = None  # npq parameters for {{ name }} templates (issue #36)
     prefix_sets: Optional[list] = field(default_factory=list)
     active: Optional[bool] = False
     rdf_file: Optional[str] = None  # Path to local RDF file (alternative to endpoint_url)
@@ -35,10 +37,41 @@ class RdfDataset:
     select_query: Optional[Query] = field(default=None)
     sparql: Optional[SPARQL] = field(default=None)
 
-    def __post_init__(self):
+    def apply_params(self, params_dict: Optional[Dict[str, str]] = None) -> None:
         """
-        Generate count_query and construct_pattern from select_pattern.
-        Only initialize SPARQL-related fields if endpoint_url is provided.
+        Apply npq parameters to select_pattern and construct_template.
+
+        {{ name }} templates are replaced with the values of the merged
+        params: the dataset's own params overridden by the given ones.
+        Substitution always starts from the raw templates, so CLI overrides
+        can be re-applied after YAML defaults. The blanket Params audit is
+        off - it rejects quoted VALUES lists (see issue #36); values stem
+        from local configuration and CLI.
+
+        Args:
+            params_dict: additional parameter values overriding self.params
+        """
+        # preserve the raw templates on first call
+        if not hasattr(self, "raw_templates"):
+            self.raw_templates = {
+                "select_pattern": self.select_pattern,
+                "construct_template": self.construct_template,
+            }
+        merged = dict(self.params) if self.params else {}
+        if params_dict:
+            merged.update(params_dict)
+        if merged:
+            for attr, raw_template in self.raw_templates.items():
+                if raw_template:
+                    params = Params(raw_template, with_audit=False)
+                    if params.has_params:
+                        params.set(merged)
+                        setattr(self, attr, params.apply_parameters())
+
+    def build_queries(self) -> None:
+        """
+        (Re)build count_query and select_query from the current select_pattern.
+        Only initializes SPARQL-related fields if endpoint_url is provided.
         """
         if self.endpoint_url:
             self.count_query = Query(
@@ -54,6 +87,13 @@ class RdfDataset:
                 description=f"Select query for {self.name}",
             )
             self.sparql = SPARQL(self.endpoint_url)
+
+    def __post_init__(self):
+        """
+        Apply npq params and generate the queries from select_pattern.
+        """
+        self.apply_params()
+        self.build_queries()
 
     @property
     def full_name(self):

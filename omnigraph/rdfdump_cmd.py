@@ -10,6 +10,8 @@ import os
 import webbrowser
 from argparse import ArgumentParser, Namespace
 
+from basemkit.argparse_action import StoreDictKeyPair
+
 from omnigraph.basecmd import BaseCmd
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
 from omnigraph.rdfdump import RdfDumpDownloader
@@ -61,6 +63,13 @@ class RdfDumpCmd(BaseCmd):
             default=None,
             help="Maximum number of solutions/triples to download (uses dataset expected_solutions if not specified)",
         )
+        parser.add_argument(
+            "--param",
+            action=StoreDictKeyPair,
+            dest="params",
+            metavar="KEY=VALUE,KEY=VALUE...",
+            help="npq parameter values overriding the dataset's params (issue #36)",
+        )
         parser.add_argument("--no-progress", action="store_true", help="Disable progress bar")
         parser.add_argument("--output-path", default=".", help="Path for dump files")
         parser.add_argument("--tryit", action="store_true", help="open the try it! URL [default: %(default)s]")
@@ -97,6 +106,11 @@ class RdfDumpCmd(BaseCmd):
         """
         super().handle_args(args)
         datasets = self.datasets
+        if getattr(args, "params", None):
+            # apply CLI npq parameter overrides and rebuild the queries
+            for dataset in datasets.values():
+                dataset.apply_params(args.params)
+                dataset.build_queries()
         if self.args.about:
             self.about()
 
