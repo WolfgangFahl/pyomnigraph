@@ -687,6 +687,40 @@ class SparqlServer:
 
         return load_success
 
+    def get_dump_files(self, file_pattern: str = None) -> List[Path]:
+        """
+        Get the dump files matching the given pattern.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            sorted list of matching dump file paths
+        """
+        dump_path: Path = Path(self.config.dumps_dir)
+        if file_pattern is None:
+            file_pattern = f"*{self.rdf_format.extension}"
+        files = sorted(dump_path.glob(file_pattern))
+        return files
+
+    def upload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Bulk-upload all dump files matching pattern using the server's
+        native bulk load mechanism.
+
+        Subclasses override this with their native loader (e.g. Jena
+        tdb2.tdbloader, Blazegraph REST DataLoader, QLever index build);
+        the default falls back to the HTTP load path.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        loaded_count = self.load_dump_files(file_pattern)
+        return loaded_count
+
     def load_dump_files(self, file_pattern: str = None) -> int:
         """
         Load all dump files matching pattern.
@@ -698,10 +732,7 @@ class SparqlServer:
         Returns:
             Number of files loaded successfully
         """
-        dump_path: Path = Path(self.config.dumps_dir)
-        if file_pattern is None:
-            file_pattern = f"*{self.rdf_format.extension}"
-        files = sorted(dump_path.glob(file_pattern))
+        files = self.get_dump_files(file_pattern)
         loaded_count = 0
         container_name = self.config.container_name
 

@@ -70,6 +70,7 @@ class OmniServer:
             "start": lambda s: ServerCmd(title("start", s), s.start),
             "status": lambda s: ServerCmd(title("status", s), s.status_info),
             "stop": lambda s: ServerCmd(title("stop", s), s.stop),
+            "upload": lambda s: ServerCmd(title("native bulk upload dumps", s), s.upload_dump_files),
             "webui": lambda s: ServerCmd(title("webui", s), s.webui),
         }
         return server_cmds

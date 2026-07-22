@@ -5,6 +5,7 @@ Created on 2025-05-28
 """
 
 import os
+import shutil
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass
 from pathlib import Path
@@ -237,6 +238,71 @@ class QLever(SparqlServer):
                 return access_token
 
         return None
+
+    def get_index_commands(self, files: List[Path]) -> List[str]:
+        """
+        Build the qlever CLI commands to (re)index the given dump files.
+
+        QLever loads bulk data by building its index from files - there is no
+        native HTTP bulk-write path; the SPARQL INSERT route is only suitable
+        for small increments.
+
+        Args:
+            files: dump files staged in the data directory
+
+        Returns:
+            list of shell commands to run in the data directory
+        """
+        commands = [
+            "qlever stop",
+            "qlever index --overwrite-existing",
+            f"qlever start --server-container {self.config.container_name}",
+        ]
+        return commands
+
+    def upload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Bulk-load dump files by rebuilding the QLever index from them -
+        the native path; the turtle-to-INSERT conversion of upload_request
+        is unsuitable for bulk data.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        container_name = self.config.container_name
+        files = self.get_dump_files(file_pattern)
+        loaded_count = 0
+        if not files:
+            self.log.log("⚠️", container_name, f"No dump files found for pattern: {file_pattern}")
+            return loaded_count
+        data_dir = Path(self.config.data_dir)
+        qleverfile_path = data_dir / "Qleverfile"
+        qlever_file = QLeverfile.ofFile(qleverfile_path)
+        if qlever_file is None:
+            self.log.log("❌", container_name, f"no Qleverfile in {data_dir} - run start (setup-config) first")
+            return loaded_count
+        # stage the dumps in the data directory and register them as input files
+        for file in files:
+            target = data_dir / file.name
+            if not target.exists():
+                shutil.copy2(file, target)
+        input_files = " ".join(file.name for file in files)
+        qlever_file.set("index", "INPUT_FILES", input_files)
+        qlever_file.save()
+        ok = True
+        for command in self.get_index_commands(files):
+            shell_result = self.run_shell_command(f"cd {data_dir};{command}")
+            if not shell_result.success:
+                self.log.log("❌", container_name, f"failed: {command}")
+                ok = False
+                break
+        if ok:
+            loaded_count = len(files)
+            self.log.log("✅", container_name, f"index rebuilt from {loaded_count} file(s)")
+        return loaded_count
 
     def upload_request(self, file_content: bytes) -> Response:
         """Upload request for QLever using SPARQL INSERT statements."""

@@ -7,6 +7,8 @@ Apache Jena SPARQL support
 """
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import List
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
@@ -96,7 +98,65 @@ class Jena(SparqlServer):
         Returns:
             Tuple of (response, exception)
         """
-        result,error=self.execute_update_query_with_post(update_query)
-        return result,error
+        result, error = self.execute_update_query_with_post(update_query)
+        return result, error
+
+    def get_tdbloader_command(self, files: List[Path]) -> str:
+        """
+        Build the tdb2.tdbloader docker command for the given dump files.
+
+        The loader classes ship inside fuseki-server.jar, so the server's own
+        image is reused with an overridden entrypoint. The TDB2 dataset is
+        single-writer - the server must be stopped while the loader runs.
+
+        Args:
+            files: dump files to load (from the dumps directory)
+
+        Returns:
+            the docker run command string
+        """
+        loc = f"/fuseki/databases/{self.config.dataset}"
+        dumps_dir = Path(self.config.dumps_dir)
+        file_args = " ".join(f"/dumps/{file.name}" for file in files)
+        command = (
+            f"docker run --rm {self.config.docker_user_flag} --entrypoint java "
+            f"-v {self.config.base_data_dir}:/fuseki "
+            f"-v {dumps_dir}:/dumps "
+            f"{self.config.image} "
+            f"-cp /jena-fuseki/fuseki-server.jar tdb2.tdbloader "
+            f"--loc {loc} {file_args}"
+        )
+        return command
+
+    def upload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Bulk-load dump files with tdb2.tdbloader directly into the TDB2
+        database files - the native path for the file-backed store, avoiding
+        the HTTP single-POST transaction that faults the mmap'd node table
+        (issue #25).
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        container_name = self.config.container_name
+        files = self.get_dump_files(file_pattern)
+        loaded_count = 0
+        if not files:
+            self.log.log("⚠️", container_name, f"No dump files found for pattern: {file_pattern}")
+        else:
+            self.stop()
+            loader_cmd = self.get_tdbloader_command(files)
+            shell_result = self.run_shell_command(
+                loader_cmd,
+                success_msg=f"tdb2.tdbloader loaded {len(files)} file(s)",
+                error_msg="tdb2.tdbloader failed",
+            )
+            if shell_result.success:
+                loaded_count = len(files)
+            self.start()
+        return loaded_count
 
 

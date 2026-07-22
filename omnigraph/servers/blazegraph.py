@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 import os
+import shutil
+
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
@@ -93,6 +95,68 @@ class Blazegraph(SparqlServer):
     """
             rwstore_path.write_text(props)
 
+
+    def get_dataloader_xml(self, container_path: str) -> str:
+        """
+        Build the DataLoader servlet properties XML for the given
+        container-side file or directory path.
+
+        Args:
+            container_path: path as seen inside the container (mounted /data)
+
+        Returns:
+            the properties XML document
+        """
+        xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+  <entry key="namespace">{self.config.dataset}</entry>
+  <entry key="propertyFile">/RWStore.properties</entry>
+  <entry key="fileOrDirs">{container_path}</entry>
+  <entry key="-durableQueues">true</entry>
+</properties>"""
+        return xml
+
+    def upload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Bulk-load dump files via Blazegraph's REST DataLoader servlet, which
+        reads the files from the server's own filesystem (the mounted /data
+        directory) instead of pushing them through HTTP request bodies.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        container_name = self.config.container_name
+        files = self.get_dump_files(file_pattern)
+        loaded_count = 0
+        if not files:
+            self.log.log("⚠️", container_name, f"No dump files found for pattern: {file_pattern}")
+        else:
+            # stage the dumps under data_dir so the container sees them at /data/dumps
+            stage_dir = Path(self.config.base_data_dir) / "dumps"
+            stage_dir.mkdir(parents=True, exist_ok=True)
+            for file in files:
+                target = stage_dir / file.name
+                if not target.exists():
+                    shutil.copy2(file, target)
+            xml = self.get_dataloader_xml("/data/dumps")
+            response = self.make_request(
+                "POST",
+                self.config.dataloader_url,
+                headers={"Content-Type": "application/xml"},
+                data=xml,
+                timeout=self.config.upload_timeout,
+            )
+            if response.success:
+                loaded_count = len(files)
+                self.log.log("✅", container_name, f"DataLoader loaded {loaded_count} file(s)")
+            else:
+                error_msg = str(response.error) if response.error else f"HTTP {response.response.status_code}"
+                self.log.log("❌", container_name, f"DataLoader failed: {error_msg}")
+        return loaded_count
 
     def status(self) -> ServerStatus:
         """
