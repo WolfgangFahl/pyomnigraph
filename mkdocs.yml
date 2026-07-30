@@ -1,4 +1,4 @@
-site_name: omnigraph API Documentation
+site_name: pyomnigraph API Documentation
 theme:
   name: material
 plugins:

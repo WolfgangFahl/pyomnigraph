@@ -1,4 +1,4 @@
-# omnigraph API Documentation
+# pyomnigraph API Documentation
 
 ::: omnigraph
     options:
