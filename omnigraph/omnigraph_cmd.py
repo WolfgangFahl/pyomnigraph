@@ -171,7 +171,8 @@ class OmnigraphCmd(BaseCmd):
         handled = False
         if cmds:
             for cmd in cmds:
-                if cmd == "load":
+                # issue #38: upload needs the per-dataset dumps_dir just like load
+                if cmd in ("load", "upload"):
                     cmd_iterator = self.load_iterator(server)
                 else:
                     cmd_iterator = iter([None])  # Single iteration
