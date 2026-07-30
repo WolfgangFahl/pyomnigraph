@@ -35,6 +35,7 @@ usage: $0 [options]
   --triplestore <name>  Triple store to use (default: blazegraph)
   --download            Download dataset (for big external datasets)
   --url <url>           Download URL (default: auto-generated from dataset name)
+  -q|--query <query>    Query name with optional @params (e.g., "count" or "search@term=Berlin")
   --no-webui            Don't open web UI after loading
   -h|--help             Show this help message
 
@@ -49,10 +50,12 @@ See https://wiki.bitplan.com/index.php/Pyomnigraph#Quickstart for more info.
 Examples:
   $0
   $0 --dataset gov_full --triplestore jena
-  $0 --dataset gov_full --download --url https://example.com/gov_full.tar.gz
+  $0 --dataset gov_full --download -q "count"
+  $0 -q "Triplestores"
 EOF
   exit 1
 }
+
 
 #
 # download_dataset - download the dataset if not cached
@@ -112,15 +115,15 @@ load_dataset() {
   local l_dataset="$2"
   action "Loading $l_dataset dataset into $l_triplestore"
   omnigraph -s "$l_triplestore" --cmd load --datasets "$l_dataset" || error "Failed to load dataset"
+  success "$l_dataset loaded"
 }
 
 #
-# open_webui - open the web UI
+# open_webui - open the web UI with optional query
 # $1: l_triplestore - name of triplestore
 #
 open_webui() {
   local l_triplestore="$1"
-  success "Done! Opening web UI"
   omnigraph -s "$l_triplestore" --cmd webui
 }
 
