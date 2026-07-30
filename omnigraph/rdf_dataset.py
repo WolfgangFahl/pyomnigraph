@@ -109,6 +109,8 @@ class RdfDataset:
             Number of solutions available from the count query
         """
         count = self.sparql.getValue(self.count_query.query, "count")
+        # issue #37: getValue returns the raw literal which may be a str
+        count = int(count)
         return count
 
     def getTryItUrl(self, database: str = "blazegraph") -> str:
