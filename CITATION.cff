@@ -1,0 +1,31 @@
+# CITATION.cff for https://github.com/WolfgangFahl/pyomnigraph
+# This CITATION.cff file was initially generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+cff-version: 1.2.0
+title: pyomnigraph
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Wolfgang
+    family-names: Fahl
+    affiliation: BITPlan GmbH
+    orcid: 'https://orcid.org/0000-0002-0821-6995'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21721772
+    description: Concept DOI (all versions) on Zenodo
+repository-code: 'https://github.com/WolfgangFahl/pyomnigraph'
+url: 'https://wiki.bitplan.com/index.php/pyomnigraph'
+abstract: >-
+  Unified Python interface for multiple graph databases
+keywords:
+  - RDF
+  - SPARQL
+  - Triple Store
+  - Graph Database
+  - Docker
+  - Wikidata
+  - Federated Queries
+license: Apache-2.0
