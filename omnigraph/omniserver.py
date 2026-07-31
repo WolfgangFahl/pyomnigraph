@@ -218,24 +218,29 @@ class OmniServer:
                 auth = "\n  auth: BASIC" if server.config.auth_user else ""
                 user = f"\n  user: {server.config.auth_user}" if server.config.auth_user else ""
                 passwd = f"\n  passwd: {server.config.auth_password}" if server.config.auth_password else ""
-                # Indent prefixes for literal block scalar (4 spaces)
-                indented_prefixes = "\n".join(f"    {line}" for line in prefixes_text.split("\n") if line.strip())
+                # Indent prefixes for literal block scalar (6 spaces below the endpoints: wrapper)
+                indented_prefixes = "\n".join(f"      {line}" for line in prefixes_text.split("\n") if line.strip())
+                # optional elements indented for the endpoints: wrapper
+                auth = auth.replace("\n  ", "\n    ")
+                user = user.replace("\n  ", "\n    ")
+                passwd = passwd.replace("\n  ", "\n    ")
 
-                entry = f"""{server.name}:
-  method: {getattr(server.config, 'method', 'POST')}
-  lang: sparql
-  name: {server.name}
-  endpoint: {server.config.sparql_url}
-  website: {server.config.base_url}
-  database: {server.config.server}{auth}{user}{passwd}
-  prefixes: |
+                # entry below the endpoints: wrapper lodstorage EndpointManager expects - see issue #39
+                entry = f"""  {server.name}:
+    method: {getattr(server.config, 'method', 'POST')}
+    lang: sparql
+    name: {server.name}
+    endpoint: {server.config.sparql_url}
+    website: {server.config.base_url}
+    database: {server.config.server}{auth}{user}{passwd}
+    prefixes: |
 {indented_prefixes}"""
 
                 yaml_entries.append(entry)
 
         yaml_header = "# SPARQL endpoints for snapquery, sparqlquery and omnigraph tools\n"
         yaml_header += server.config.generator_header() + "\n"
-        yaml_content = yaml_header + "\n".join(yaml_entries)
+        yaml_content = yaml_header + "endpoints:\n" + "\n".join(yaml_entries)
 
         if output_path:
             with open(output_path, "w") as f:
