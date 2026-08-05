@@ -3,6 +3,20 @@
 # see https://github.com/WolfgangFahl/pyomnigraph
 #
 servers:
+  allegrograph:
+    server: "allegrograph"
+    name: "allegrograph"
+    wikidata_id: "Q4731408"
+    container_name: "allegrograph-omnigraph"
+    image: "franzinc/agraph:latest"
+    # datasets are implemented as repositories in allegrograph
+    dataset: "omnigraph"
+    port: 10035
+    test_port: 10535
+    host: "localhost"
+    auth_user: "admin"
+    auth_password: "admin"
+    active: true
   blazegraph:
     server: "blazegraph"
     name: "blazegraph"

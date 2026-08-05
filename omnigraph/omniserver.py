@@ -13,6 +13,7 @@ from tabulate import tabulate
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
+from omnigraph.servers.allegrograph import AllegroGraph, AllegroGraphConfig
 from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.servers.graphdb import GraphDB, GraphDBConfig
 from omnigraph.servers.jena import Jena, JenaConfig
@@ -90,6 +91,7 @@ class OmniServer:
         config_dict = asdict(config)
 
         server_mappings = {
+            "allegrograph": (AllegroGraphConfig, AllegroGraph),
             "blazegraph": (BlazegraphConfig, Blazegraph),
             "graphdb": (GraphDBConfig, GraphDB),
             "jena": (JenaConfig, Jena),

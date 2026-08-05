@@ -52,6 +52,7 @@ This leads to:
 
 | Database | Status | Notes |
 |----------|--------|-------|
+| **AllegroGraph** | 🟢 Working | Multi-model, entity-event knowledge graphs, no license file needed |
 | **Apache Jena** | 🟢 Working | Robust, standards compliant |
 | **Blazegraph** | 🟢 Working | High performance, easy setup |
 | **Oxigraph** | 🟢 Working | Rust-based, embedded, fast |
@@ -67,16 +68,17 @@ Whether you're building a semantic web application, conducting research, or eval
 ```bash
 omnigraph --list --include-inactive --doc-format github
 ```
-| Active   | Name                                  | Container Name         | Wikidata                                               | Image                                                                                            |   Port |   Test Port | Dataset   | User   |
-|----------|---------------------------------------|------------------------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------|-------------|-----------|--------|
-| 🟢️       | [blazegraph](http://localhost:9898)   | blazegraph-omnigraph   | [Q20127748](https://www.wikidata.org/wiki/Q20127748)   | [lyrasis/blazegraph:2.1.5](https://hub.docker.com/r/lyrasis/blazegraph)                          |   9898 |        7898 | kb        |        |
-| 🛑       | [graphdb](http://localhost:7200)      | graphdb-omnigraph      | [Q58425577](https://www.wikidata.org/wiki/Q58425577)   | [ontotext/graphdb:11.2.0](https://hub.docker.com/r/ontotext/graphdb)                             |   7200 |        7700 | repo1     |        |
-| 🟢️       | [jena](http://localhost:3030)         | jena-omnigraph         | [Q109376461](https://www.wikidata.org/wiki/Q109376461) | [stain/jena-fuseki:latest](https://hub.docker.com/r/stain/jena-fuseki)                           |   3030 |        7030 | ds        | admin  |
-| 🟢️       | [oxigraph](http://localhost:7878)     | oxigraph-omnigraph     | [Q118980507](https://www.wikidata.org/wiki/Q118980507) | [oxigraph/oxigraph:latest](https://hub.docker.com/r/oxigraph/oxigraph)                           |   7878 |        7378 | default   |        |
-| 🟢️       | [qlever](http://localhost:7019)       | qlever-omnigraph       | [Q111016295](https://www.wikidata.org/wiki/Q111016295) | [adfreiburg/qlever:latest](https://hub.docker.com/r/adfreiburg/qlever)                           |   7019 |        7819 | olympics  |        |
-| 🛑       | [stardog](http://localhost:5820)      | stardog-omnigraph      | [Q91147741](https://www.wikidata.org/wiki/Q91147741)   | [stardog/stardog:latest](https://hub.docker.com/r/stardog/stardog)                               |   5820 |        5320 | mydb      | admin  |
-| 🟢️       | [virtuoso](http://localhost:8890)     | virtuoso-omnigraph     | [Q7935239](https://www.wikidata.org/wiki/Q7935239)     | [openlink/virtuoso-opensource-7:latest](https://hub.docker.com/r/openlink/virtuoso-opensource-7) |   8890 |        8390 | KB        | dba    |
-| 🛑       | [millenniumdb](http://localhost:1234) | millenniumdb-omnigraph | [Q118954995](https://www.wikidata.org/wiki/Q118954995) | [imfd/millenniumdb](https://hub.docker.com/r/imfd/millenniumdb)                                  |   1234 |        1734 | default   |        |
+| Active   | Name                                   | Container Name         | Wikidata                                               | Image                                                                                            |   Port |   Test Port | Dataset   | User   |
+|----------|----------------------------------------|------------------------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------|-------------|-----------|--------|
+| 🟢️       | [allegrograph](http://localhost:10035) | allegrograph-omnigraph | [Q4731408](https://www.wikidata.org/wiki/Q4731408)     | [franzinc/agraph:latest](https://hub.docker.com/r/franzinc/agraph)                               |  10035 |       10535 | omnigraph | admin  |
+| 🟢️       | [blazegraph](http://localhost:9898)    | blazegraph-omnigraph   | [Q20127748](https://www.wikidata.org/wiki/Q20127748)   | [lyrasis/blazegraph:2.1.5](https://hub.docker.com/r/lyrasis/blazegraph)                          |   9898 |        7898 | kb        |        |
+| 🛑       | [graphdb](http://localhost:7200)       | graphdb-omnigraph      | [Q58425577](https://www.wikidata.org/wiki/Q58425577)   | [ontotext/graphdb:11.2.0](https://hub.docker.com/r/ontotext/graphdb)                             |   7200 |        7700 | repo1     |        |
+| 🟢️       | [jena](http://localhost:3030)          | jena-omnigraph         | [Q109376461](https://www.wikidata.org/wiki/Q109376461) | [stain/jena-fuseki:latest](https://hub.docker.com/r/stain/jena-fuseki)                           |   3030 |        7030 | ds        | admin  |
+| 🟢️       | [oxigraph](http://localhost:7878)      | oxigraph-omnigraph     | [Q118980507](https://www.wikidata.org/wiki/Q118980507) | [oxigraph/oxigraph:latest](https://hub.docker.com/r/oxigraph/oxigraph)                           |   7878 |        7378 | default   |        |
+| 🟢️       | [qlever](http://localhost:7019)        | qlever-omnigraph       | [Q111016295](https://www.wikidata.org/wiki/Q111016295) | [adfreiburg/qlever:latest](https://hub.docker.com/r/adfreiburg/qlever)                           |   7019 |        7819 | olympics  |        |
+| 🛑       | [stardog](http://localhost:5820)       | stardog-omnigraph      | [Q91147741](https://www.wikidata.org/wiki/Q91147741)   | [stardog/stardog:latest](https://hub.docker.com/r/stardog/stardog)                               |   5820 |        5320 | mydb      | admin  |
+| 🟢️       | [virtuoso](http://localhost:8890)      | virtuoso-omnigraph     | [Q7935239](https://www.wikidata.org/wiki/Q7935239)     | [openlink/virtuoso-opensource-7:latest](https://hub.docker.com/r/openlink/virtuoso-opensource-7) |   8890 |        8390 | KB        | dba    |
+| 🛑       | [millenniumdb](http://localhost:1234)  | millenniumdb-omnigraph | [Q118954995](https://www.wikidata.org/wiki/Q118954995) | [imfd/millenniumdb](https://hub.docker.com/r/imfd/millenniumdb)                                  |   1234 |        1734 | default   |        |
 
 ### Server Management
 
