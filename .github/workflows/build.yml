@@ -28,10 +28,17 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Check out the paper repository for its use case examples
+      uses: actions/checkout@v6
+      with:
+        repository: WolfgangFahl/pyomnigraphPaper
+        path: pyomnigraphPaper
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
         scripts/install
     - name: Run tests
+      env:
+        PYOMNIGRAPH_EXAMPLES: ${{ github.workspace }}/pyomnigraphPaper/examples/railway/dumps
       run: |
         scripts/test

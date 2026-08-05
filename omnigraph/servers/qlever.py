@@ -253,8 +253,10 @@ class QLever(SparqlServer):
         Returns:
             list of shell commands to run in the data directory
         """
+        # the container is stopped and removed by build_from_dump_files before these
+        # run - a still existing container holds both the port and the name, and the
+        # rebuilt index would never be served, see issue #40
         commands = [
-            "qlever stop",
             "qlever index --overwrite-existing",
             f"qlever start --server-container {self.config.container_name}",
         ]
@@ -304,6 +306,9 @@ class QLever(SparqlServer):
         input_files = " ".join(file.name for file in files)
         qlever_file.set("index", "INPUT_FILES", input_files)
         qlever_file.save()
+        # build replaces the store - the server has to let go of the index first
+        self.stop()
+        self.rm()
         ok = True
         for command in self.get_index_commands(files):
             shell_result = self.run_shell_command(f"cd {data_dir};{command}")
