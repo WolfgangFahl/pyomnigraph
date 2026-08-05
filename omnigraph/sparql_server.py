@@ -290,6 +290,25 @@ class SparqlServer:
         self.current_status = server_status
         return server_status
 
+    def endpoint_answers(self) -> bool:
+        """
+        Check whether the server answers on its status url.
+
+        docker logs are cumulative, so every line of the first boot survives a
+        restart - a log line alone therefore says the container ran once, not
+        that the server is serving now. Readiness needs the endpoint.
+
+        Returns:
+            True if the status url answers
+        """
+        answers = False
+        if self.config.status_url:
+            self.expect_errors = True
+            response = self.make_request("GET", self.config.status_url)
+            self.expect_errors = False
+            answers = response.success
+        return answers
+
     def refresh_logs(self, server_status=ServerStatus):
         """
         refresh the logs for the given server status
@@ -758,9 +777,9 @@ class SparqlServer:
         can_address = self.supports_datasets
         if can_address:
             self.config.dataset = dataset
-            if self.config.base_data_dir:
-                self.config.data_dir = Path(self.config.base_data_dir) / dataset
-                self.config.data_dir.mkdir(parents=True, exist_ok=True)
+            # no directory is created here - a dataset is a graph or a repository
+            # for the backends that support switching, and the data directory of a
+            # running container belongs to the container's user
             # recompute the urls that carry the dataset name
             self.config.__post_init__()
             if self.config.sparql_url:

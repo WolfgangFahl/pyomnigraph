@@ -123,7 +123,7 @@ class AllegroGraph(SparqlServer):
         """
         server_status = super().status()
         logs = server_status.logs
-        if logs and "scheduler process started" in logs:
+        if logs and "scheduler process started" in logs and self.endpoint_answers():
             server_status.at = ServerLifecycleState.READY
         if server_status.at == ServerLifecycleState.READY and self.repo_created:
             self.add_triple_count2_server_status(server_status)

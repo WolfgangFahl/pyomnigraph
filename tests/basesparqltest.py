@@ -78,8 +78,11 @@ class BaseSparqlTest(Basetest):
                 work(name, server)
                 worked_on.append(name)
             finally:
-                if not was_running:
-                    server.stop()
+                # unconditionally - the tests own their -test containers, and a
+                # server left running keeps its memory: leaving the pre-running
+                # ones up put all eight back in memory together, which is the
+                # situation one-at-a-time exists to prevent
+                server.stop()
         return worked_on
 
     def load_royals(self, server: SparqlServer) -> int:

@@ -84,10 +84,8 @@ class Jena(SparqlServer):
         # the log lines survive a restart, so they only qualify the container -
         # readiness is decided by the endpoint answering, see issue #50
         if logs and "Creating dataset" in logs and "Fuseki is available :-)" in logs:
-            if server_status.running:
-                response = self.make_request("GET", self.config.status_url)
-                if response.success:
-                    server_status.at = ServerLifecycleState.READY
+            if self.endpoint_answers():
+                server_status.at = ServerLifecycleState.READY
 
         return server_status
 

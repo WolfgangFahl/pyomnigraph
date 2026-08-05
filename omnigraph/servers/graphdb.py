@@ -183,10 +183,8 @@ class GraphDB(SparqlServer):
         if logs:
             # the log line survives a restart, so it only qualifies the container -
             # readiness is decided by the endpoint answering, as for jena, #50
-            if "Started GraphDB" in logs and server_status.running:
-                response = self.make_request("GET", self.config.status_url)
-                if response.success:
-                    server_status.at = ServerLifecycleState.READY
+            if "Started GraphDB" in logs and self.endpoint_answers():
+                server_status.at = ServerLifecycleState.READY
 
         if server_status.at == ServerLifecycleState.READY:
             if self.repo_created:

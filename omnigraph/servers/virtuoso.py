@@ -130,12 +130,11 @@ class Virtuoso(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
 
-        if (
-            logs
-            and "Server online at" in logs
-            and "HTTP/WebDAV server online at" in logs
-        ):
-            server_status.at = ServerLifecycleState.READY
+        # the log lines survive a restart, so they only qualify the container -
+        # readiness is decided by the endpoint answering, as for jena and graphdb
+        if logs and "Server online at" in logs and "HTTP/WebDAV server online at" in logs:
+            if self.endpoint_answers():
+                server_status.at = ServerLifecycleState.READY
 
         return server_status
 
