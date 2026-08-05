@@ -686,6 +686,34 @@ class SparqlServer:
         """
         return self.sparql.insert(update_query)
 
+    def clear_by_build(self) -> int:
+        """
+        Clear by building the store from an empty dump - for backends whose
+        runtime path can not delete, see #62.
+
+        Returns:
+            Number of triples after the rebuild
+        """
+        container_name = self.config.container_name
+        count_triples = self.count_triples()
+        protected = count_triples >= self.config.unforced_clear_limit
+        if protected and not self.env.force:
+            self.log.log("❌", container_name, f"deleting {count_triples} triples ... needs force option")
+            return count_triples
+        self.log.log("✅", container_name, "clearing by rebuilding from an empty dump")
+        empty_dir = Path(self.config.base_data_dir) / "empty_dumps"
+        empty_dir.mkdir(parents=True, exist_ok=True)
+        empty_file = empty_dir / f"empty{self.rdf_format.extension}"
+        empty_file.write_text("")
+        dumps_dir = self.config.dumps_dir
+        try:
+            self.config.dumps_dir = str(empty_dir)
+            self.build_from_dump_files()
+        finally:
+            self.config.dumps_dir = dumps_dir
+        triple_count = self.count_triples()
+        return triple_count
+
     def clear(self) -> int:
         """
         Delete all triples.

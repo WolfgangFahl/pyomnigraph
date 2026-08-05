@@ -221,27 +221,12 @@ class MillenniumDB(SparqlServer):
 
     def clear(self) -> int:
         """
-        Clear by building the store from no triples at all.
-
-        A build only backend has no endpoint to delete through, so an empty
-        store is produced the same way a full one is - see issue #50.
+        Clear by building the store from no triples at all - see #62.
 
         Returns:
             Number of triples after the rebuild
         """
-        container_name = self.config.container_name
-        self.log.log("✅", container_name, "clearing by rebuilding from an empty dump")
-        empty_dir = Path(self.config.base_data_dir) / "empty_dumps"
-        empty_dir.mkdir(parents=True, exist_ok=True)
-        empty_file = empty_dir / f"empty{self.rdf_format.extension}"
-        empty_file.write_text("")
-        dumps_dir = self.config.dumps_dir
-        try:
-            self.config.dumps_dir = str(empty_dir)
-            self.build_from_dump_files()
-        finally:
-            self.config.dumps_dir = dumps_dir
-        triple_count = self.count_triples()
+        triple_count = self.clear_by_build()
         return triple_count
 
     def build_from_dump_files(self, file_pattern: str = None) -> int:

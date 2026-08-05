@@ -130,6 +130,19 @@ class QLever(SparqlServer):
 
         return server_status
 
+    def clear(self) -> int:
+        """
+        Clear by rebuilding the index from an empty dump.
+
+        CLEAR ALL through the runtime path reports success while leaving the
+        index untouched - see #62.
+
+        Returns:
+            Number of triples after the rebuild
+        """
+        triple_count = self.clear_by_build()
+        return triple_count
+
     def get_step_list(self) -> List[Step]:
         step_list = [
             Step(
