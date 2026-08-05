@@ -29,6 +29,7 @@ class ComposeService:
     command: Optional[str] = None
     platform: Optional[str] = None
     user: Optional[str] = None
+    shm_size: Optional[str] = None
 
     def as_dict(self) -> Dict:
         """
@@ -42,6 +43,8 @@ class ComposeService:
             service["platform"] = self.platform
         if self.user:
             service["user"] = self.user
+        if self.shm_size:
+            service["shm_size"] = self.shm_size
         if self.ports:
             service["ports"] = self.ports
         if self.volumes:
@@ -88,6 +91,7 @@ class ComposeGenerator:
             environment = []
             platform = None
             user = None
+            shm_size = None
             image = None
             container_name = None
             command_parts = []
@@ -116,6 +120,9 @@ class ComposeGenerator:
                 elif token in ("-u", "--user"):
                     index += 1
                     user = tokens[index]
+                elif token == "--shm-size":
+                    index += 1
+                    shm_size = tokens[index]
                 elif token.startswith("-"):
                     # unknown flag with a value, e.g. --restart=x is self contained
                     if "=" not in token and index + 1 < len(tokens) and not tokens[index + 1].startswith("-"):
@@ -133,6 +140,7 @@ class ComposeGenerator:
                     command=" ".join(command_parts) if command_parts else None,
                     platform=platform,
                     user=user,
+                    shm_size=shm_size,
                 )
         return service
 
