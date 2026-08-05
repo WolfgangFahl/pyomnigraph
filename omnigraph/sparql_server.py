@@ -569,30 +569,47 @@ class SparqlServer:
             pbar = tqdm(total=timeout, desc=f"Waiting for {self.full_name}", unit="s")
 
         ready_status = False
+        died = False
+        hint = "no connection yet"
         self.expect_errors = True
         for secs in range(timeout):
-            server_status = self.status()
-            if server_status.at == ServerLifecycleState.READY:
-                if show_progress and pbar:
-                    pbar.close()
-                self.log.log(
-                    "✅",
-                    container_name,
-                    f"{self.full_name} ready at {base_url} after {secs}s",
-                )
-                ready_status = True
-                break
+            # one cheap HTTP probe per tick - docker inspect and the log read only
+            # run when the endpoint answers, or every tenth tick to notice a
+            # container that died instead of waiting for the full timeout
+            if self.endpoint_answers():
+                server_status = self.status()
+                hint = server_status.at.value
+                if server_status.at == ServerLifecycleState.READY:
+                    if show_progress and pbar:
+                        pbar.close()
+                    self.log.log(
+                        "✅",
+                        container_name,
+                        f"{self.full_name} ready at {base_url} after {secs}s",
+                    )
+                    ready_status = True
+                    break
+            elif secs % 10 == 9:
+                server_status = self.status()
+                hint = server_status.at.value
+                if not server_status.running:
+                    died = True
+                    if show_progress and pbar:
+                        pbar.close()
+                    self.log.log(
+                        "❌",
+                        container_name,
+                        f"{self.full_name} container stopped while waiting - {server_status.at.value}",
+                    )
+                    break
 
             if show_progress and pbar:
-                hint = "no connection yet"
-                if server_status.at and server_status.at != ServerLifecycleState.ERROR:
-                    hint = server_status.at.value
                 pbar.set_postfix_str(hint)
                 pbar.update(1)
             time.sleep(1)
         self.expect_errors = False
 
-        if not ready_status:
+        if not ready_status and not died:
             if show_progress and pbar:
                 pbar.close()
             self.log.log(
