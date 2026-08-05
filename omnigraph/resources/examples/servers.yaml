@@ -16,6 +16,8 @@ servers:
     host: "localhost"
     auth_user: "admin"
     auth_password: "admin"
+    # the 976 MB image needs more than the default 20s to become ready on a cold CI runner
+    ready_timeout: 120
     active: true
   blazegraph:
     server: "blazegraph"
