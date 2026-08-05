@@ -12,7 +12,7 @@ from typing import Any, Optional
 from requests.auth import HTTPDigestAuth
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
-from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, ShellResult
+from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer, ShellResult
 
 
 @dataclass
@@ -36,6 +36,10 @@ class VirtuosoConfig(ServerConfig):
         self.update_url = f"{self.base_url}/sparql-auth"
         self.upload_url = f"{self.base_url}/sparql-graph-crud"
         self.web_url = f"{self.base_url}/sparql"
+        # Virtuoso has no per dataset endpoint and its unqualified default graph is the union
+        # of all graphs including the system graphs - so upload, count and clear are scoped
+        # to Virtuoso's own default graph, see #43
+        self.graph_uri = "urn:virtuoso:default"
 
     def get_docker_run_command(self, data_dir) -> str:
         """
@@ -171,6 +175,47 @@ class Virtuoso(SparqlServer):
         result, error = self.execute_update_query_with_post(update_query, **kwargs)
         return result, error
 
+    def count_triples(self) -> int:
+        """
+        Count the triples of my graph.
+
+        An unrestricted pattern would count the union of all graphs including
+        the system graphs Virtuoso ships with.
+
+        Returns:
+            Number of triples in the configured graph
+        """
+        count_query = f"SELECT (COUNT(*) AS ?count) WHERE {{ GRAPH <{self.config.graph_uri}> {{ ?s ?p ?o }} }}"
+        try:
+            result = self.sparql.getValue(count_query, "count")
+            triple_count = int(result) if result else 0
+        except Exception as ex:
+            self.handle_exception("count_triples", ex)
+            triple_count = -1
+        return triple_count
+
+    def upload_request(self, file_content: bytes) -> Response:
+        """
+        Upload via the graph store protocol into my graph.
+
+        Without a graph parameter Virtuoso answers 200 with an HTML page and stores nothing.
+
+        Args:
+            file_content: the RDF payload to upload
+
+        Returns:
+            Response of the upload request
+        """
+        response = self.make_request(
+            "POST",
+            f"{self.config.upload_url}?graph-uri={self.config.graph_uri}",
+            headers={"Content-Type": self.rdf_format.mime_type},
+            data=file_content,
+            timeout=self.config.upload_timeout,
+            auth=self.get_digest_auth(),
+        )
+        return response
+
     def get_clear_query(self) -> str:
         """
         the clear query to be used
@@ -181,7 +226,7 @@ class Virtuoso(SparqlServer):
 
         # Use CLEAR GRAPH instead of DELETE for better Virtuoso compatibility
         # This requires fewer permissions than DELETE
-        clear_query = "CLEAR GRAPH <urn:virtuoso:default>"
+        clear_query = f"CLEAR GRAPH <{self.config.graph_uri}>"
         return clear_query
 
     def get_web_url(self) -> str:
