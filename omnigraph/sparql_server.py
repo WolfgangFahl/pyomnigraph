@@ -272,10 +272,12 @@ class SparqlServer:
             server_status.running = state.get("Running", False)
             server_status.docker_status = state.get("Status")
             server_status.docker_exit_code = state.get("ExitCode")
-            self.refresh_logs(server_status)
+            # docker logs are cumulative over restarts - StartedAt marks the
+            # current boot, so only its lines count for readiness decisions
+            started_at = state.get("StartedAt")
+            self.refresh_logs(server_status, since=started_at)
             if server_status.running:
                 server_status.at = ServerLifecycleState.UP
-                self.refresh_logs(server_status)
             else:
                 if server_status.docker_status == "exited" and server_status.docker_exit_code not in (0, None):
                     server_status.at = ServerLifecycleState.ERROR
@@ -312,11 +314,17 @@ class SparqlServer:
             answers = response.response is not None
         return answers
 
-    def refresh_logs(self, server_status=ServerStatus):
+    def refresh_logs(self, server_status=ServerStatus, since: str = None):
         """
         refresh the logs for the given server status
+
+        Args:
+            server_status: the status to attach the logs to
+            since: only lines after this timestamp - the StartedAt of the current
+                boot, so that lines of earlier boots do not fake readiness
         """
-        proc = self.shell.run(f"docker logs {self.config.container_name}", tee=False)
+        since_option = f"--since {since} " if since else ""
+        proc = self.shell.run(f"docker logs {since_option}{self.config.container_name}", tee=False)
         logs = f"stdout:{proc.stdout}\nstderr:{proc.stderr}"
         server_status.logs = logs
 
