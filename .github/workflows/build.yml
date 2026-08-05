@@ -28,8 +28,6 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up QEMU so images built for another architecture can run
-      uses: docker/setup-qemu-action@v3
     - name: Check out the paper repository for its use case examples
       uses: actions/checkout@v6
       with:

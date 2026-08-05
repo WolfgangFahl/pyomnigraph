@@ -172,8 +172,10 @@ class ServerConfig:
     protocol: str = "http"
     host: str = "localhost"
     docker_bind: str = "127.0.0.1"  # Docker port bind address (default: localhost-only for security)
-    # docker --platform to force, e.g. linux/arm64 when the amd64 build of an
-    # image uses instructions the host CPU does not have - see issue #49
+    # docker --platform to force, e.g. linux/arm64 when the native build of an
+    # image uses instructions this host's CPU does not have - see issue #49.
+    # A property of the machine rather than of the server, so it is normally set
+    # per machine through the OMNIGRAPH_DOCKER_PLATFORM environment variable
     docker_platform: Optional[str] = None
     # JVM heap for the java based servers, e.g. 4g - see issue #33
     heap_size: str = "4g"
@@ -248,7 +250,8 @@ class ServerConfig:
         Returns:
             the flag string including a trailing space or an empty string
         """
-        flag = f"--platform {self.docker_platform} " if self.docker_platform else ""
+        platform = self.docker_platform or os.environ.get("OMNIGRAPH_DOCKER_PLATFORM")
+        flag = f"--platform {platform} " if platform else ""
         return flag
 
     @property
