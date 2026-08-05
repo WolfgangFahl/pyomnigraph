@@ -27,6 +27,10 @@ class Version:
     chat_url = "https://github.com/WolfgangFahl/pyomnigraph/discussions"
     cm_url = "https://github.com/WolfgangFahl/pyomnigraph"
 
+    # https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
+    # a generic user agent is rejected by the wikidata endpoint
+    user_agent = f"{name}/{version} ({cm_url}) python-requests"
+
     license = f"""Copyright 2025 contributors. All rights reserved.
 
   Licensed under the Apache License 2.0

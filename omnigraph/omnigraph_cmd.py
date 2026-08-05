@@ -11,6 +11,7 @@ from typing import Dict, List
 from lodstorage.prefix_config import PrefixConfigs
 
 from omnigraph.basecmd import BaseCmd
+from omnigraph.compose import ComposeGenerator
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
 from omnigraph.rdf_dataset import RdfDataset
@@ -70,6 +71,11 @@ class OmnigraphCmd(BaseCmd):
         )
         parser.add_argument(
             "-l", "--list-servers", action="store_true", help="List available servers [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--compose",
+            action="store_true",
+            help="generate a docker compose file for the servers [default: %(default)s]",
         )
         parser.add_argument(
             "--test",
@@ -219,6 +225,13 @@ class OmnigraphCmd(BaseCmd):
                 for server in self.servers.values():
                     config = server.config
                     print(config.to_apache_config(version=self.version, domain=self.args.apache))
+
+        if self.args.compose:
+            compose_generator = ComposeGenerator()
+            # the whole stack, not the -s selection
+            configs = {name: server.config for name, server in self.all_servers.items()}
+            markup = compose_generator.as_compose(configs, lambda config: config.base_data_dir)
+            print(markup)
 
         if self.args.list_servers:
             table_format = self.args.doc_format if self.args.doc_format != "plain" else "simple"

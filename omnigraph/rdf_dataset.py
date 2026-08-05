@@ -12,6 +12,8 @@ from lodstorage.params import Params
 from lodstorage.query import Query
 from lodstorage.sparql import SPARQL
 
+from omnigraph.version import Version
+
 
 @dataclass
 class RdfDataset:
@@ -31,6 +33,10 @@ class RdfDataset:
     prefix_sets: Optional[list] = field(default_factory=list)
     active: Optional[bool] = False
     rdf_file: Optional[str] = None  # Path to local RDF file (alternative to endpoint_url)
+    # user agent and rate limit for the endpoint - see issue #55 and
+    # https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy
+    user_agent: Optional[str] = None  # defaults to Version.user_agent
+    calls_per_minute: Optional[int] = None  # rate limit an endpoint asks for
     # fields to be configured by post_init
     id: Optional[str] = field(default=None)
     count_query: Optional[Query] = field(default=None)
@@ -86,7 +92,11 @@ class RdfDataset:
                 endpoint=self.endpoint_url,
                 description=f"Select query for {self.name}",
             )
-            self.sparql = SPARQL(self.endpoint_url)
+            self.sparql = SPARQL(
+                self.endpoint_url,
+                agent=self.user_agent or Version.user_agent,
+                calls_per_minute=self.calls_per_minute,
+            )
 
     def __post_init__(self):
         """

@@ -1,6 +1,8 @@
 # pyomnigraph RDF datasets configuration example
 # see https://github.com/WolfgangFahl/pyomnigraph
 #
+# user_agent and calls_per_minute may be set per dataset - see issue #55
+# the default is omnigraph/<version> (<repo url>) per the Wikimedia user agent policy
 datasets:
   wikidata_triplestores:
     # Human-readable dataset name

@@ -16,6 +16,7 @@ from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
 from omnigraph.rdf_dataset import RdfDataset, RdfDatasets
+from omnigraph.version import Version
 
 
 class RdfDumpDownloader:
@@ -37,7 +38,11 @@ class RdfDumpDownloader:
         self.rdf_format = RdfFormat.by_label(args.rdf_format)
         self.dataset = dataset
         self.endpoint_url = dataset.endpoint_url
-        self.sparql = SPARQL(self.endpoint_url)
+        self.sparql = SPARQL(
+            self.endpoint_url,
+            agent=dataset.user_agent or Version.user_agent,
+            calls_per_minute=dataset.calls_per_minute,
+        )
         self.output_path = output_path
         self.limit = args.limit if args else 10000
         self.max_count = args.max_count if args and args.max_count is not None else dataset.expected_solutions or 200000
