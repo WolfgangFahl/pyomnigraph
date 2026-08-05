@@ -617,6 +617,13 @@ class SparqlServer:
                 container_name,
                 f"Timeout waiting for {self.full_name} to start after {timeout}s",
             )
+        if not ready_status:
+            # a timeout message without the why is worthless - show what the
+            # container itself said in its current boot
+            server_status = self.status()
+            if server_status.logs:
+                tail = "\n".join(server_status.logs.splitlines()[-20:])
+                self.log.log("⚠️", container_name, f"last boot log lines:\n{tail}")
 
         return ready_status
 
