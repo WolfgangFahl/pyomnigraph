@@ -35,9 +35,10 @@ class MillenniumDBConfig(ServerConfig):
         """
         super().__post_init__()
 
-        # MillenniumDB uses different ports for SPARQL and Web UI
-        self.sparql_port = 1234
-        self.web_port = 4321
+        # MillenniumDB uses different ports for SPARQL and Web UI - the configured
+        # port is the host side, so a test instance does not collide with a live one
+        self.sparql_port = self.port
+        self.web_port = self.port + 3087  # 1234 -> 4321 keeps the upstream defaults
 
         # Configure URLs
         self.status_url = f"http://{self.host}:{self.sparql_port}/sparql"
@@ -61,12 +62,12 @@ class MillenniumDBConfig(ServerConfig):
         db_path = f"/data/{self.dataset}"
 
         docker_run_command = (
-            f"docker run -d --name {self.container_name} "
+            f"docker run -d {self.docker_platform_flag}--name {self.container_name} "
             f"-p {self.docker_bind}:{self.sparql_port}:1234 "
             f"-p {self.docker_bind}:{self.web_port}:4321 "
             f"-v {data_dir}:/data "
             f"{self.image} "
-            f"mdb-server {db_path}"
+            f"mdb server {db_path}"
         )
         return docker_run_command
 
@@ -115,13 +116,15 @@ class MillenniumDB(SparqlServer):
         rdf_files = list(dumps_dir.glob(f"*{self.rdf_format.extension}"))
 
         if not rdf_files:
-            self.log.log(
-                "⚠️",
-                self.config.container_name,
-                f"No RDF files found in {dumps_dir}"
-            )
-            # Create empty database anyway
-            import_files = []
+            self.log.log("⚠️", self.config.container_name, f"No RDF files found in {dumps_dir}")
+            # mdb import refuses to run without input files, so an empty store is
+            # produced from an empty dump - the database has to exist to be served
+            empty_dir = data_dir / "empty_dumps"
+            empty_dir.mkdir(parents=True, exist_ok=True)
+            empty_file = empty_dir / f"empty{self.rdf_format.extension}"
+            empty_file.write_text("")
+            dumps_dir = empty_dir
+            import_files = [str(empty_file)]
         else:
             import_files = [str(f) for f in rdf_files]
 
@@ -137,11 +140,11 @@ class MillenniumDB(SparqlServer):
         files_arg = " ".join([f"/import/{Path(f).name}" for f in import_files])
 
         import_cmd = (
-            f"docker run --rm "
+            f"docker run --rm {self.config.docker_platform_flag}"
             f"-v {dumps_dir}:/import "
             f"-v {data_dir}:/data "
             f"{self.config.image} "
-            f"mdb-import {files_arg} /data/{self.config.dataset}"
+            f"mdb import {files_arg} /data/{self.config.dataset}"
         )
 
         import_result = self.shell.run(import_cmd, tee=self.verbose)
@@ -206,6 +209,31 @@ class MillenniumDB(SparqlServer):
     @property
     def load_paths(self) -> list:
         return [LoadPath.BUILD]
+
+    def clear(self) -> int:
+        """
+        Clear by building the store from no triples at all.
+
+        A build only backend has no endpoint to delete through, so an empty
+        store is produced the same way a full one is - see issue #50.
+
+        Returns:
+            Number of triples after the rebuild
+        """
+        container_name = self.config.container_name
+        self.log.log("✅", container_name, "clearing by rebuilding from an empty dump")
+        empty_dir = Path(self.config.base_data_dir) / "empty_dumps"
+        empty_dir.mkdir(parents=True, exist_ok=True)
+        empty_file = empty_dir / f"empty{self.rdf_format.extension}"
+        empty_file.write_text("")
+        dumps_dir = self.config.dumps_dir
+        try:
+            self.config.dumps_dir = str(empty_dir)
+            self.build_from_dump_files()
+        finally:
+            self.config.dumps_dir = dumps_dir
+        triple_count = self.count_triples()
+        return triple_count
 
     def build_from_dump_files(self, file_pattern: str = None) -> int:
         """

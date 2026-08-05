@@ -172,6 +172,9 @@ class ServerConfig:
     protocol: str = "http"
     host: str = "localhost"
     docker_bind: str = "127.0.0.1"  # Docker port bind address (default: localhost-only for security)
+    # docker --platform to force, e.g. linux/arm64 when the amd64 build of an
+    # image uses instructions the host CPU does not have - see issue #49
+    docker_platform: Optional[str] = None
     rdf_format: str = "turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None
@@ -234,6 +237,17 @@ class ServerConfig:
             if target_image.startswith("https://github.com/"):
                 target_image = target_image.split("/")[-1].replace(".git", "") + ":local"
         return target_image
+
+    @property
+    def docker_platform_flag(self) -> str:
+        """
+        the --platform flag for docker commands, empty unless configured
+
+        Returns:
+            the flag string including a trailing space or an empty string
+        """
+        flag = f"--platform {self.docker_platform} " if self.docker_platform else ""
+        return flag
 
     @property
     def docker_user_flag(self) -> str:

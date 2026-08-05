@@ -134,5 +134,9 @@ servers:
     port: 1234
     test_port: 1734
     host: "localhost"
+    # the amd64 build uses instructions some x86 CPUs lack and dies with SIGILL -
+    # the arm64 build runs under emulation everywhere, see #49
+    docker_platform: "linux/arm64"
+    ready_timeout: 120
     prefix_sets: ["rdf", "wikidata"]
-    active: false
+    active: true
