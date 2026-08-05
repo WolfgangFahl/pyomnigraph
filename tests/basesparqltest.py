@@ -76,7 +76,13 @@ class BaseSparqlTest(Basetest):
             docker_status = server.docker_info()
             if not docker_status.success:
                 self.skipTest("docker is not available")
-            was_running = server.status().running
+            server_status = server.status()
+            was_running = server_status.running
+            if server_status.exists and not was_running:
+                # a stopped container keeps the options it was created with, so a
+                # test would run against a stale configuration - recreate instead,
+                # see #57 where the shm fix could not reach a surviving container
+                server.rm()
             started = was_running or server.start(show_progress=False)
             if not started:
                 # remove the failed -test container: a stopped container is
