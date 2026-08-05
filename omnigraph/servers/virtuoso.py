@@ -7,6 +7,9 @@ OpenLink Virtuoso SPARQL support
 """
 
 from dataclasses import dataclass
+from typing import Any, Optional
+
+from requests.auth import HTTPDigestAuth
 
 from omnigraph.server_config import ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer, ShellResult
@@ -25,9 +28,12 @@ class VirtuosoConfig(ServerConfig):
         super().__post_init__()
 
         # Clean URLs without credentials
+        # /sparql is read only by design - the SPARQL_SELECT role of user SPARQL applies there
+        # writes go to /sparql-auth which authenticates a user holding the SPARQL_UPDATE role
+        # see https://community.openlinksw.com/t/trying-to-get-pyomnigraph-working-with-virtuoso/5037/2
         self.status_url = f"{self.base_url}/sparql"
         self.sparql_url = f"{self.base_url}/sparql"
-        self.update_url = f"{self.base_url}/sparql"
+        self.update_url = f"{self.base_url}/sparql-auth"
         self.upload_url = f"{self.base_url}/sparql-graph-crud"
         self.web_url = f"{self.base_url}/sparql"
 
@@ -135,6 +141,35 @@ class Virtuoso(SparqlServer):
         status = self.status()
         if status.running:
             self.setup_permissions()
+
+    def get_digest_auth(self) -> Optional[HTTPDigestAuth]:
+        """
+        Get the digest authentication for the /sparql-auth endpoint.
+
+        Returns:
+            HTTPDigestAuth for the configured user or None if unconfigured
+        """
+        digest_auth = None
+        if self.config.auth_user and self.config.auth_password:
+            digest_auth = HTTPDigestAuth(self.config.auth_user, self.config.auth_password)
+        return digest_auth
+
+    def execute_update_query(self, update_query: str) -> tuple[Optional[Any], Optional[Exception]]:
+        """
+        Execute SPARQL UPDATE query via the authenticated /sparql-auth endpoint.
+
+        Args:
+            update_query: SPARQL UPDATE query string
+
+        Returns:
+            Tuple of (response, exception)
+        """
+        kwargs = {}
+        digest_auth = self.get_digest_auth()
+        if digest_auth:
+            kwargs["auth"] = digest_auth
+        result, error = self.execute_update_query_with_post(update_query, **kwargs)
+        return result, error
 
     def get_clear_query(self) -> str:
         """

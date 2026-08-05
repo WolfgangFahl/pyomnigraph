@@ -559,13 +559,14 @@ class SparqlServer:
         clear_query = "CLEAR ALL"
         return clear_query
 
-    def execute_update_query_with_post(self, update_query: str) -> tuple[Optional[Any], Optional[Exception]]:
+    def execute_update_query_with_post(self, update_query: str, **kwargs) -> tuple[Optional[Any], Optional[Exception]]:
         """
         Execute SPARQL UPDATE query
         using application/sparql-update content type for UPDATE operations.
 
         Args:
             update_query: SPARQL UPDATE query string
+            **kwargs: Additional arguments forwarded to make_request e.g. a server specific auth
 
         Returns:
             Tuple of (response, exception)
@@ -580,6 +581,7 @@ class SparqlServer:
                 headers={"Content-Type": "application/sparql-update"},
                 data=update_query,
                 timeout=self.config.upload_timeout,
+                **kwargs,
             )
 
             result = resp.response
