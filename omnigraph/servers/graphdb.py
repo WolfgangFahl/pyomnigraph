@@ -105,7 +105,9 @@ class GraphDB(SparqlServer):
             sr:sailImpl [
                 sail:sailType "graphdb:Sail" ;
                 graphdb:read-only "false" ;
-                graphdb:ruleset "rdfsplus-optimized" ;
+                # empty ruleset - any other ruleset materialises axiomatic
+                # statements so that a fresh repository is not empty
+                graphdb:ruleset "empty" ;
                 graphdb:disable-sameAs "true" ;
                 graphdb:check-for-inconsistencies "false" ;
                 graphdb:entity-id-size "32" ;
@@ -138,6 +140,35 @@ class GraphDB(SparqlServer):
         else:
             self.repo_created=True
 
+
+    def execute_update_query(self, update_query: str) -> tuple:
+        """
+        Execute SPARQL UPDATE as an update form parameter.
+
+        The statements endpoint answers HTTP 415 for application/sparql-update.
+
+        Args:
+            update_query: SPARQL UPDATE query string
+
+        Returns:
+            Tuple of (response, exception)
+        """
+        result = None
+        error = None
+        try:
+            resp = self.make_request(
+                "POST",
+                self.config.update_url,
+                data={"update": update_query},
+                timeout=self.config.upload_timeout,
+            )
+            result = resp.response
+            if not resp.success:
+                status = resp.response.status_code if resp.response else "unknown"
+                error = resp.error or Exception(f"HTTP {status}")
+        except Exception as ex:
+            error = ex
+        return result, error
 
     def status(self) -> ServerStatus:
         """

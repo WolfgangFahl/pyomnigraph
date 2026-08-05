@@ -47,8 +47,9 @@ servers:
     port: 7200                          # GraphDB default port
     test_port: 7700
     host: "localhost"
-    # license issue
-    active: false
+    # no license key needed - effective_image swaps to the free image
+    ready_timeout: 120
+    active: true
   jena:
     server: "jena"
     name: "jena"
