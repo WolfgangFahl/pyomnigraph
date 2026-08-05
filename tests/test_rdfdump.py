@@ -98,6 +98,9 @@ class TestRdfDumpDownloader(Basetest):
                 if self.debug:
                     print(f" Downloaded {chunks} chunks for {name}")
 
+                if chunks == 0 and downloader.endpoint_error:
+                    # endpoint weather, not a code defect - see #64
+                    self.skipTest(f"public endpoint refused: {downloader.endpoint_error[:100]}")
                 self.assertGreater(chunks, 0)
 
     def test_local_rdf_file_dataset(self):

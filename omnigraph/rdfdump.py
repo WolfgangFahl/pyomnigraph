@@ -48,6 +48,7 @@ class RdfDumpDownloader:
         self.max_count = args.max_count if args and args.max_count is not None else dataset.expected_solutions or 200000
         self.show_progress = not args.no_progress if args else True
         self.force = args.force if args else False
+        self.endpoint_error = None
         self.debug = args.debug if args else False
 
     def fetch_chunk(self, offset: int, rdf_format: str = "turtle") -> str:
@@ -109,6 +110,10 @@ class RdfDumpDownloader:
             try:
                 content = self.fetch_chunk(offset=offset, rdf_format=self.rdf_format.label)
             except Exception as e:
+                # keep the refusal so a caller can tell endpoint weather from a
+                # code defect - see #64: wikidata answers the count and then load
+                # sheds the CONSTRUCT with a 502
+                self.endpoint_error = str(e)
                 print(f"Error at offset {offset}: {e}")
                 break
 
