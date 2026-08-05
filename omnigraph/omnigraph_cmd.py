@@ -237,9 +237,14 @@ class OmnigraphCmd(BaseCmd):
 
         if self.args.compose:
             compose_generator = ComposeGenerator()
-            # the whole stack, not the -s selection
+            # the whole stack, not the -s selection, with a data directory derived
+            # per server - relying on the side effects of server selection left a
+            # None volume in the file, found trying it out on fur
             configs = {name: server.config for name, server in self.all_servers.items()}
-            markup = compose_generator.as_compose(configs, lambda config: config.base_data_dir)
+            markup = compose_generator.as_compose(
+                configs,
+                lambda config: config.base_data_dir or str(self.ogp.omnigraph_dir / config.name / "data"),
+            )
             print(markup)
 
         if self.args.list_servers:
