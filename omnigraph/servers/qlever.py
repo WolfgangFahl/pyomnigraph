@@ -126,7 +126,7 @@ class QLever(SparqlServer):
         # up says the container runs - the endpoint says the index is served
         if server_status.at == ServerLifecycleState.UP and self.endpoint_answers():
             server_status.at = ServerLifecycleState.READY
-        self.add_triple_count2_server_status(server_status)
+            self.add_triple_count2_server_status(server_status)
 
         return server_status
 

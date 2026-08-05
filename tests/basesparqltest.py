@@ -79,6 +79,11 @@ class BaseSparqlTest(Basetest):
             was_running = server.status().running
             started = was_running or server.start(show_progress=False)
             if not started:
+                # remove the failed -test container: a stopped container is
+                # docker-started and keeps the options it was created with, so a
+                # configuration fix can never reach it - Jenkins build 259 ran a
+                # container of build 258 without the shm fix of #57
+                server.rm()
                 self.failed_servers.add(name)
                 self.not_started.append(name)
                 continue
