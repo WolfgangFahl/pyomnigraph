@@ -741,6 +741,57 @@ class SparqlServer:
         loaded_count = self.load_dump_files(file_pattern)
         return loaded_count
 
+    def use_dataset(self, dataset: str) -> bool:
+        """
+        Address a different dataset on this server - see issue #44.
+
+        The dataset name is re-materialised into the urls, the data directory and
+        whatever construct the server maps it to, and the dataset is created where
+        the server needs it to exist.
+
+        Args:
+            dataset: name of the dataset to address
+
+        Returns:
+            True if the server can address the dataset
+        """
+        can_address = self.supports_datasets
+        if can_address:
+            self.config.dataset = dataset
+            if self.config.base_data_dir:
+                self.config.data_dir = Path(self.config.base_data_dir) / dataset
+                self.config.data_dir.mkdir(parents=True, exist_ok=True)
+            # recompute the urls that carry the dataset name
+            self.config.__post_init__()
+            if self.config.sparql_url:
+                is_fuseki = self.config.server == "jena"
+                self.sparql = SPARQL(self.config.sparql_url, isFuseki=is_fuseki)
+                if self.config.auth_user and self.config.auth_password:
+                    self.sparql.addAuthentication(self.config.auth_user, self.config.auth_password)
+            can_address = self.ensure_dataset()
+        else:
+            self.log.log("❌", self.config.container_name, f"{self.name} can not address a second dataset")
+        return can_address
+
+    @property
+    def supports_datasets(self) -> bool:
+        """
+        Whether a second dataset can be addressed on a running server.
+
+        Returns:
+            True if the server materialises the dataset name per operation
+        """
+        return False
+
+    def ensure_dataset(self) -> bool:
+        """
+        Create the construct the dataset name maps to if it does not exist.
+
+        Returns:
+            True if the dataset is available
+        """
+        return True
+
     @property
     def load_paths(self) -> List[LoadPath]:
         """

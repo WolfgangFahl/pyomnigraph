@@ -175,6 +175,8 @@ class ServerConfig:
     # docker --platform to force, e.g. linux/arm64 when the amd64 build of an
     # image uses instructions the host CPU does not have - see issue #49
     docker_platform: Optional[str] = None
+    # JVM heap for the java based servers, e.g. 4g - see issue #33
+    heap_size: str = "4g"
     rdf_format: str = "turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None

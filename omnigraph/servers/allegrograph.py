@@ -90,6 +90,30 @@ class AllegroGraph(SparqlServer):
             raise Exception(f"Failed to create repository: {response.error}")
         self.repo_created = True
 
+    @property
+    def supports_datasets(self) -> bool:
+        # the dataset name is materialised as a repository
+        return True
+
+    def ensure_dataset(self) -> bool:
+        """
+        Create the repository if it does not exist yet.
+
+        A PUT on an existing repository recreates it empty, so its existence is
+        checked first - see issue #44.
+
+        Returns:
+            True if the repository is available
+        """
+        repo_url = f"{self.config.base_url}/repositories/{self.config.dataset}"
+        exists = self.make_request("GET", f"{repo_url}/size").success
+        available = exists
+        if not exists:
+            available = self.make_request("PUT", repo_url).success
+        if available:
+            self.repo_created = True
+        return available
+
     def status(self) -> ServerStatus:
         """
         Get server status information.

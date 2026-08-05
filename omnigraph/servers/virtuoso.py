@@ -36,10 +36,11 @@ class VirtuosoConfig(ServerConfig):
         self.update_url = f"{self.base_url}/sparql-auth"
         self.upload_url = f"{self.base_url}/sparql-graph-crud"
         self.web_url = f"{self.base_url}/sparql"
-        # Virtuoso has no per dataset endpoint and its unqualified default graph is the union
-        # of all graphs including the system graphs - so upload, count and clear are scoped
-        # to Virtuoso's own default graph, see #43
-        self.graph_uri = "urn:virtuoso:default"
+        # Virtuoso has no per dataset endpoint and its unqualified default graph is the
+        # union of all graphs including the system graphs, so the dataset name is
+        # materialised as a named graph - the way other servers materialise it as a
+        # namespace, repository or database, see #43
+        self.graph_uri = f"urn:omnigraph:{self.dataset}" if self.dataset else "urn:virtuoso:default"
 
     def get_docker_run_command(self, data_dir) -> str:
         """
@@ -145,6 +146,11 @@ class Virtuoso(SparqlServer):
         status = self.status()
         if status.running:
             self.setup_permissions()
+
+    @property
+    def supports_datasets(self) -> bool:
+        # the dataset name is materialised as a named graph, which needs no creation
+        return True
 
     def get_digest_auth(self) -> Optional[HTTPDigestAuth]:
         """
