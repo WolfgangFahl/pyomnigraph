@@ -33,7 +33,8 @@ class TestDatasets(BaseSparqlTest):
         Returns:
             the triple count of that dataset
         """
-        server.use_dataset(dataset)
+        addressed = server.use_dataset(dataset)
+        self.assertTrue(addressed, f"could not address dataset {dataset}")
         server.config.dumps_dir = self.dumps_dir
         server.clear()
         server.load_dump_files()

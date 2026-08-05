@@ -109,7 +109,14 @@ class AllegroGraph(SparqlServer):
         exists = self.make_request("GET", f"{repo_url}/size").success
         available = exists
         if not exists:
-            available = self.make_request("PUT", repo_url).success
+            response = self.make_request("PUT", repo_url)
+            available = response.success
+            if not available:
+                # name the failure - see #63 where an identical PUT created one
+                # repository and silently not the next
+                status = response.response.status_code if response.response else "no response"
+                body = response.response.text[:200] if response.response is not None else str(response.error)
+                self.log.log("❌", self.config.container_name, f"creating {self.config.dataset} failed: {status} {body}")
         if available:
             self.repo_created = True
         return available
