@@ -104,6 +104,8 @@ class SparqlServer:
         self.shell = env.shell
         self.rdf_format = RdfFormat.by_label(self.config.rdf_format)
         self.current_status = None
+        # while true connection errors are expected and not worth reporting
+        self.expect_errors = False
         self.docker_util = DockerUtil(
             shell=self.shell,
             container_name=self.config.container_name,
@@ -182,8 +184,13 @@ class SparqlServer:
     def handle_exception(self, context: str, ex: Exception):
         """
         handle the given exception
+
+        While waiting for a server to come up connection errors are expected and
+        are only shown in verbose or debug mode - see issue #31.
         """
         container_name = self.config.container_name
+        if self.expect_errors and not (self.verbose or self.debug):
+            return
         self.log.log("❌", container_name, f"[{self.full_name}] Exception {context}: {ex}")
         if self.debug:
             # extract exception type, and trace back
@@ -240,8 +247,12 @@ class SparqlServer:
     def status_info(self) -> str:
         """
         Return one-line summary of server status e.g. for CLI use.
+
+        A server that is still booting can not answer - see issue #31.
         """
+        self.expect_errors = True
         self.status()
+        self.expect_errors = False
         summary = self.current_status.get_summary(self.debug)
         info = f"{self.flag}{summary}"
         return info
@@ -397,7 +408,10 @@ class SparqlServer:
                 operation_success = False
 
         if operation_success:
+            # a freshly created container is not listening yet - see issue #31
+            self.expect_errors = True
             server_status = self.status()
+            self.expect_errors = False
             if not server_status.running:
                 self.log.log(
                     "❌",
@@ -443,7 +457,10 @@ class SparqlServer:
                 docker_status = self.docker_info()
                 operation_success = docker_status.success
                 if operation_success:
+                    # a not yet started server can not answer - see issue #31
+                    self.expect_errors = True
                     server_status = self.status()
+                    self.expect_errors = False
 
                     if server_status.running:
                         self.log.log(
@@ -522,6 +539,7 @@ class SparqlServer:
             pbar = tqdm(total=timeout, desc=f"Waiting for {self.full_name}", unit="s")
 
         ready_status = False
+        self.expect_errors = True
         for secs in range(timeout):
             server_status = self.status()
             if server_status.at == ServerLifecycleState.READY:
@@ -536,8 +554,13 @@ class SparqlServer:
                 break
 
             if show_progress and pbar:
+                hint = "no connection yet"
+                if server_status.at and server_status.at != ServerLifecycleState.ERROR:
+                    hint = server_status.at.value
+                pbar.set_postfix_str(hint)
                 pbar.update(1)
             time.sleep(1)
+        self.expect_errors = False
 
         if not ready_status:
             if show_progress and pbar:
