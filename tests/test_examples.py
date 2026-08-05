@@ -87,24 +87,32 @@ class TestExamples(BaseSparqlTest):
         """
         if self.dumps_root is None:
             self.skipTest("paper repository dump snapshot not available")
-        servers = self.running_servers()
-        self.assertTrue(servers, "no backend could be started")
-        for name, server in servers.items():
-            for dataset, expected in self.expected_triples.items():
-                triple_count = self.load_dataset(server, dataset)
-                if self.debug:
-                    print(f"{name} {dataset}: {triple_count}")
-                if name in self.rejects_example_dumps:
-                    # a backend whose importer refuses the dumps is rated on it -
-                    # see the input tolerance criterion of discussion #24 - and is
-                    # not a reason for this test to fail
-                    self.log_input_intolerance(name, dataset, expected, triple_count)
-                    continue
-                self.assertEqual(
-                    expected,
-                    triple_count,
-                    f"{name}: expected {expected} triples of {dataset}, got {triple_count}",
-                )
+        checked = self.with_each_server(self.check_examples)
+        self.assertTrue(checked, "no backend could be started")
+
+    def check_examples(self, name: str, server: SparqlServer):
+        """
+        Load each example dataset into the given server and check its count.
+
+        Args:
+            name: the server name
+            server: the server to check
+        """
+        for dataset, expected in self.expected_triples.items():
+            triple_count = self.load_dataset(server, dataset)
+            if self.debug:
+                print(f"{name} {dataset}: {triple_count}")
+            if name in self.rejects_example_dumps:
+                # a backend whose importer refuses the dumps is rated on it -
+                # see the input tolerance criterion of discussion #24 - and is
+                # not a reason for this test to fail
+                self.log_input_intolerance(name, dataset, expected, triple_count)
+                continue
+            self.assertEqual(
+                expected,
+                triple_count,
+                f"{name}: expected {expected} triples of {dataset}, got {triple_count}",
+            )
 
     def log_input_intolerance(self, name: str, dataset: str, expected: int, triple_count: int):
         """

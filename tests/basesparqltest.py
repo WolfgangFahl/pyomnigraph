@@ -7,6 +7,7 @@ shared setup for tests that need running backends
 """
 
 from pathlib import Path
+from typing import Callable, List
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
 from omnigraph.omniserver import OmniServer
@@ -19,6 +20,10 @@ class BaseSparqlTest(Basetest):
     """
     base class for tests that work against the configured backends
     """
+
+    # a server that already failed to start is not waited for again - a failed
+    # start costs its full ready_timeout and every test would pay it anew
+    failed_servers = set()
 
     def setUp(self, debug=False, profile=True, force=True):
         """
@@ -38,33 +43,43 @@ class BaseSparqlTest(Basetest):
             patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp),
         )
         self.servers = omni_server.servers(str(self.ogp.examples_dir / "servers.yaml"))
+        self.not_started = []
 
-    def running_servers(self) -> dict:
+    def with_each_server(self, work: Callable[[str, SparqlServer], None]) -> List[str]:
         """
-        Start the configured servers and return those that came up.
+        Start each backend, hand it to work, then stop it again.
 
-        A test asserting over no server at all would pass without checking
-        anything, so the servers are started here rather than relying on the
-        order in which the test modules run.
+        One backend at a time keeps the memory bounded - eight stores at once
+        exhaust a build machine, and a starved store never becomes ready, which
+        then costs its full readiness budget before it is given up on.
+
+        Args:
+            work: callable taking the server name and the server
 
         Returns:
-            dict of server name to SparqlServer for the servers that are ready
+            names of the servers work was called for
         """
-        running = {}
-        self.not_started = []
+        worked_on = []
         for name, server in self.servers.items():
+            if name in self.failed_servers:
+                self.not_started.append(name)
+                continue
             docker_status = server.docker_info()
             if not docker_status.success:
                 self.skipTest("docker is not available")
-            server_status = server.status()
-            started = server_status.running
+            was_running = server.status().running
+            started = was_running or server.start(show_progress=False)
             if not started:
-                started = server.start(show_progress=False)
-            if started:
-                running[name] = server
-            else:
+                self.failed_servers.add(name)
                 self.not_started.append(name)
-        return running
+                continue
+            try:
+                work(name, server)
+                worked_on.append(name)
+            finally:
+                if not was_running:
+                    server.stop()
+        return worked_on
 
     def load_royals(self, server: SparqlServer) -> int:
         """

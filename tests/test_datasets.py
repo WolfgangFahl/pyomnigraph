@@ -48,14 +48,19 @@ class TestDatasets(BaseSparqlTest):
         for each of them, and 0 for the one that was cleared while the other keeps
         its 63.
         """
+        checked = self.with_each_server(self.check_isolation)
+        self.assertTrue(checked, "no backend could be started")
+
+    def check_isolation(self, name: str, server: SparqlServer):
+        """
+        Check that two datasets on the given server keep their own content.
+
+        Args:
+            name: the server name
+            server: the server to check
+        """
         expected = 63
-        servers = self.running_servers()
-        self.assertTrue(servers, "no backend could be started")
-        checked = 0
-        for name, server in servers.items():
-            if not server.supports_datasets:
-                continue
-            checked += 1
+        if server.supports_datasets:
             count_a = self.load_into(server, "omnigraph_a")
             count_b = self.load_into(server, "omnigraph_b")
             self.assertEqual(expected, count_a, f"{name}: dataset a has {count_a} triples")
@@ -72,4 +77,3 @@ class TestDatasets(BaseSparqlTest):
             )
             if self.debug:
                 print(f"{name}: two datasets isolated")
-        self.assertTrue(checked, "no backend declares dataset support")
