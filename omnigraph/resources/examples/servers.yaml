@@ -135,6 +135,10 @@ servers:
     port: 1234
     test_port: 1734
     host: "localhost"
+    # the amd64 build needs instructions no CPU we have carries - it dies with
+    # SIGILL on an i9-9980HK, on a Ryzen 9 5900X and on the CI machines, none of
+    # which report avx512. The arm64 build runs under emulation everywhere, #49
+    docker_platform: "linux/arm64"
     ready_timeout: 120
     prefix_sets: ["rdf", "wikidata"]
     active: true
