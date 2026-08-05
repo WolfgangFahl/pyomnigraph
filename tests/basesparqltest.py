@@ -1,0 +1,89 @@
+"""
+Created on 2026-08-05
+
+shared setup for tests that need running backends
+
+@author: wf
+"""
+
+from pathlib import Path
+
+from omnigraph.ominigraph_paths import OmnigraphPaths
+from omnigraph.omniserver import OmniServer
+from omnigraph.server_config import LoadPath
+from omnigraph.sparql_server import ServerEnv, SparqlServer
+from tests.basetest import Basetest
+
+
+class BaseSparqlTest(Basetest):
+    """
+    base class for tests that work against the configured backends
+    """
+
+    def setUp(self, debug=False, profile=True, force=True):
+        """
+        setUp the test environment with the test instances of the active servers
+
+        Args:
+            debug: show debug output
+            profile: show timing
+            force: allow clearing stores above the unforced clear limit
+        """
+        Basetest.setUp(self, debug=debug, profile=profile)
+        home = Path("/tmp/home") if self.inPublicCI() else None
+        self.ogp = OmnigraphPaths(home)
+        env = ServerEnv(debug=self.debug, verbose=self.debug, force=force)
+        omni_server = OmniServer(
+            env=env,
+            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp),
+        )
+        self.servers = omni_server.servers(str(self.ogp.examples_dir / "servers.yaml"))
+
+    def running_servers(self) -> dict:
+        """
+        Start the configured servers and return those that came up.
+
+        A test asserting over no server at all would pass without checking
+        anything, so the servers are started here rather than relying on the
+        order in which the test modules run.
+
+        Returns:
+            dict of server name to SparqlServer for the servers that are ready
+        """
+        running = {}
+        self.not_started = []
+        for name, server in self.servers.items():
+            docker_status = server.docker_info()
+            if not docker_status.success:
+                self.skipTest("docker is not available")
+            server_status = server.status()
+            started = server_status.running
+            if not started:
+                started = server.start(show_progress=False)
+            if started:
+                running[name] = server
+            else:
+                self.not_started.append(name)
+        return running
+
+    def load_royals(self, server: SparqlServer) -> int:
+        """
+        Load the royals example into the given server.
+
+        Args:
+            server: the server to load into
+
+        Returns:
+            the triple count after loading
+        """
+        server.config.dumps_dir = self.ogp.examples_dir
+        # a store holding exactly this dataset is built where the backend can
+        # build - a backend whose runtime path can not clear would otherwise add
+        # to whatever it already holds
+        if LoadPath.BUILD in server.load_paths:
+            server.load_dump_files(path=LoadPath.BUILD)
+        else:
+            server.clear()
+            server.load_dump_files(path=LoadPath.LIVELOAD)
+        triple_count = server.count_triples()
+        return triple_count

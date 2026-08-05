@@ -6,32 +6,20 @@ test addressing two datasets in parallel on one server - see issue #44
 @author: wf
 """
 
-from pathlib import Path
-
-from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.omniserver import OmniServer
-from omnigraph.sparql_server import ServerEnv, SparqlServer
-from tests.basetest import Basetest
+from omnigraph.sparql_server import SparqlServer
+from tests.basesparqltest import BaseSparqlTest
 
 
-class TestDatasets(Basetest):
+class TestDatasets(BaseSparqlTest):
     """
     two datasets on one server keep their own content
     """
 
-    def setUp(self, debug=False, profile=True):
+    def setUp(self, debug=False, profile=True, force=True):
         """
         setUp the test environment
         """
-        Basetest.setUp(self, debug=debug, profile=profile)
-        home = Path("/tmp/home") if self.inPublicCI() else None
-        self.ogp = OmnigraphPaths(home)
-        env = ServerEnv(debug=self.debug, verbose=self.debug, force=True)
-        omni_server = OmniServer(
-            env=env,
-            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp),
-        )
-        self.servers = omni_server.servers(str(self.ogp.examples_dir / "servers.yaml"))
+        BaseSparqlTest.setUp(self, debug=debug, profile=profile, force=force)
         self.dumps_dir = self.ogp.examples_dir
 
     def load_into(self, server: SparqlServer, dataset: str) -> int:
@@ -61,12 +49,13 @@ class TestDatasets(Basetest):
         its 63.
         """
         expected = 63
-        for name, server in self.servers.items():
+        servers = self.running_servers()
+        self.assertTrue(servers, "no backend could be started")
+        checked = 0
+        for name, server in servers.items():
             if not server.supports_datasets:
                 continue
-            server_status = server.status()
-            if not server_status.running:
-                continue
+            checked += 1
             count_a = self.load_into(server, "omnigraph_a")
             count_b = self.load_into(server, "omnigraph_b")
             self.assertEqual(expected, count_a, f"{name}: dataset a has {count_a} triples")
@@ -83,3 +72,4 @@ class TestDatasets(Basetest):
             )
             if self.debug:
                 print(f"{name}: two datasets isolated")
+        self.assertTrue(checked, "no backend declares dataset support")

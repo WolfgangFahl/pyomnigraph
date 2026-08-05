@@ -9,14 +9,12 @@ test the use case examples of the paper repository - see issue #52
 import os
 from pathlib import Path
 
-from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.omniserver import OmniServer
 from omnigraph.server_config import LoadPath
-from omnigraph.sparql_server import ServerEnv, SparqlServer
-from tests.basetest import Basetest
+from omnigraph.sparql_server import SparqlServer
+from tests.basesparqltest import BaseSparqlTest
 
 
-class TestExamples(Basetest):
+class TestExamples(BaseSparqlTest):
     """
     load the dated dump snapshot of the paper repository into the backends
     """
@@ -31,23 +29,12 @@ class TestExamples(Basetest):
     # input tolerance in discussion #24 rather than failed here
     rejects_example_dumps = {"millenniumdb"}
 
-    def setUp(self, debug=False, profile=True):
+    def setUp(self, debug=False, profile=True, force=True):
         """
         setUp the test environment
         """
-        Basetest.setUp(self, debug=debug, profile=profile)
+        BaseSparqlTest.setUp(self, debug=debug, profile=profile, force=force)
         self.dumps_root = self.get_dumps_root()
-        home = Path("/tmp/home") if self.inPublicCI() else None
-        self.ogp = OmnigraphPaths(home)
-        # force so that a store holding more than unforced_clear_limit triples
-        # can be cleared before the example is loaded
-        env = ServerEnv(debug=self.debug, verbose=self.debug, force=True)
-        omni_server = OmniServer(
-            env=env,
-            patch_config=lambda config: OmniServer.patch_test_config(config, self.ogp),
-        )
-        servers_yaml_path = self.ogp.examples_dir / "servers.yaml"
-        self.servers = omni_server.servers(str(servers_yaml_path))
 
     def get_dumps_root(self) -> Path:
         """
@@ -100,10 +87,9 @@ class TestExamples(Basetest):
         """
         if self.dumps_root is None:
             self.skipTest("paper repository dump snapshot not available")
-        for name, server in self.servers.items():
-            server_status = server.status()
-            if not server_status.running:
-                continue
+        servers = self.running_servers()
+        self.assertTrue(servers, "no backend could be started")
+        for name, server in servers.items():
             for dataset, expected in self.expected_triples.items():
                 triple_count = self.load_dataset(server, dataset)
                 if self.debug:

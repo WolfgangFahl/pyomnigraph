@@ -101,9 +101,10 @@ class MillenniumDB(SparqlServer):
 
         db_dir = data_dir / self.config.dataset
 
-        # Check if database already exists
+        # Check if database already exists - an aborted import leaves the files
+        # behind with zero length, and the server then exits reading the catalog
         catalog_file = db_dir / "catalog.dat"
-        if catalog_file.exists():
+        if catalog_file.exists() and catalog_file.stat().st_size > 0:
             self.log.log(
                 "✅",
                 self.config.container_name,
