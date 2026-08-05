@@ -12,7 +12,7 @@ from lodstorage.prefix_config import PrefixConfigs
 from tabulate import tabulate
 
 from omnigraph.ominigraph_paths import OmnigraphPaths
-from omnigraph.server_config import ServerCmd, ServerConfig, ServerConfigs, ServerEnv
+from omnigraph.server_config import LoadPath, ServerCmd, ServerConfig, ServerConfigs, ServerEnv
 from omnigraph.servers.allegrograph import AllegroGraph, AllegroGraphConfig
 from omnigraph.servers.blazegraph import Blazegraph, BlazegraphConfig
 from omnigraph.servers.graphdb import GraphDB, GraphDBConfig
@@ -65,6 +65,18 @@ class OmniServer:
             "count": lambda s: ServerCmd(title("triple count", s), s.count_triples),
             "info": lambda s: ServerCmd(title("info", s), s.docker_info),
             "load": lambda s: ServerCmd(title("load dumps", s), s.load_dump_files),
+            "liveload": lambda s: ServerCmd(
+                title("liveload dumps into the running server", s),
+                lambda: s.load_dump_files(path=LoadPath.LIVELOAD),
+            ),
+            "bulkload": lambda s: ServerCmd(
+                title("bulkload dumps with the native loader", s),
+                lambda: s.load_dump_files(path=LoadPath.BULKLOAD),
+            ),
+            "build": lambda s: ServerCmd(
+                title("build the store from the dumps", s),
+                lambda: s.load_dump_files(path=LoadPath.BUILD),
+            ),
             "logs": lambda s: ServerCmd(title("logs of", s), s.logs),
             "needed": lambda s: ServerCmd(title("check needed software for", s), s.check_needed_software),
             "rm": lambda s: ServerCmd(title("remove", s), s.rm),

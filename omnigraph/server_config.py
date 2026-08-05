@@ -19,6 +19,16 @@ from omnigraph.software import SoftwareList
 from omnigraph.version import Version
 
 
+class LoadPath(Enum):
+    """
+    the ways data can get into a store - see issue #50
+    """
+
+    LIVELOAD = "liveload"  # server up, added through its endpoint, incremental
+    BULKLOAD = "bulkload"  # server down, the store's own loader writes its files
+    BUILD = "build"  # the store is produced from the dumps and replaces its content
+
+
 class SupportStatus(Enum):
     """
     Determines if and how a server can run based on environment/licenses.

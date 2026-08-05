@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
-from omnigraph.server_config import ServerLifecycleState, ServerStatus
+from omnigraph.server_config import LoadPath, ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -81,8 +81,13 @@ class Jena(SparqlServer):
         """
         server_status = super().status()
         logs = server_status.logs
+        # the log lines survive a restart, so they only qualify the container -
+        # readiness is decided by the endpoint answering, see issue #50
         if logs and "Creating dataset" in logs and "Fuseki is available :-)" in logs:
-            server_status.at = ServerLifecycleState.READY
+            if server_status.running:
+                response = self.make_request("GET", self.config.status_url)
+                if response.success:
+                    server_status.at = ServerLifecycleState.READY
 
         return server_status
 
@@ -128,7 +133,11 @@ class Jena(SparqlServer):
         )
         return command
 
-    def upload_dump_files(self, file_pattern: str = None) -> int:
+    @property
+    def load_paths(self) -> list:
+        return [LoadPath.LIVELOAD, LoadPath.BULKLOAD]
+
+    def bulkload_dump_files(self, file_pattern: str = None) -> int:
         """
         Bulk-load dump files with tdb2.tdbloader directly into the TDB2
         database files - the native path for the file-backed store, avoiding

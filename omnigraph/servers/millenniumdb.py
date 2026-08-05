@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-from omnigraph.server_config import ServerLifecycleState, ServerStatus
+from omnigraph.server_config import LoadPath, ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import Response, ServerConfig, ServerEnv, SparqlServer
 
 
@@ -203,7 +203,11 @@ class MillenniumDB(SparqlServer):
         self.log.log("❌", self.config.container_name, error_msg)
         return Response(None, RuntimeError(error_msg))
 
-    def load_dump_files(self, file_pattern: str = None) -> int:
+    @property
+    def load_paths(self) -> list:
+        return [LoadPath.BUILD]
+
+    def build_from_dump_files(self, file_pattern: str = None) -> int:
         """
         Override load_dump_files to explain MillenniumDB's import process.
 

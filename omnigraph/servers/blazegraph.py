@@ -10,7 +10,7 @@ import re
 import os
 import shutil
 
-from omnigraph.server_config import ServerLifecycleState, ServerStatus
+from omnigraph.server_config import LoadPath, ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import ServerConfig, ServerEnv, SparqlServer
 
 
@@ -117,7 +117,11 @@ class Blazegraph(SparqlServer):
 </properties>"""
         return xml
 
-    def upload_dump_files(self, file_pattern: str = None) -> int:
+    @property
+    def load_paths(self) -> list:
+        return [LoadPath.LIVELOAD, LoadPath.BULKLOAD]
+
+    def bulkload_dump_files(self, file_pattern: str = None) -> int:
         """
         Bulk-load dump files via Blazegraph's REST DataLoader servlet, which
         reads the files from the server's own filesystem (the mounted /data

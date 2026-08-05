@@ -23,7 +23,7 @@ from lodstorage.rdf_format import RdfFormat
 from lodstorage.sparql import SPARQL
 from tqdm import tqdm
 
-from omnigraph.server_config import ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
+from omnigraph.server_config import LoadPath, ServerConfig, ServerEnv, ServerLifecycleState, ServerStatus
 from omnigraph.software import SoftwareList
 
 
@@ -730,12 +730,7 @@ class SparqlServer:
 
     def upload_dump_files(self, file_pattern: str = None) -> int:
         """
-        Bulk-upload all dump files matching pattern using the server's
-        native bulk load mechanism.
-
-        Subclasses override this with their native loader (e.g. Jena
-        tdb2.tdbloader, Blazegraph REST DataLoader, QLever index build);
-        the default falls back to the HTTP load path.
+        legacy delegate - superseded by the load path dispatcher of issue #50
 
         Args:
             file_pattern: Glob pattern for dump files
@@ -746,13 +741,78 @@ class SparqlServer:
         loaded_count = self.load_dump_files(file_pattern)
         return loaded_count
 
-    def load_dump_files(self, file_pattern: str = None) -> int:
+    @property
+    def load_paths(self) -> List[LoadPath]:
         """
-        Load all dump files matching pattern.
+        The load paths this server offers, best first - see issue #50.
+
+        Returns:
+            list of supported LoadPath values
+        """
+        return [LoadPath.LIVELOAD]
+
+    def load_dump_files(self, file_pattern: str = None, path: LoadPath = None) -> int:
+        """
+        Load dump files over the best available path, or over the requested one.
 
         Args:
             file_pattern: Glob pattern for dump files
-            use_bulk: Use bulk loader if True, individual files if False
+            path: the LoadPath to force - refused when the server does not offer it
+
+        Returns:
+            Number of files loaded successfully
+        """
+        container_name = self.config.container_name
+        paths = self.load_paths
+        if path is None:
+            path = paths[0]
+        elif path not in paths:
+            offered = ", ".join(p.value for p in paths)
+            self.log.log("❌", container_name, f"{path.value} not available - {self.name} offers {offered}")
+            return 0
+        self.log.log("✅", container_name, f"loading via {path.value}")
+        loader = {
+            LoadPath.LIVELOAD: self.liveload_dump_files,
+            LoadPath.BULKLOAD: self.bulkload_dump_files,
+            LoadPath.BUILD: self.build_from_dump_files,
+        }[path]
+        loaded_count = loader(file_pattern)
+        return loaded_count
+
+    def bulkload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Bulk-load with the store's own loader while the server is stopped.
+
+        Only servers declaring LoadPath.BULKLOAD override this.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        raise NotImplementedError(f"{self.name} has no bulkload path")
+
+    def build_from_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Produce the store from the dump files, replacing its content.
+
+        Only servers declaring LoadPath.BUILD override this.
+
+        Args:
+            file_pattern: Glob pattern for dump files
+
+        Returns:
+            Number of files loaded successfully
+        """
+        raise NotImplementedError(f"{self.name} has no build path")
+
+    def liveload_dump_files(self, file_pattern: str = None) -> int:
+        """
+        Load all dump files matching pattern through the running server.
+
+        Args:
+            file_pattern: Glob pattern for dump files
 
         Returns:
             Number of files loaded successfully

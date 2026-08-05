@@ -13,7 +13,7 @@ from typing import List, Optional
 
 import rdflib
 
-from omnigraph.server_config import ServerLifecycleState, ServerStatus
+from omnigraph.server_config import LoadPath, ServerLifecycleState, ServerStatus
 from omnigraph.sparql_server import (
     Response,
     ServerConfig,
@@ -260,7 +260,11 @@ class QLever(SparqlServer):
         ]
         return commands
 
-    def upload_dump_files(self, file_pattern: str = None) -> int:
+    @property
+    def load_paths(self) -> list:
+        return [LoadPath.LIVELOAD, LoadPath.BUILD]
+
+    def build_from_dump_files(self, file_pattern: str = None) -> int:
         """
         Bulk-load dump files by rebuilding the QLever index from them -
         the native path; the turtle-to-INSERT conversion of upload_request
