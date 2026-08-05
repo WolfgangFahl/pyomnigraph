@@ -288,11 +288,19 @@ class QLever(SparqlServer):
         if qlever_file is None:
             self.log.log("❌", container_name, f"no Qleverfile in {data_dir} - run start (setup-config) first")
             return loaded_count
-        # stage the dumps in the data directory and register them as input files
+        # stage the dumps in the data directory and register them as input files.
+        # build replaces the store, so previously staged dumps are removed first and
+        # same named files are overwritten - otherwise the index is built from the
+        # union of every dataset ever loaded, or from stale content of the same
+        # file name of another dataset, see issue #40
+        wanted = {file.name for file in files}
+        for stale in data_dir.glob(f"*{self.rdf_format.extension}"):
+            if stale.name not in wanted:
+                stale.unlink()
+                self.log.log("✅", container_name, f"removed stale dump {stale.name}")
         for file in files:
             target = data_dir / file.name
-            if not target.exists():
-                shutil.copy2(file, target)
+            shutil.copy2(file, target)
         input_files = " ".join(file.name for file in files)
         qlever_file.set("index", "INPUT_FILES", input_files)
         qlever_file.save()
