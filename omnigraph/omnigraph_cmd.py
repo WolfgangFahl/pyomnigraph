@@ -104,7 +104,16 @@ class OmnigraphCmd(BaseCmd):
         servers = {}
         server_names = self.args.servers
         if "all" in server_names:
-            server_names = list(self.all_servers.keys())
+            # all means all that can run on this machine - see #61; an explicitly
+            # named server is still tried and reports what it lacks
+            server_names = []
+            for name, candidate in self.all_servers.items():
+                support = candidate.config.support_status
+                if support.can_start():
+                    server_names.append(name)
+                else:
+                    unmet = ", ".join(candidate.config.unmet_prerequisites()) or support.value
+                    self.log.log("🛑", "omnigraph", f"skipping {name}: {unmet}")
         for server_name in server_names:
             server = self.all_servers.get(server_name)
             if server:

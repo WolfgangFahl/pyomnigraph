@@ -45,6 +45,7 @@ class BaseSparqlTest(Basetest):
         )
         self.servers = omni_server.servers(str(self.ogp.examples_dir / "servers.yaml"))
         self.not_started = []
+        self.blocked = {}
 
     def with_each_server(self, work: Callable[[str, SparqlServer], None]) -> List[str]:
         """
@@ -62,6 +63,13 @@ class BaseSparqlTest(Basetest):
         """
         worked_on = []
         for name, server in self.servers.items():
+            support = server.config.support_status
+            if support.is_blocking():
+                # a machine that lacks a prerequisite is not a failure - see #61
+                unmet = ", ".join(server.config.unmet_prerequisites()) or support.value
+                self.blocked[name] = unmet
+                print(f"{name} blocked on this machine: {unmet}")
+                continue
             if name in self.failed_servers:
                 self.not_started.append(name)
                 continue

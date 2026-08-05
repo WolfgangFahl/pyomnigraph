@@ -5,11 +5,13 @@ Created on 2025-05-28
 """
 
 import os
+import platform as host_platform
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Optional
+from pathlib import Path
+from typing import Callable, Dict, List, Optional
 
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
@@ -37,6 +39,7 @@ class SupportStatus(Enum):
     SUPPORTED = "supported ✅"
     LIMITED = "limited ⚠️"
     MISSING_LICENSE = "no_license 🛑"
+    MISSING_PREREQUISITE = "no_prerequisite 🛑"
     MISSING_SOFTWARE = "no_software 🛑"
     MANUAL_DISABLED = "disabled ⛔"
 
@@ -60,6 +63,10 @@ class SupportStatus(Enum):
             log.log(
                 "🛑", container_name, f"License required (set {config.license_env_var}) and no free fallback available"
             )
+
+        elif self == SupportStatus.MISSING_PREREQUISITE:
+            unmet = ", ".join(config.unmet_prerequisites())
+            log.log("🛑", container_name, f"prerequisites unmet on this machine: {unmet}")
 
         elif self == SupportStatus.LIMITED:
             log.log("⚠️", container_name, f"Using free/community image: {config.effective_image}")
@@ -209,6 +216,49 @@ class ServerConfig:
         # Check if we have a license available
         self.has_license = self.license_env_var and os.environ.get(self.license_env_var)
 
+    def platform_supported(self) -> bool:
+        """
+        Whether this host can execute the configured docker platform.
+
+        Returns:
+            True if no platform is forced, the architectures match, or the
+            host brings emulation - built in on macOS, binfmt on linux
+        """
+        supported = True
+        if self.docker_platform:
+            target_arch = self.docker_platform.split("/")[-1]
+            aliases = {"x86_64": "amd64", "aarch64": "arm64"}
+            host_arch = host_platform.machine().lower()
+            host_arch = aliases.get(host_arch, host_arch)
+            if host_arch != target_arch:
+                if host_platform.system() == "Darwin":
+                    supported = True
+                else:
+                    qemu_name = {"arm64": "qemu-aarch64", "amd64": "qemu-x86_64"}.get(
+                        target_arch, f"qemu-{target_arch}"
+                    )
+                    supported = Path(f"/proc/sys/fs/binfmt_misc/{qemu_name}").exists()
+        return supported
+
+    def unmet_prerequisites(self) -> List[str]:
+        """
+        The prerequisites this machine does not meet for the server - see #61:
+        active states project support, prerequisites state machine support.
+
+        Returns:
+            one description per unmet prerequisite, empty if all are met
+        """
+        unmet = []
+        if not self.platform_supported():
+            unmet.append(f"no emulation for {self.docker_platform}")
+        if self.needed_software:
+            software_list = self.needed_software
+            if isinstance(software_list, dict):
+                software_list = SoftwareList.from_dict2(software_list)  # @UndefinedVariable
+            for command in software_list.missing_commands():
+                unmet.append(f"missing command: {command}")
+        return unmet
+
     @property
     def support_status(self) -> SupportStatus:
         """
@@ -230,6 +280,8 @@ class ServerConfig:
                 status = SupportStatus.LIMITED
             else:
                 status = SupportStatus.MISSING_LICENSE
+        if status.can_start() and self.unmet_prerequisites():
+            status = SupportStatus.MISSING_PREREQUISITE
 
         return status
 

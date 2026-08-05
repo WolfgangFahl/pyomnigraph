@@ -1,4 +1,5 @@
 import os
+import shutil
 from dataclasses import dataclass, field
 from typing import List
 
@@ -24,6 +25,16 @@ class SoftwareList:
     """
 
     software_list: List[Software] = field(default_factory=list)
+
+    def missing_commands(self) -> List[str]:
+        """
+        The commands of this list that are not available on this machine.
+
+        Returns:
+            the missing command names
+        """
+        missing = [software.command for software in self.software_list if shutil.which(software.command) is None]
+        return missing
 
     def check_installed(self, log: Log, shell: Shell, verbose: bool = True) -> int:
         """
