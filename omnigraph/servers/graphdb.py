@@ -25,7 +25,8 @@ class GraphDBConfig(ServerConfig):
 
         # Clean URLs without credentials
         graphdb_repo = f"{self.base_url}/repositories/{self.dataset}"
-        self.status_url = f"{self.base_url}/rest/info"
+        # /rest/info answers 406 - /protocol is the RDF4J endpoint that responds
+        self.status_url = f"{self.base_url}/protocol"
         self.sparql_url = f"{graphdb_repo}"
         self.update_url = f"{graphdb_repo}/statements"
         self.upload_url = f"{graphdb_repo}/statements"
@@ -180,9 +181,12 @@ class GraphDB(SparqlServer):
         server_status = super().status()
         logs = server_status.logs
         if logs:
-            if "Started GraphDB" in logs:
-                lifecycle = ServerLifecycleState.READY
-                server_status.at = lifecycle
+            # the log line survives a restart, so it only qualifies the container -
+            # readiness is decided by the endpoint answering, as for jena, #50
+            if "Started GraphDB" in logs and server_status.running:
+                response = self.make_request("GET", self.config.status_url)
+                if response.success:
+                    server_status.at = ServerLifecycleState.READY
 
         if server_status.at == ServerLifecycleState.READY:
             if self.repo_created:
