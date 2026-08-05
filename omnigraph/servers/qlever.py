@@ -190,6 +190,10 @@ class QLever(SparqlServer):
     def start(self, show_progress: bool = True) -> bool:
         """
         Start QLever using proper workflow.
+
+        The step workflow creates the container, so it only runs when no
+        container exists - the qlever CLI refuses on a name or port it finds
+        taken, which is exactly the state a stopped or running container leaves.
         """
         if not self.config.data_dir:
             raise ValueError("Data directory needs to be specified")
@@ -197,6 +201,15 @@ class QLever(SparqlServer):
         if not os.path.exists(self.config.data_dir):
             raise ValueError(f"Data directory {self.data.dir} needs to exist")
         self.dataset = self.config.dataset
+        server_status = self.status()
+        if server_status.running:
+            started = self.wait_until_ready(show_progress=show_progress)
+            return started
+        if server_status.exists:
+            start_cmd = f"docker start {self.config.container_name}"
+            self.docker_util.run_shell_command(start_cmd, error_msg=f"Failed to start {self.config.container_name}")
+            started = self.wait_until_ready(show_progress=show_progress)
+            return started
         started = False
         if self.dataset:
             steps = 0

@@ -306,7 +306,10 @@ class SparqlServer:
             self.expect_errors = True
             response = self.make_request("GET", self.config.status_url)
             self.expect_errors = False
-            answers = response.success
+            # any HTTP status is an answer - the question is whether the server
+            # speaks HTTP at all, not whether this url returns 2xx: qlever gives
+            # 404 on its root and graphdb 406 on /rest/info while serving fine
+            answers = response.response is not None
         return answers
 
     def refresh_logs(self, server_status=ServerStatus):

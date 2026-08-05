@@ -15,6 +15,7 @@ with the prompt:
 @author: wf
 """
 
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -62,7 +63,7 @@ class MillenniumDBConfig(ServerConfig):
         db_path = f"/data/{self.dataset}"
 
         docker_run_command = (
-            f"docker run -d {self.docker_platform_flag}--name {self.container_name} "
+            f"docker run -d {self.docker_platform_flag}{self.docker_user_flag} --name {self.container_name} "
             f"-p {self.docker_bind}:{self.sparql_port}:1234 "
             f"-p {self.docker_bind}:{self.web_port}:4321 "
             f"-v {data_dir}:/data "
@@ -111,6 +112,11 @@ class MillenniumDB(SparqlServer):
                 f"Database already exists at {db_dir}"
             )
             return
+        if db_dir.exists():
+            # the leftovers of an aborted import - mdb import refuses a non
+            # empty target directory, so the stale remains have to go first
+            shutil.rmtree(db_dir)
+            self.log.log("⚠️", self.config.container_name, f"removed stale database remains at {db_dir}")
 
         # Find RDF files to import
         dumps_dir = Path(self.config.dumps_dir) if self.config.dumps_dir else data_dir
@@ -140,8 +146,10 @@ class MillenniumDB(SparqlServer):
         # Map both dumps_dir and data_dir to container
         files_arg = " ".join([f"/import/{Path(f).name}" for f in import_files])
 
+        # run as the invoking user - a root owned database in the bind mount can
+        # not be removed by the test user, which is what broke CI
         import_cmd = (
-            f"docker run --rm {self.config.docker_platform_flag}"
+            f"docker run --rm {self.config.docker_platform_flag}{self.config.docker_user_flag} "
             f"-v {dumps_dir}:/import "
             f"-v {data_dir}:/data "
             f"{self.config.image} "
@@ -257,7 +265,6 @@ class MillenniumDB(SparqlServer):
         # Remove existing database directory to force reimport
         db_dir = Path(self.config.base_data_dir) / self.config.dataset
         if db_dir.exists():
-            import shutil
             shutil.rmtree(db_dir)
             self.log.log(
                 "✅",
