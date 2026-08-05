@@ -119,6 +119,9 @@ class RdfDataset:
             Number of solutions available from the count query
         """
         count = self.sparql.getValue(self.count_query.query, "count")
+        if count is None:
+            # name the endpoint instead of turning silence into a zero - see #64
+            raise RuntimeError(f"count query answered nothing on {self.endpoint_url}")
         # issue #37: getValue returns the raw literal which may be a str
         count = int(count)
         return count

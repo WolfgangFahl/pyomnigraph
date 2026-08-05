@@ -65,7 +65,12 @@ class RdfDumpDownloader:
         if self.debug:
             print(query)
         content = self.sparql.post_query_direct(query=query, rdf_format=rdf_format)
-        # Better debugging
+        if not content:
+            # an empty answer is a finding, not a silent skip - see #64
+            print(f"empty chunk at offset {offset} from {self.endpoint_url}")
+        elif "<html" in content[:200].lower():
+            # a throttle or error page would otherwise be written as turtle
+            print(f"non-RDF answer at offset {offset} from {self.endpoint_url}: {content[:200]!r}")
         if self.debug:
             print(f"Chunk {offset}: content length = {len(content) if content else 0}")
         return content
@@ -83,6 +88,9 @@ class RdfDumpDownloader:
 
         # Get actual count from dataset
         actual_count = self.dataset.get_solution_count()
+        if actual_count == 0:
+            # zero makes the loop a no-op - name it so a build log says why, #64
+            print(f"count 0 from {self.endpoint_url} for {self.dataset.name} - nothing to download")
         total_chunks = (actual_count + self.limit - 1) // self.limit  # Round up
         chunk_count = 0
 
