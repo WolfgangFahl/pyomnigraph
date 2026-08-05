@@ -44,7 +44,7 @@ class BlazegraphConfig(ServerConfig):
         # larger datasets time out - see issue #33
         java_opts = f"-Xmx{self.heap_size} -Xms{self.heap_size}"
         docker_run_command = (
-            f"docker run -d --name {self.container_name} "
+            f"docker run {self.docker_options_flag}-d --name {self.container_name} "
             f"-e BLAZEGRAPH_UID={os.getuid()} "
             f"-e BLAZEGRAPH_GID={os.getgid()} "
             f"-e JAVA_OPTS='{java_opts}' "

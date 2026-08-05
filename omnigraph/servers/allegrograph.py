@@ -52,10 +52,7 @@ class AllegroGraphConfig(ServerConfig):
         env_str = " " + " ".join(env_parts) if env_parts else ""
 
         docker_run_command = (
-            f"docker run{env_str} -d --name {self.container_name} "
-            # demanded by the image - the linux docker default of 64m shared
-            # memory makes the container exit at boot with exactly this advice
-            f"--shm-size 1g "
+            f"docker run {self.docker_options_flag}{env_str.strip()} -d --name {self.container_name} "
             f"-p {self.docker_bind}:{self.port}:10035 "
             f"-v {data_dir}:/agraph/data "
             f"{self.image}"

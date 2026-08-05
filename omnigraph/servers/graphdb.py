@@ -60,7 +60,7 @@ class GraphDBConfig(ServerConfig):
 
         # 4. Construct Command
         docker_run_command = (
-            f"docker run {env_str} -d --name {self.container_name} "
+            f"docker run {self.docker_options_flag}{env_str} -d --name {self.container_name} "
             f"-p {self.docker_bind}:{self.port}:7200 "
             f"-v {data_dir}:/opt/graphdb/home "
             f"{target_image}"

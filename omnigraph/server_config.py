@@ -179,6 +179,9 @@ class ServerConfig:
     docker_platform: Optional[str] = None
     # JVM heap for the java based servers, e.g. 4g - see issue #33
     heap_size: str = "4g"
+    # additional docker run options verbatim, e.g. --shm-size 1g - whatever an
+    # image demands is configuration here, not a code change per option
+    docker_options: Optional[str] = None
     rdf_format: str = "turtle"
     auth_user: Optional[str] = None
     auth_password: Optional[str] = None
@@ -241,6 +244,17 @@ class ServerConfig:
             if target_image.startswith("https://github.com/"):
                 target_image = target_image.split("/")[-1].replace(".git", "") + ":local"
         return target_image
+
+    @property
+    def docker_options_flag(self) -> str:
+        """
+        the configured extra docker run options, empty unless set
+
+        Returns:
+            the options including a trailing space or an empty string
+        """
+        flag = f"{self.docker_options} " if self.docker_options else ""
+        return flag
 
     @property
     def docker_platform_flag(self) -> str:

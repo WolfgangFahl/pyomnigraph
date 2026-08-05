@@ -19,6 +19,8 @@ servers:
     # the 976 MB image needs more than the default 20s on a cold machine;
     # a longer budget only makes a broken start slower, so 120 is the cap
     ready_timeout: 120
+    # the image exits at boot below 1g shared memory and says so in its log
+    docker_options: "--shm-size 1g"
     active: true
   blazegraph:
     server: "blazegraph"

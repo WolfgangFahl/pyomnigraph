@@ -63,7 +63,7 @@ class MillenniumDBConfig(ServerConfig):
         db_path = f"/data/{self.dataset}"
 
         docker_run_command = (
-            f"docker run -d {self.docker_platform_flag}{self.docker_user_flag} --name {self.container_name} "
+            f"docker run {self.docker_options_flag}-d {self.docker_platform_flag}{self.docker_user_flag} --name {self.container_name} "
             f"-p {self.docker_bind}:{self.sparql_port}:1234 "
             f"-p {self.docker_bind}:{self.web_port}:4321 "
             f"-v {data_dir}:/data "

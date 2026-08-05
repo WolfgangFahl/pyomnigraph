@@ -49,7 +49,7 @@ class JenaConfig(ServerConfig):
         if self.auth_password:
             env = f"{env} -e ADMIN_PASSWORD={self.auth_password}"
         docker_run_command = (
-            f"docker run {self.docker_user_flag} {env} -d --name {self.container_name} "
+            f"docker run {self.docker_options_flag}{self.docker_user_flag} {env} -d --name {self.container_name} "
             f"-p {self.docker_bind}:{self.port}:3030 "
             f"-v {data_dir}:/fuseki "
             f"{self.image}"
