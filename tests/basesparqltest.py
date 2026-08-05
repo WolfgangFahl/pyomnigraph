@@ -6,6 +6,7 @@ shared setup for tests that need running backends
 @author: wf
 """
 
+import os
 from pathlib import Path
 from typing import Callable, List
 
@@ -35,6 +36,11 @@ class BaseSparqlTest(Basetest):
             force: allow clearing stores above the unforced clear limit
         """
         Basetest.setUp(self, debug=debug, profile=profile)
+        # a build machine can not host eight triple stores - one of them claims a
+        # 4g heap alone - so the backends are exercised where they can run and the
+        # build stays a build. Set OMNIGRAPH_BACKENDS to run them anyway
+        if self.inPublicCI() and not os.environ.get("OMNIGRAPH_BACKENDS"):
+            self.skipTest("backends are not started on a build machine")
         home = Path("/tmp/home") if self.inPublicCI() else None
         self.ogp = OmnigraphPaths(home)
         env = ServerEnv(debug=self.debug, verbose=self.debug, force=force)
