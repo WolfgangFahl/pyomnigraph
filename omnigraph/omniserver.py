@@ -163,7 +163,9 @@ class OmniServer:
             else:
                 return text
 
-        for server in servers.values():
+        # active servers first, then alphabetically - the config order is not meaningful
+        sorted_servers = sorted(servers.values(), key=lambda s: (not s.config.active, s.name))
+        for server in sorted_servers:
             active_str = server.flag
 
             wikidata_id = getattr(server.config, "wikidata_id", "")
