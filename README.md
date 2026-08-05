@@ -56,12 +56,10 @@ This leads to:
 | **Blazegraph** | 🟢 Working | High performance, easy setup |
 | **Oxigraph** | 🟢 Working | Rust-based, embedded, fast |
 | **QLever** | 🟢 Working | Extremely fast queries |
-| **Virtuoso** | 🟢 Working | Mature; SPARQL and SQL over one engine, reasoning and inference, fine grained attribute based access control, SPARQL via SQL for existing SQL applications. Updates use the authenticated endpoint; data is scoped to the default graph ([#43](https://github.com/WolfgangFahl/pyomnigraph/issues/43)) |
-| **GraphDB** | 🛑 Disabled | License required (free image available), enterprise features and reasoning |
-| **Stardog** | 🛑 Disabled | License required, knowledge graphs and reasoning; implementation unverified ([#17](https://github.com/WolfgangFahl/pyomnigraph/issues/17)) |
+| **Virtuoso** | 🟢 Working | Mature, SPARQL and SQL over one engine, reasoning and inference, fine grained attribute based access control, SPARQL via SQL |
+| **GraphDB** | 🛑 Disabled | License required, enterprise features and reasoning |
+| **Stardog** | 🛑 Disabled | License required, knowledge graphs and reasoning |
 | **MillenniumDB** | 🛑 Disabled | Import-first workflow, Property Graph + RDF |
-
-The `Active` column of the generated table below is the authoritative state - it is read from `servers.yaml`.
 
 Whether you're building a semantic web application, conducting research, or evaluating different triple stores, pyomnigraph eliminates the complexity of working with multiple graph database systems.
 
