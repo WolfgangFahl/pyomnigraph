@@ -77,13 +77,15 @@ class BaseSparqlTest(Basetest):
             if not docker_status.success:
                 self.skipTest("docker is not available")
             server_status = server.status()
-            was_running = server_status.running
-            if server_status.exists and not was_running:
-                # a stopped container keeps the options it was created with, so a
-                # test would run against a stale configuration - recreate instead,
-                # see #57 where the shm fix could not reach a surviving container
+            if server_status.exists:
+                # any surviving container - stopped or still running from an
+                # aborted build - keeps the options it was created with, so a
+                # test would run against a stale configuration: Jenkins build 264
+                # failed on the running 1g container of build 263 while 2g was
+                # configured. A test always creates its container fresh, #63
+                server.stop()
                 server.rm()
-            started = was_running or server.start(show_progress=False)
+            started = server.start(show_progress=False)
             if not started:
                 # remove the failed -test container: a stopped container is
                 # docker-started and keeps the options it was created with, so a
