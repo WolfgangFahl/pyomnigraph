@@ -61,7 +61,16 @@ class TestCompose(Basetest):
         """
         compose = yaml.safe_load(self.markup.split("\n#")[0])
         services = compose["services"]
-        for name in ["allegrograph", "blazegraph", "graphdb", "jena", "millenniumdb", "oxigraph", "virtuoso"]:
+        for name in [
+            "allegrograph",
+            "blazegraph",
+            "graphdb",
+            "jena",
+            "millenniumdb",
+            "oxigraph",
+            "tentris",
+            "virtuoso",
+        ]:
             self.assertIn(name, services, f"{name} missing from the compose file")
             self.assertIn("image", services[name])
             self.assertIn("container_name", services[name])

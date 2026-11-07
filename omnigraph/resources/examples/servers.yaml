@@ -115,6 +115,19 @@ servers:
     auth_password: "admin"
     # license issue
     active: false
+  tentris:
+    server: "tentris"
+    name: "tentris"
+    wikidata_id: "Q141933959"
+    container_name: "tentris-omnigraph"
+    # official multi-arch image amd64/arm64 - https://docs.tentris.io/running_with_docker.html
+    # no /config/tentris-license.toml is mounted, so the non-commercial license applies
+    image: "ghcr.io/tentris/tentris:v1.5.0"
+    dataset: "default"
+    port: 9080
+    test_port: 9580
+    host: "localhost"
+    active: true
   virtuoso:
     server: "virtuoso"
     name: "virtuoso"

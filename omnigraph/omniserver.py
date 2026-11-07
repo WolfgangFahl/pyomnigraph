@@ -21,6 +21,7 @@ from omnigraph.servers.millenniumdb import MillenniumDB, MillenniumDBConfig
 from omnigraph.servers.oxigraph import Oxigraph, OxigraphConfig
 from omnigraph.servers.qlever import QLever, QLeverConfig
 from omnigraph.servers.stardog import Stardog, StardogConfig
+from omnigraph.servers.tentris import Tentris, TentrisConfig
 from omnigraph.servers.virtuoso import Virtuoso, VirtuosoConfig
 from omnigraph.sparql_server import SparqlServer
 
@@ -111,6 +112,7 @@ class OmniServer:
             "oxigraph": (OxigraphConfig, Oxigraph),
             "qlever": (QLeverConfig, QLever),
             "stardog": (StardogConfig, Stardog),
+            "tentris": (TentrisConfig, Tentris),
             "virtuoso": (VirtuosoConfig, Virtuoso),
         }
 
@@ -196,9 +198,14 @@ class OmniServer:
             image = getattr(server.config, "image", "")
             image_link = image
             if image:
-                # Remove tag (everything after :) and create Docker Hub link
+                # Remove tag (everything after :) and link the registry page
                 image_name = image.split(":")[0]
-                docker_url = f"https://hub.docker.com/r/{image_name}"
+                registry = image_name.split("/")[0]
+                if "." in registry and "/" in image_name:
+                    # registry qualified e.g. ghcr.io/tentris/tentris - the registry serves the page
+                    docker_url = f"https://{image_name}"
+                else:
+                    docker_url = f"https://hub.docker.com/r/{image_name}"
                 image_link = format_link(image, docker_url, table_format)
 
             table_data.append(

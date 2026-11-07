@@ -59,6 +59,7 @@ This leads to:
 | **MillenniumDB** | 🟢 Working | Property Graph + RDF, build-only: the store is produced by mdb import before it can serve |
 | **Oxigraph** | 🟢 Working | Rust-based, embedded, fast |
 | **QLever** | 🟢 Working | Extremely fast queries |
+| **Tentris** | 🟢 Working | Tensor-based, disk-based; non-commercial license without a license file |
 | **Virtuoso** | 🟢 Working | Mature, SPARQL and SQL over one engine, reasoning and inference, fine grained attribute based access control, SPARQL via SQL |
 | **Stardog** | 🛑 Disabled | License required, knowledge graphs and reasoning |
 
@@ -77,6 +78,7 @@ omnigraph --list --include-inactive --doc-format github
 | 🟢️       | [millenniumdb](http://localhost:1234)  | millenniumdb-omnigraph | [Q118954995](https://www.wikidata.org/wiki/Q118954995) | [imfd/millenniumdb](https://hub.docker.com/r/imfd/millenniumdb)                                  |   1234 |        1734 | default   |        |
 | 🟢️       | [oxigraph](http://localhost:7878)      | oxigraph-omnigraph     | [Q118980507](https://www.wikidata.org/wiki/Q118980507) | [oxigraph/oxigraph:latest](https://hub.docker.com/r/oxigraph/oxigraph)                           |   7878 |        7378 | default   |        |
 | 🟢️       | [qlever](http://localhost:7019)        | qlever-omnigraph       | [Q111016295](https://www.wikidata.org/wiki/Q111016295) | [adfreiburg/qlever:latest](https://hub.docker.com/r/adfreiburg/qlever)                           |   7019 |        7819 | olympics  |        |
+| 🟢️       | [tentris](http://localhost:9080)       | tentris-omnigraph      | [Q141933959](https://www.wikidata.org/wiki/Q141933959) | [ghcr.io/tentris/tentris:v1.5.0](https://ghcr.io/tentris/tentris)                                |   9080 |        9580 | default   |        |
 | 🟢️       | [virtuoso](http://localhost:8890)      | virtuoso-omnigraph     | [Q7935239](https://www.wikidata.org/wiki/Q7935239)     | [openlink/virtuoso-opensource-7:latest](https://hub.docker.com/r/openlink/virtuoso-opensource-7) |   8890 |        8390 | KB        | dba    |
 | 🛑       | [stardog](http://localhost:5820)       | stardog-omnigraph      | [Q91147741](https://www.wikidata.org/wiki/Q91147741)   | [stardog/stardog:latest](https://hub.docker.com/r/stardog/stardog)                               |   5820 |        5320 | mydb      | admin  |
 
