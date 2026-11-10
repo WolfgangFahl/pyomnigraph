@@ -15,7 +15,7 @@ with the prompt:
 @author: wf
 """
 
-import shutil
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -91,6 +91,8 @@ class MillenniumDB(SparqlServer):
             env: Server environment (includes log, shell, debug, verbose)
         """
         super().__init__(config=config, env=env)
+        # set by build_from_dump_files to replace an existing database
+        self.force_import = False
 
     def pre_create(self):
         """
@@ -105,7 +107,7 @@ class MillenniumDB(SparqlServer):
         # Check if database already exists - an aborted import leaves the files
         # behind with zero length, and the server then exits reading the catalog
         catalog_file = db_dir / "catalog.dat"
-        if catalog_file.exists() and catalog_file.stat().st_size > 0:
+        if not self.force_import and catalog_file.exists() and catalog_file.stat().st_size > 0:
             self.log.log(
                 "✅",
                 self.config.container_name,
@@ -113,10 +115,10 @@ class MillenniumDB(SparqlServer):
             )
             return
         if db_dir.exists():
-            # the leftovers of an aborted import - mdb import refuses a non
-            # empty target directory, so the stale remains have to go first
-            shutil.rmtree(db_dir)
-            self.log.log("⚠️", self.config.container_name, f"removed stale database remains at {db_dir}")
+            # an existing database or the leftovers of an aborted import - mdb
+            # import refuses a non empty target directory; the import container
+            # removes it itself, see below
+            self.log.log("⚠️", self.config.container_name, f"replacing database at {db_dir}")
 
         # Find RDF files to import
         dumps_dir = Path(self.config.dumps_dir) if self.config.dumps_dir else data_dir
@@ -144,16 +146,22 @@ class MillenniumDB(SparqlServer):
 
         # Build import command
         # Map both dumps_dir and data_dir to container
-        files_arg = " ".join([f"/import/{Path(f).name}" for f in import_files])
+        files_arg = " ".join([shlex.quote(f"/import/{Path(f).name}") for f in import_files])
 
         # run as the invoking user - a root owned database in the bind mount can
         # not be removed by the test user, which is what broke CI
+        # the target is removed inside the import container: removed on the host,
+        # mdb import intermittently still saw /data/<dataset> through the bind
+        # mount and then failed with "cannot check if file is empty" - removing
+        # and importing in one container gives both the same view of the mount
+        db_path = f"/data/{self.config.dataset}"
+        import_script = f"rm -rf {shlex.quote(db_path)} && mdb import {files_arg} {shlex.quote(db_path)}"
         import_cmd = (
             f"docker run --rm {self.config.docker_platform_flag}{self.config.docker_user_flag} "
             f"-v {dumps_dir}:/import "
             f"-v {data_dir}:/data "
             f"{self.config.image} "
-            f"mdb import {files_arg} /data/{self.config.dataset}"
+            f"sh -c {shlex.quote(import_script)}"
         )
 
         import_result = self.shell.run(import_cmd, tee=self.verbose)
@@ -247,18 +255,13 @@ class MillenniumDB(SparqlServer):
         self.stop()
         self.rm()
 
-        # Remove existing database directory to force reimport
-        db_dir = Path(self.config.base_data_dir) / self.config.dataset
-        if db_dir.exists():
-            shutil.rmtree(db_dir)
-            self.log.log(
-                "✅",
-                self.config.container_name,
-                f"Removed existing database at {db_dir}"
-            )
-
-        # Start will trigger pre_create which does the import
-        started = self.start()
+        # Start will trigger pre_create which does the import - forced, since the
+        # existing database is replaced by the import container itself
+        self.force_import = True
+        try:
+            started = self.start()
+        finally:
+            self.force_import = False
 
         if started:
             # Count triples to verify import

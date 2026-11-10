@@ -121,9 +121,12 @@ class BaseSparqlTest(Basetest):
         # build - a backend whose runtime path can not clear would otherwise add
         # to whatever it already holds
         if LoadPath.BUILD in server.load_paths:
-            server.load_dump_files(path=LoadPath.BUILD)
+            load_path = LoadPath.BUILD
         else:
             server.clear()
-            server.load_dump_files(path=LoadPath.LIVELOAD)
+            load_path = LoadPath.LIVELOAD
+        loaded_count = server.load_dump_files(path=load_path)
+        # a failed load would otherwise only show as a wrong triple count
+        self.assertGreater(loaded_count, 0, f"{load_path.value} load failed for {server.config.name}")
         triple_count = server.count_triples()
         return triple_count

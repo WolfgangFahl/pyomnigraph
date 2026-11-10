@@ -194,6 +194,10 @@ class QLever(SparqlServer):
         input_files = qlever_file.get("index", "input_files")
         # patch the port
         qlever_file.set("server", "port", str(self.config.port))
+        # qlever start waits until the server answers at host_name, which defaults
+        # to the machine's host name - where that resolves to an address the
+        # published port does not answer on, qlever start never returns
+        qlever_file.set("server", "host_name", "localhost")
         # path the name
         qlever_file.save()
         # steps are index from 1 so step.step in the step_list
